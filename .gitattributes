@@ -1,0 +1,5 @@
+*.inc eol=crlf
+*.bas eol=crlf
+
+*.inc linguist-language=PowerBASIC
+*.bas linguist-language=PowerBASIC
