@@ -2,11 +2,11 @@
 
 This repository contains code of thinBasic module, which is in continuous development for 14 years.
 
-The first public version of the module was released on September 21st 2005 by Petr Schreiber as an experimental way to add OpenGL support to thinBasic programming language.
+The first public version of the module was released on September 21st, 2005 by Petr Schreiber as an experimental way to add OpenGL support to thinBasic programming language.
 
-Since then, the scope grew bigger, adding support for basic texture loading, custom model format, scene-entity system and much more - including 2D sprite system kindly contributed by Michael Hartlef, along with usefuly 2D primitive functions.
+Since then, the scope has grown bigger, adding support for basic texture loading, custom model format, scene-entity system and much more - including 2D sprite system kindly contributed by Michael Hartlef, along with useful 2D primitive functions.
 
-TBGL module is part of standard thinBASIC installation and the development is led by Petr Schreiber, who would like to continue the development here, on the official thinBasic GitHub.
+TBGL module is part of the standard thinBASIC installation and the development is led by Petr Schreiber, who would like to continue the development here, on the official thinBasic GitHub.
 
 ## Why is this at GitHub?
 
@@ -61,13 +61,15 @@ Pull request should be placed from branch on forked repo with a single commit an
 
 ## Acknowledgement
 
-I would like to thank Eros Olmi for creating thinBASIC and letting me joing the adventure.
+I would like to thank Eros Olmi for creating thinBASIC and letting me join the adventure.
 
 I would like to thank José Roca for providing wonderful OpenGL & WinAPI headers.
+
+I would like to thank Bob Zale, may he rest in peace, for creating practical, straightforward compiler.
 
 I would like to thank Mike Hartlef for cool Sprite2D and 2D primitives for TBGL.
 
 I would like to thank PowerBASIC community which helped me to solve many challenges along the way.
 
 
-*Petr Schreiber, Dec 24, 2018
+*Petr Schreiber, Dec 24, 2018*
