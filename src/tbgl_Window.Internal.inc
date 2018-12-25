@@ -71,6 +71,9 @@ SUB internal_InitOpenGL( )
   resource_Materials_Alloc()
   resource_GBuffers_Alloc()
 
+  ' -- Initializing data
+  resource_Frame_Init()
+
   ' -- Blending
   glBlendFunc %GL_ONE, %GL_ONE
 

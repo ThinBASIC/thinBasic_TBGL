@@ -241,25 +241,25 @@ SUB Exec_TBGL_PrintFont2D( )
     ' X
     SELECT CASE AS LONG (screenAlignment)
       CASE %TBGL_ALIGN_LEFT, %TBGL_ALIGN_LEFT_UP, %TBGL_ALIGN_LEFT_CENTER, %TBGL_ALIGN_LEFT_DOWN
-        x += rm2D_Left
+        x += g_renderMatrix2D.Left
 
       CASE %TBGL_ALIGN_CENTER, %TBGL_ALIGN_CENTER_UP, %TBGL_ALIGN_CENTER_CENTER, %TBGL_ALIGN_CENTER_DOWN
-        x += rm2D_Left+(rm2D_Right - rm2D_Left)/2
+        x += g_renderMatrix2D.left+(g_renderMatrix2D.right - g_renderMatrix2D.left)/2
 
       CASE %TBGL_ALIGN_RIGHT, %TBGL_ALIGN_RIGHT_UP, %TBGL_ALIGN_RIGHT_CENTER, %TBGL_ALIGN_RIGHT_DOWN
-        x += rm2D_Right
+        x += g_renderMatrix2D.right
     END SELECT
 
     ' Y
     SELECT CASE AS LONG (screenAlignment)
       CASE %TBGL_ALIGN_LEFT_UP, %TBGL_ALIGN_CENTER_UP, %TBGL_ALIGN_RIGHT_UP
-        y += rm2D_Top
+        y += g_renderMatrix2D.top
 
       CASE %TBGL_ALIGN_LEFT_CENTER, %TBGL_ALIGN_CENTER_CENTER, %TBGL_ALIGN_RIGHT_CENTER
-        y += rm2D_Top+(rm2D_Bottom - rm2D_Top)/2
+        y += g_renderMatrix2D.top+(g_renderMatrix2D.bottom - g_renderMatrix2D.top)/2
 
       CASE %TBGL_ALIGN_LEFT_DOWN, %TBGL_ALIGN_CENTER_DOWN, %TBGL_ALIGN_RIGHT_DOWN
-        y += rm2D_Bottom
+        y += g_renderMatrix2D.bottom
     END SELECT
 
   END IF
@@ -699,7 +699,7 @@ END SUB
 
 SUB internal_ManagedRasterPos(BYVAL x AS SINGLE, BYVAL y AS SINGLE, BYVAL z AS SINGLE)
 
-  IF rm2D_Top < rm2D_Bottom THEN y = ABS(rm2D_Bottom-rm2D_Top) - y
+  IF g_renderMatrix2D.top < g_renderMatrix2D.bottom THEN y = ABS(g_renderMatrix2D.bottom-g_renderMatrix2D.top) - y
 
   glPushAttrib(%GL_TRANSFORM_BIT OR %GL_VIEWPORT_BIT)
 
