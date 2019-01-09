@@ -22,6 +22,16 @@
           y1 = b
           x2 = c
           y2 = d
+
+          if g_renderMatrix2d.pixelPerfect then
+            ' -- Ensuring pixel row/column, when needed
+            local xdir, ydir as single
+            xdir = iif(x1 < x2, 1, -1)
+            ydir = iif(y1 < y2, 1, -1)
+            if g_renderMatrix2d.pixelOffsetX*xdir > 0 then x2 += g_renderMatrix2d.pixelOffsetX else x1 += g_renderMatrix2d.pixelOffsetX
+            if g_renderMatrix2d.pixelOffsetY*ydir > 0 then y2 += g_renderMatrix2d.pixelOffsetY else y1 += g_renderMatrix2d.pixelOffsetY
+          end if
+
           glVertex2f x1, y2
           glVertex2f x2, y2
           glVertex2f x2, y1
@@ -82,8 +92,16 @@
 
     nParsed = thinBasic_ParseXNumbers(4,6, a, b, c, d, e, f)
 
-
     IF nParsed < 6 THEN
+
+      if g_Win.RenderMatrixMode = %TBGL_2D and g_renderMatrix2d.pixelPerfect then
+        ' -- Ensure the start and end of the line is visible
+        glBegin %GL_POINTS
+          glVertex2f  a, b
+          glVertex2f  c, d
+        glEnd
+      end if
+
       glBegin %GL_LINES
         glVertex2f  a, b
         glVertex2f  c, d

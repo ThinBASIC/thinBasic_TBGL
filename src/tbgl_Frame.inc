@@ -27,6 +27,28 @@ GLOBAL dDivisor AS QUAD
 
 ' -----------------------------------------------------------------------------
 
+%TBGL_OPENGL_ORTHO_2D  = 0
+%TBGL_PIXEL_PERFECT_2D = 1
+
+type tRenderMatrix2D
+  pixelPerfect as long
+  pixelOffsetX as single
+  pixelOffsetY as single
+
+  left         as single
+  right        as single
+  top          as single
+  bottom       as single
+end type
+
+global g_renderMatrix2D as tRenderMatrix2D
+
+sub resource_Frame_Init()
+  reset g_renderMatrix2D
+end sub
+
+' -----------------------------------------------------------------------------
+
 ' -- Clears specified buffers and can reset matrix
 SUB Exec_TBGL_ClearFrame( )
 
@@ -108,31 +130,53 @@ END SUB
 
 
 ' -- Sets 2D mode, can have custom coordinate system
-%TBGL_OPENGL_ORTHO_2D  = 0
-%TBGL_PIXEL_PERFECT_2D = 1
+sub Exec_TBGL_RenderMatrix2D( )
+  local minx, miny, maxy, maxx, mode2d as ext
 
-GLOBAL rm2D_Left, rm2D_Right, rm2D_Top, rm2D_Bottom AS SINGLE
-SUB Exec_TBGL_RenderMatrix2D( )
-  LOCAL minx, miny, maxy, maxx AS EXT
+  mode2d = %TBGL_OPENGL_ORTHO_2D
 
-  IF thinBasic_CheckOpenParens_Optional THEN
+  if thinBasic_CheckOpenParens_Optional then
     thinBasic_ParseNumber minx
-    IF thinBasic_CheckComma_Mandatory( ) THEN
+    if thinBasic_CheckComma_Mandatory( ) then
       thinBasic_ParseNumber miny
-      IF thinBasic_CheckComma_Mandatory( ) THEN
+      if thinBasic_CheckComma_Mandatory( ) then
         thinBasic_ParseNumber maxx
-        IF thinBasic_CheckComma_Mandatory( ) THEN
+        if thinBasic_CheckComma_Mandatory( ) then
           thinBasic_ParseNumber maxy
+
+          if thinBasic_CheckComma_Optional( ) then
+            thinBasic_ParseNumber mode2d
+          end if
 
           thinBasic_CheckCloseParens_Mandatory
 
-        END IF
-      END IF
-    END IF
+          ' -- This overrides default off-by-one OpenGL rasterization via simple hack
+          g_renderMatrix2d.pixelPerfect = mode2d
+          if mode2d = %TBGL_PIXEL_PERFECT_2D then
+            if minx < maxx then
+              incr maxx
+              g_renderMatrix2d.pixelOffsetX = 0.5
+            else
+              decr maxx
+              g_renderMatrix2d.pixelOffsetX =-0.5
+            end if
 
-  ELSE
+            if miny < maxy then
+              incr maxy
+              g_renderMatrix2d.pixelOffsetY = 0.5
+            else
+              decr maxy
+              g_renderMatrix2d.pixelOffsetY =-0.5
+            end if
+          end if
 
-    LOCAL c AS RECT
+        end if
+      end if
+    end if
+
+  else
+
+    local c as RECT
     GetClientRect( g_Win.handle, c )
 
     minx = 0
@@ -140,24 +184,24 @@ SUB Exec_TBGL_RenderMatrix2D( )
     maxx = c.nRight
     maxy = c.nBottom
 
-  END IF
+  end if
 
   glLoadIdentity( )
   glMatrixMode( %GL_PROJECTION )
 
   glLoadIdentity( )
-  glOrtho(minx, maxx, miny, maxy, -1, 1)
+  glOrtho(minx-g_renderMatrix2d.pixelOffsetX, maxx-g_renderMatrix2d.pixelOffsetX, miny-g_renderMatrix2d.pixelOffsetY, maxy-g_renderMatrix2d.pixelOffsetY, 0, 1)
   glMatrixMode( %GL_MODELVIEW )
 
   g_Win.RenderMatrixMode = %TBGL_2D
 
-  '[!] Dirty, dirty, dirty coding...
-  rm2D_Left   = minX
-  rm2D_Bottom = minY
-  rm2D_Right  = maxX
-  rm2D_Top    = maxY
+  g_renderMatrix2D.left   = minX
+  g_renderMatrix2D.bottom = minY
+  g_renderMatrix2D.right  = maxX
+  g_renderMatrix2D.top    = maxY
 
-END SUB
+end sub
+
 
 ' -- Retrieves rendering mode
 FUNCTION Exec_TBGL_GetRenderMatrixMode( ) AS EXT

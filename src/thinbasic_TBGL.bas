@@ -9,19 +9,19 @@
 ' -----------------------------------------------------------------------------
 #RESOURCE ICON, PROGRAM, "TBGL.ICO"
 #RESOURCE VERSIONINFO
-#RESOURCE FILEVERSION 1, 10, 6, 0
-#RESOURCE PRODUCTVERSION 1, 10, 6, 0
+#RESOURCE FILEVERSION 1, 10, 6, 1
+#RESOURCE PRODUCTVERSION 1, 10, 6, 1
 
 #RESOURCE STRINGINFO "0409", "04B0"
 
 #RESOURCE VERSION$ "CompanyName",      "thinBasic"
 #RESOURCE VERSION$ "FileDescription",  "thinBASIC module for 2D/3D graphics"
-#RESOURCE VERSION$ "FileVersion",      "1.10.6.0"
+#RESOURCE VERSION$ "FileVersion",      "1.10.6.1"
 #RESOURCE VERSION$ "InternalName",     "TBGL"
 #RESOURCE VERSION$ "OriginalFilename", "ThinBASIC_TBGL.dll"
-#RESOURCE VERSION$ "LegalCopyright",   "Copyright © thinBasic 2018"
+#RESOURCE VERSION$ "LegalCopyright",   "Copyright © thinBasic 2019"
 #RESOURCE VERSION$ "ProductName",      "TBGL"
-#RESOURCE VERSION$ "ProductVersion",   "1.10.6.0"
+#RESOURCE VERSION$ "ProductVersion",   "1.10.6.1"
 #RESOURCE VERSION$ "Comments",         "Support site: http://www.thinbasic.com/"
 
 ' -----------------------------------------------------------------------------
@@ -2097,6 +2097,9 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
   thinBasic_AddEquate   "%TBGL_NOT_SRC_AND_DST"    , "" , %GL_AND_INVERTED
   thinBasic_AddEquate   "%TBGL_SRC_OR_NOT_DST"     , "" , %GL_OR_REVERSE
   thinBasic_AddEquate   "%TBGL_NOT_SRC_OR_DST"     , "" , %GL_OR_INVERTED
+
+  thinBasic_AddEquate   "%TBGL_PIXEL_PERFECT_2D"   , "" , %TBGL_PIXEL_PERFECT_2D
+  thinBasic_AddEquate   "%TBGL_OPENGL_ORTHO_2D"    , "" , %TBGL_OPENGL_ORTHO_2D
 
 END FUNCTION
 
