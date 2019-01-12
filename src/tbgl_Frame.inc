@@ -168,6 +168,9 @@ sub Exec_TBGL_RenderMatrix2D( )
               decr maxy
               g_renderMatrix2d.pixelOffsetY =-0.5
             end if
+          else
+            g_renderMatrix2d.pixelOffsetX = 0
+            g_renderMatrix2d.pixelOffsetY = 0
           end if
 
         end if
