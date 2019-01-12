@@ -15,6 +15,8 @@
 ' -- Mouse
 ' -----------------------------------------------------------------------------
 
+$ERR_INVALID_ENUM = "Invalid enumeration passed to the function"
+
 ' -- Controls visibility of cursor
 SUB Exec_TBGL_ShowCursor ( )
   LOCAL flag AS EXT
@@ -32,76 +34,114 @@ SUB Exec_TBGL_ShowCursor ( )
 END SUB
 
 ' -- Determines whether mouse is in client area
-FUNCTION MouseIsInClient( ) AS LONG
-  LOCAL mouse AS POINTAPI
-  LOCAL clienta AS RECT
-  GetCursorPos mouse
-  GetClientrect( g_Win.handle, clienta )
+function MouseIsInClient(optional byref mouseCoordinates as POINTAPI, byref area as Rect) as long
+  dim clientArea as Rect
+  dim mouse      as PointApi
 
-  IF g_Win.controlParent = 0 THEN         ' Window
+  GetCursorPos mouse
+  GetClientrect( g_Win.handle, clientArea )
+
+  if g_Win.controlParent = 0 then         ' Window
     ScreenToClient( g_Win.handle, mouse )
-  ELSE                                    ' Canvas
-    LOCAL Win AS RECT
+  else                                    ' Canvas
+    dim Win as Rect
     GetWindowRect( g_Win.handle, Win )
     mouse.y = mouse.y - win.ntop
     mouse.x = mouse.x - win.nLeft
-  END IF
+  end if
 
-  IF ( GetForegroundWindow = g_Win.handle OR GetForegroundWindow = g_Win.controlParent ) AND _
-    mouse.x >= 0 AND mouse.x < clienta.nright AND _
-    mouse.y >= 0 AND mouse.y < clienta.nbottom THEN
-    FUNCTION = 1
-  ELSE
-    FUNCTION = 0
-  END IF
+  if ( GetForegroundWindow = g_Win.handle or GetForegroundWindow = g_Win.controlParent ) and _
+       mouse.x >= 0 and mouse.x < clientArea.nright and _
+       mouse.y >= 0 and mouse.y < clientArea.nbottom then
 
-END FUNCTION
+    if varptr(mouseCoordinates) then
+      type set mouseCoordinates = mouse
+    end if
+
+    if varptr(area) then
+      type set area = clientArea
+    end if
+
+    function = 1
+  else
+    function = 0
+  end if
+
+end function
 
 '
-FUNCTION Exec_TBGL_MouseGetPosX( ) AS LONG
+function Exec_TBGL_MouseInClient( ) as long
 
-  LOCAL mouse AS POINTAPI
+  function = MouseIsInClient()
 
-  GetCursorPos mouse
+end function
 
-  IF g_Win.controlParent = 0 THEN         ' Window
-    ScreenToClient( g_Win.handle, mouse )
-  ELSE
-    LOCAL Win AS RECT                     ' Canvas
-    GetWindowRect( g_Win.handle, Win )
-    mouse.y = mouse.y - win.ntop
-    mouse.x = mouse.x - win.nLeft
-  END IF
+function Exec_TBGL_MouseGetPosX( ) as single
 
-  IF MouseIsInClient THEN
-    FUNCTION = mouse.x
-  ELSE
-    FUNCTION = - 1
-  END IF
-END FUNCTION
+  dim coordinateMode as ext
+  coordinateMode = %TBGL_CLIENTAREA
+
+  if thinBasic_CheckOpenParens_Optional then
+    thinBasic_ParseNumber coordinateMode
+    thinBasic_CheckCloseParens_Mandatory
+  end if
+
+  dim mouse as PointApi
+  dim area  as Rect
+
+  if MouseIsInClient(mouse, area) = 0 then
+    function = -1
+    exit function
+  end if
+
+  select case coordinateMode
+
+    case %TBGL_CLIENTAREA
+      function = mouse.x
+
+    case %TBGL_2D
+      function = g_renderMatrix2D.left + mouse.x / (area.nRight - area.nLeft) * (g_renderMatrix2D.right - g_renderMatrix2D.left)
+
+    case else
+      tbglError $ERR_INVALID_ENUM
+
+  end select
+
+end function
 
 
-FUNCTION Exec_TBGL_MouseGetPosY( ) AS LONG
-  LOCAL mouse AS POINTAPI
+function Exec_TBGL_MouseGetPosY( ) as single
 
-  GetCursorPos mouse
+  dim coordinateMode as ext
+  coordinateMode = %TBGL_CLIENTAREA
 
-  IF g_Win.controlParent = 0 THEN           ' Window
-    ScreenToClient( g_Win.handle, mouse )
-  ELSE                                      ' Canvas
-    LOCAL Win AS RECT
-    GetWindowRect( g_Win.handle, Win )
-    mouse.y = mouse.y - win.ntop
-    mouse.x = mouse.x - win.nLeft
-  END IF
+  if thinBasic_CheckOpenParens_Optional then
+    thinBasic_ParseNumber coordinateMode
+    thinBasic_CheckCloseParens_Mandatory
+  end if
 
-  IF MouseIsInClient THEN
-    FUNCTION = mouse.y
-  ELSE
-    FUNCTION = - 1
-  END IF
+  dim mouse as PointApi
+  dim area  as Rect
 
-END FUNCTION
+  if MouseIsInClient(mouse, area) = 0 then
+    function = -1
+    exit function
+  end if
+
+  select case coordinateMode
+
+    case %TBGL_CLIENTAREA
+      function = mouse.y
+
+    case %TBGL_2D
+      function = g_renderMatrix2D.top - g_renderMatrix2d.pixelOffsetY*2 + mouse.y / (area.nBottom - area.nTop) * (g_renderMatrix2D.bottom - g_renderMatrix2D.top)
+
+    case else
+      tbglError $ERR_INVALID_ENUM
+
+  end select
+
+end function
 
 
 FUNCTION Exec_TBGL_MouseGetLButton( ) AS LONG
