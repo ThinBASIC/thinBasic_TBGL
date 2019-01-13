@@ -313,7 +313,9 @@ SUB internal_InitValues( )
   REDIM DepthFuncStack(1 TO 4) AS GLOBAL LONG
   DepthFuncStackDepth = 0
 
-  internal_SceneSubsystemInit( )
+  internal_SceneSubsystemInit()
+
+  resource_input_init()
 
   resource_Window_Alloc()
 
@@ -344,9 +346,6 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
 
   internal_InitValues( )
 
-  GetAsyncKeyState( %VK_LBUTTON )
-  GetAsyncKeyState( %VK_RBUTTON )
-  GetAsyncKeyState( %VK_MBUTTON )
 
   DIM keyPressed( 0 TO 256 ) AS BYTE
 
@@ -651,7 +650,7 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
   thinBasic_LoadSymbolEx  "TBGL_FontHandle"                       , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_FontHandle )                             , %thinBasic_ForceOverWrite, _
                           "TBGL_FontHandle( fontName, fontSize [, style ] )", "Returns handle to Windows font, this can be used with TBGL_BuildFont"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetAsyncKeyState"                 , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetAsyncKeyState )                       , %thinBasic_ForceOverWrite, _
+  thinBasic_LoadSymbolEx  "TBGL_GetAsyncKeyState"                 , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetAsyncKeyState )                       , %thinBasic_ForceOverWrite, _
                           "TBGL_GetAsyncKeyState( keyCode )", "Useful function for checking key status independently on actual window"
 
   thinBasic_LoadSymbolEx  "TBGL_GetDesktopInfo"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_GetDesktopInfo )                         , %thinBasic_ForceOverWrite, _
@@ -690,7 +689,7 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
   thinBasic_LoadSymbolEx  "TBGL_GetLastGLError"                   , %thinBasic_ReturnString                 , CODEPTR( Exec_TBGL_GetLastGLError )                         , %thinBasic_ForceOverWrite, _
                           "TBGL_GetLastGLError", "Returns text description of last OpenGL error"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetMultiAsyncKeyState"            , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetMultiAsyncKeyState )                  , %thinBasic_ForceOverWrite, _
+  thinBasic_LoadSymbolEx  "TBGL_GetMultiAsyncKeyState"            , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetMultiAsyncKeyState )                  , %thinBasic_ForceOverWrite, _
                           "TBGL_GetMultiAsyncKeyState( keyCode1 [, keyCode2[, keyCode3]] )", "Useful function for checking if multiple keys are pressed independently on actual window"
 
   thinBasic_LoadSymbolEx  "TBGL_GetPixelInfo"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_GetPixelInfo )                           , %thinBasic_ForceOverWrite, _
@@ -732,7 +731,7 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
   thinBasic_LoadSymbolEx  "TBGL_GetUseTexturing"                  , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetUseTexturing )                        , %thinBasic_ForceOverWrite, _
                           "TBGL_GetUseTexturing", "Determines whether texturing is enabled"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetWindowAnyKeyState"             , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetWindowAnyKeyState )                   , %thinBasic_ForceOverWrite, _
+  thinBasic_LoadSymbolEx  "TBGL_GetWindowAnyKeyState"             , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetWindowAnyKeyState )                   , %thinBasic_ForceOverWrite, _
                           "TBGL_GetWindowAnyKeyState( hWnd, cKey1 [, vKey2[, vKey3[,vKey4]]] )", "Function to determine whether any of the passed keys has been pressed."
 
   thinBasic_LoadSymbolEx  "TBGL_GetWindowBMP"                     , %thinBasic_ReturnString                 , CODEPTR( Exec_TBGL_GetWindowBMP )                           , %thinBasic_ForceOverWrite, _
@@ -741,13 +740,13 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
   thinBasic_LoadSymbolEx  "TBGL_GetWindowClient"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_GetWindowClient )                        , %thinBasic_ForceOverWrite, _
                           "TBGL_GetWindowClient( hWnd, variableX, variableY )", "Fills passed variables with window client width and height"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetWindowKeyOnce"                 , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_GetWindowKeyOnce )                       , %thinBasic_ForceOverWrite, _
+  thinBasic_LoadSymbolEx  "TBGL_GetWindowKeyOnce"                 , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_GetWindowKeyOnce )                       , %thinBasic_ForceOverWrite, _
                           "TBGL_GetWindowKeyOnce( hWnd, keyCode )", "Useful function for checking if button was pressed down"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetWindowKeyState"                , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetWindowKeyState )                      , %thinBasic_ForceOverWrite, _
+  thinBasic_LoadSymbolEx  "TBGL_GetWindowKeyState"                , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetWindowKeyState )                      , %thinBasic_ForceOverWrite, _
                           "TBGL_GetWindowKeyState( hWnd, keyCode )", "Useful function for checking key status in specified window"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetWindowMultiKeyState"           , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetWindowMultiKeyState )                 , %thinBasic_ForceOverWrite, _
+  thinBasic_LoadSymbolEx  "TBGL_GetWindowMultiKeyState"           , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetWindowMultiKeyState )                 , %thinBasic_ForceOverWrite, _
                           "TBGL_GetWindowMultiKeyState( hWnd, keyCode1 [, keyCode2[, keyCode3]] )", "Useful function for checking if keys are pressed"
 
   thinBasic_LoadSymbolEx  "TBGL_IsFullscreen"                     , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_IsFullscreen )                           , %thinBasic_ForceOverWrite, _

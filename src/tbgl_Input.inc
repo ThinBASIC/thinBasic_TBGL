@@ -17,6 +17,11 @@
 
 $ERR_INVALID_ENUM = "Invalid enumeration passed to the function"
 
+sub resource_input_init()
+  dim keyPressed(0 to 256) as byte
+  internal_resetKeyState()
+end sub
+
 ' -- Controls visibility of cursor
 SUB Exec_TBGL_ShowCursor ( )
   LOCAL flag AS EXT
@@ -199,204 +204,169 @@ END FUNCTION
 ' -- Keyboard
 ' -----------------------------------------------------------------------------
 
+sub internal_resetKeyState()
+  register virtualKey as long
+
+  for virtualKey = 0 to 256
+    GetAsyncKeyState(virtualKey)
+  next
+
+  reset keyPressed()
+end sub
+
 ' -- Resets key before use
-SUB Exec_TBGL_ResetKeyState( )
-  REGISTER Key AS LONG
+sub Exec_TBGL_ResetKeyState( )
 
-  IF thinBasic_CheckOpenParens_Optional THEN thinBasic_CheckCloseParens_Mandatory
-  FOR Key = 1 TO 256
-    GetAsyncKeyState( Key )
-  NEXT
-  RESET keyPressed( )
+  if thinBasic_CheckOpenParens_Optional then thinBasic_CheckCloseParens_Mandatory
+  internal_resetKeyState()
 
-END SUB
+end sub
 
 
-FUNCTION Exec_TBGL_GetAsyncKeyState( ) AS EXT
-  LOCAL eKey AS EXT
+function Exec_TBGL_GetAsyncKeyState( ) as long
+  local eKey as ext
 
   eKey = thinBasic_Parse1Number
-  IF eKey < 0 THEN
-    FOR eKey = 1 TO 256
-      GetAsyncKeyState( eKey )
-    NEXT
-  ELSE
-    FUNCTION = GetAsyncKeyState( eKey )
-  END IF
-END FUNCTION
+
+  if eKey < 0 then exit function
+
+  GetAsyncKeyState(eKey)
+  function = iif(GetAsyncKeyState(eKey), 1, 0)
+
+end function
 
 
-FUNCTION Exec_TBGL_GetWindowKeyState( ) AS EXT
-  LOCAL eKey AS EXT
-  LOCAL ehWnd AS EXT
+function Exec_TBGL_GetWindowKeyState( ) as long
+  local eKey, ehWnd as ext
 
-  thinBasic_Parse2Numbers( ehWnd, eKey )
-  IF eKey < 0 THEN
-    FOR eKey = 1 TO 256
-      GetAsyncKeyState( eKey )
-    NEXT
-  ELSE
-    FUNCTION = GetAsyncKeyState( eKey ) AND ( GetForegroundWindow = ehWnd OR GetForegroundWindow = g_Win.controlParent )    ' ! muze delat binec u multiwin
-  END IF
+  thinBasic_Parse2Numbers(ehWnd, eKey)
 
-END FUNCTION
+  if eKey < 0 then exit function
+
+  GetAsyncKeyState(eKey)
+  function = GetAsyncKeyState(eKey) AND (GetForegroundWindow = ehWnd OR GetForegroundWindow = g_Win.controlParent)
+
+end function
 
 ' -- Returns non-zero only when the key was not pushed last time
-FUNCTION Exec_TBGL_GetWindowKeyOnce( ) AS EXT
-  LOCAL eKey AS EXT
-  LOCAL ehWnd AS EXT
-  LOCAL kstatus AS LONG
+function Exec_TBGL_GetWindowKeyOnce( ) as long
+  local eKey, ehWnd as ext
+  local kstatus as long
 
-  thinBasic_Parse2Numbers( ehWnd, eKey )
-  IF eKey < 0 THEN
-    FOR eKey = 1 TO 256
-      GetAsyncKeyState( eKey )
-    NEXT
-  ELSE
-    kstatus = GetAsyncKeyState( eKey )
+  thinBasic_Parse2Numbers(ehWnd, eKey)
 
-    IF ( GetForegroundWindow = ehWnd OR GetForegroundWindow = g_Win.controlParent ) THEN
-      IF kstatus = 0 THEN
-        keyPressed( eKey ) = 0
-      ELSEIF keyPressed( eKey ) = 0 THEN
-        keyPressed( eKey ) = 1
-        FUNCTION = kstatus
-      END IF
-    END IF
-  END IF
+  if eKey < 0 then exit function
 
-END FUNCTION
+  GetAsyncKeyState(eKey)
+  kstatus = GetAsyncKeyState(eKey)
+
+  if (GetForegroundWindow = ehWnd OR GetForegroundWindow = g_Win.controlParent) then
+    if kstatus = 0 then
+      keyPressed(eKey) = 0
+      function = 0
+    elseif keyPressed(eKey) = 0 then
+      keyPressed(eKey) = 1
+      function = iif(kstatus = 0, 0, 1)
+    end if
+  end if
+
+end function
 
 ' -- Allows checking of multiple keys
-FUNCTION Exec_TBGL_GetMultiAsyncKeyState( ) AS EXT
-  LOCAL eKeys( ) AS EXT
-  LOCAL MaxKeys AS LONG
-  LOCAL KeysFound AS LONG
-  LOCAL ParensPresent AS LONG
-  LOCAL Counter AS LONG
-  LOCAL AllKeysDown AS LONG
+function internal_getMultiKeyState(handleAsFirstParam as long) as long
+  dim eKeys(1 to 10) as ext
+  local KeysFound, ParensPresent, Counter, AllKeysDown as long
 
-  MaxKeys = 3
-  REDIM eKeys( 1& TO MaxKeys )
-  IF thinBasic_CheckOpenParens_Optional = %TRUE THEN ParensPresent = %TRUE
+  if thinBasic_CheckOpenParens_Optional then ParensPresent = %TRUE
 
-  KeysFound = 1&
-  thinBasic_ParseNumber eKeys( KeysFound )
-  WHILE thinBasic_CheckComma_Optional = %TRUE
-    INCR KeysFound
-    thinBasic_ParseNumber eKeys( KeysFound )
-    IF KeysFound = MaxKeys THEN EXIT LOOP
-  WEND
+  if handleAsFirstParam then
+    local ehWnd as ext
+    thinBasic_ParseNumber ehWnd
+    thinBasic_CheckComma_Mandatory
+  end if
 
-  FUNCTION = KeysFound
+  KeysFound = 1
+  thinBasic_ParseNumber eKeys(KeysFound)
+  while thinBasic_CheckComma_Optional
+    incr KeysFound
 
-  IF KeysFound = 1& AND eKeys( 1& ) < 0 THEN
-    FOR Counter = 1& TO 256&
-      GetAsyncKeyState( Counter )
-    NEXT
-  ELSE
-    AllKeysDown = %TRUE
-    FOR Counter = 1 TO KeysFound
-      IF AllKeysDown = %TRUE THEN
-        IF GetAsyncKeyState( eKeys( Counter )) THEN
-        ELSE
-          AllKeysDown = %FALSE
-          EXIT FOR
-        END IF
-      END IF
-    NEXT
+    if KeysFound > ubound(eKeys) then
+      tbglError "The function does not support more than " + format$(ubound(eKeys)) + " concurrent keys"
+      exit function
+    end if
 
-    FUNCTION = AllKeysDown
-  END IF
+    thinBasic_ParseNumber eKeys(KeysFound)
+  wend
 
-  IF ParensPresent = %TRUE THEN thinBasic_CheckCloseParens_Mandatory
+  if ParensPresent then thinBasic_CheckCloseParens_Mandatory
 
-END FUNCTION
+  AllKeysDown = %TRUE
+
+  for Counter = 1 to KeysFound
+
+    GetAsyncKeyState(eKeys(Counter))
+    if GetAsyncKeyState(eKeys(Counter)) = 0 then
+      AllKeysDown = %FALSE
+      exit for
+    end if
+
+  next
+
+  function = AllKeysDown
+
+end function
 
 
-FUNCTION Exec_TBGL_GetWindowMultiKeyState( ) AS EXT
+function Exec_TBGL_GetMultiAsyncKeyState( ) as long
+  function = internal_getMultiKeyState(%FALSE)
+end function
 
-  LOCAL eKeys( ) AS EXT
-  LOCAL MaxKeys AS LONG
-  LOCAL KeysFound AS LONG
-  LOCAL ehWnd AS EXT
-  LOCAL ParensPresent AS LONG
-  LOCAL Counter AS LONG
-  LOCAL AllKeysDown AS LONG
 
-  MaxKeys = 3
-  REDIM eKeys( 1& TO MaxKeys )
-  IF thinBasic_CheckOpenParens_Optional = %TRUE THEN ParensPresent = %TRUE
-  thinBasic_ParseNumber ehWnd
-  IF thinBasic_CheckComma_Mandatory THEN
-    KeysFound = 1&
-    thinBasic_ParseNumber eKeys( KeysFound )
-    WHILE thinBasic_CheckComma_Optional
-      INCR KeysFound
-      thinBasic_ParseNumber eKeys( KeysFound )
-      IF KeysFound = MaxKeys THEN EXIT LOOP
-    WEND
-    FUNCTION = KeysFound
-
-    IF KeysFound = 1& AND eKeys( 1& ) < 0 THEN
-      FOR Counter = 1& TO 256&
-        GetAsyncKeyState( Counter )
-      NEXT
-    ELSE
-      IF ( GetForegroundWindow = ehWnd OR GetForegroundWindow = g_Win.controlParent ) THEN
-        AllKeysDown = %TRUE
-        FOR Counter = 1 TO KeysFound
-          IF AllKeysDown = %TRUE THEN
-            IF GetAsyncKeyState( eKeys( Counter )) THEN
-            ELSE
-              AllKeysDown = %FALSE
-              EXIT FOR
-            END IF
-          END IF
-        NEXT
-
-        FUNCTION = AllKeysDown
-
-      END IF
-    END IF
-
-  END IF
-
-  IF ParensPresent = %TRUE THEN thinBasic_CheckCloseParens_Mandatory
-
-END FUNCTION
+function Exec_TBGL_GetWindowMultiKeyState() as long
+  function = internal_getMultiKeyState(%TRUE)
+end function
 
 ' -- Returns non-zero value, if any of passed keys was pressed
-FUNCTION Exec_TBGL_GetWindowAnyKeyState( ) AS EXT
-  LOCAL eKeys( ) AS EXT
-  LOCAL KeysFound AS LONG
-  LOCAL ehWnd AS EXT
-  LOCAL ParensPresent AS LONG
-  LOCAL Counter AS LONG
+function Exec_TBGL_GetWindowAnyKeyState() as long
+  dim eKeys(1 to 10) as ext
+  local ehWnd as ext
+  local KeysFound, ParensPresent, Counter as long
 
-  REDIM eKeys( 1& TO 1& )
-
-  IF thinBasic_CheckOpenParens_Optional = %TRUE THEN ParensPresent = %TRUE
+  if thinBasic_CheckOpenParens_Optional = %TRUE then ParensPresent = %TRUE
   thinBasic_ParseNumber ehWnd
-  IF thinBasic_CheckComma_Mandatory THEN
-    KeysFound = 1%
-    thinBasic_ParseNumber eKeys( KeysFound )
-    WHILE thinBasic_CheckComma_Optional
-      INCR KeysFound
-      REDIM PRESERVE eKeys( 1& TO KeysFound )
-      thinBasic_ParseNumber eKeys( KeysFound )
-    WEND
 
-    IF ( GetForegroundWindow = ehWnd OR GetForegroundWindow = g_Win.controlParent ) THEN
-      FOR Counter = 1& TO KeysFound
-        IF GetAsyncKeyState( eKeys( Counter )) THEN
-          FUNCTION = %TRUE
-          EXIT FOR
-        END IF
-      NEXT
-    END IF
-  END IF
+  if thinBasic_CheckComma_Optional then
+    KeysFound = 1
+    thinBasic_ParseNumber eKeys(KeysFound)
+    while thinBasic_CheckComma_Optional
+      incr KeysFound
+      if KeysFound > ubound(eKeys) then
+        redim preserve eKeys(1 to ubound(eKeys)*2)
+      end if
 
-  IF ParensPresent = %TRUE THEN thinBasic_CheckCloseParens_Mandatory
+      thinBasic_ParseNumber eKeys(KeysFound)
+    wend
 
-END FUNCTION
+    IF ParensPresent = %TRUE THEN thinBasic_CheckCloseParens_Mandatory
+
+    if (GetForegroundWindow = ehWnd OR GetForegroundWindow = g_Win.controlParent) then
+      for Counter = 1 TO KeysFound
+        GetAsyncKeyState(eKeys(Counter))
+        if GetAsyncKeyState(eKeys(Counter)) THEN
+          function = %TRUE
+          exit for
+        end if
+      next
+    end if
+  elseif thinBasic_CheckCloseParens_Mandatory then
+    for Counter = 0 to 256
+      if counter = %VK_LBUTTON or counter = %VK_MBUTTON or counter = %VK_RBUTTON then iterate for
+
+      GetAsyncKeyState(Counter)
+      if GetAsyncKeyState(Counter) THEN
+        function = %TRUE
+        exit for
+      end if
+    next
+  end if
+end function
