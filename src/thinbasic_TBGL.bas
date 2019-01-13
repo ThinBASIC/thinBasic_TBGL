@@ -799,6 +799,8 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
   thinBasic_LoadSymbolEx  "TBGL_DeleteTexture"                    , %thinBasic_ReturnNone                     , CODEPTR( Exec_TBGL_DeleteTexture )                            , %thinBasic_ForceOverWrite, _
                           "TBGL_DeleteTexture(TextureIndex)", "Deletes texture from memory."
 
+  thinBasic_LoadSymbolEx  "TBGL_MouseInClient"                     , %thinBasic_ReturnCodeLong              , CODEPTR( EXEC_TBGL_MouseInClient )                          , %thinBasic_ForceOverWrite, _
+                          "TBGL_MouseInClient", "Tests whether mouse is in window client area"
 
   thinBasic_LoadSymbolEx  "TBGL_MouseGetLButton"                  , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_MouseGetLButton )                        , %thinBasic_ForceOverWrite, _
                           "TBGL_MouseGetLButton", "Function which returns whether left mouse button is down or not"
@@ -806,10 +808,10 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
   thinBasic_LoadSymbolEx  "TBGL_MouseGetMButton"                  , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_MouseGetMButton )                        , %thinBasic_ForceOverWrite, _
                           "TBGL_MouseGetMButton", "Function which returns whether middle mouse button is down or not"
 
-  thinBasic_LoadSymbolEx  "TBGL_MouseGetPosX"                     , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_MouseGetPosX )                           , %thinBasic_ForceOverWrite, _
+  thinBasic_LoadSymbolEx  "TBGL_MouseGetPosX"                     , %thinBasic_ReturnCodeSingle             , CODEPTR( EXEC_TBGL_MouseGetPosX )                           , %thinBasic_ForceOverWrite, _
                           "TBGL_MouseGetPosX", "Function which returns X position of mouse cursor"
 
-  thinBasic_LoadSymbolEx  "TBGL_MouseGetPosY"                     , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_MouseGetPosY )                           , %thinBasic_ForceOverWrite, _
+  thinBasic_LoadSymbolEx  "TBGL_MouseGetPosY"                     , %thinBasic_ReturnCodeSingle             , CODEPTR( EXEC_TBGL_MouseGetPosY )                           , %thinBasic_ForceOverWrite, _
                           "TBGL_MouseGetPosY", "Function which returns Y position of mouse cursor"
 
   thinBasic_LoadSymbolEx  "TBGL_MouseGetRButton"                  , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_MouseGetRButton )                        , %thinBasic_ForceOverWrite, _
