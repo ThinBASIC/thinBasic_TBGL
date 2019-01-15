@@ -478,10 +478,7 @@ SUB Internal_TBGL_Free( )
     resource_DisplayLists_Release()
     resource_Materials_Release()
     resource_GBuffers_Release()
-
-    ' -- Reinit for further use
     resource_Window_Release()
-    resource_Window_Alloc()
 
     ' -- Release keybuffers
     RESET keyPressed( )

@@ -11,7 +11,7 @@
 ' -----------------------------------------------------------------------------
 
 GLOBAL windowSizing AS LONG   ' -- Is window sized now?
-GLOBAL keyPressed( ) AS BYTE
+GLOBAL keyPressed() AS BYTE
 GLOBAL tbgl_MouseWheelDelta AS LONG
 
 %PeriodicFuncTimer = 1000
