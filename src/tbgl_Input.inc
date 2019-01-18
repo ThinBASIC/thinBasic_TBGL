@@ -251,23 +251,23 @@ end function
 ' -- Returns non-zero only when the key was not pushed last time
 function Exec_TBGL_GetWindowKeyOnce( ) as long
   local eKey, ehWnd as ext
-  local kstatus as long
+  local keyDown as long
+  local windowActive as long
 
   thinBasic_Parse2Numbers(ehWnd, eKey)
 
   if eKey < 0 then exit function
 
   GetAsyncKeyState(eKey)
-  kstatus = GetAsyncKeyState(eKey)
+  keyDown = iif(GetAsyncKeyState(eKey), 1, 0)
+  windowActive = (GetForegroundWindow = ehWnd OR GetForegroundWindow = g_Win.controlParent)
 
-  if (GetForegroundWindow = ehWnd OR GetForegroundWindow = g_Win.controlParent) then
-    if kstatus = 0 then
-      keyPressed(eKey) = 0
-      function = 0
-    elseif keyPressed(eKey) = 0 then
-      keyPressed(eKey) = 1
-      function = iif(kstatus = 0, 0, 1)
-    end if
+  if windowActive and keyDown and keyPressed(eKey) = 0 then
+    keyPressed(eKey) = 1
+    function = 1
+  else
+    keyPressed(eKey) = 0
+    function = 0
   end if
 
 end function
