@@ -262,9 +262,13 @@ function Exec_TBGL_GetWindowKeyOnce( ) as long
   keyDown = iif(GetAsyncKeyState(eKey), 1, 0)
   windowActive = (GetForegroundWindow = ehWnd OR GetForegroundWindow = g_Win.controlParent)
 
-  if windowActive and keyDown and keyPressed(eKey) = 0 then
-    keyPressed(eKey) = 1
-    function = 1
+  if windowActive and keyDown then
+    if keyPressed(eKey) = 0 then
+      keyPressed(eKey) = 1
+      function = 1
+    else
+      function = 0
+    end if
   else
     keyPressed(eKey) = 0
     function = 0
