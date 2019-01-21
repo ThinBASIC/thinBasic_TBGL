@@ -9,19 +9,19 @@
 ' -----------------------------------------------------------------------------
 #RESOURCE ICON, PROGRAM, "TBGL.ICO"
 #RESOURCE VERSIONINFO
-#RESOURCE FILEVERSION 1, 10, 6, 1
-#RESOURCE PRODUCTVERSION 1, 10, 6, 1
+#RESOURCE FILEVERSION 1, 10, 7, 1
+#RESOURCE PRODUCTVERSION 1, 10, 7, 1
 
 #RESOURCE STRINGINFO "0409", "04B0"
 
 #RESOURCE VERSION$ "CompanyName",      "thinBasic"
 #RESOURCE VERSION$ "FileDescription",  "thinBASIC module for 2D/3D graphics"
-#RESOURCE VERSION$ "FileVersion",      "1.10.6.1"
+#RESOURCE VERSION$ "FileVersion",      "1.10.7.1"
 #RESOURCE VERSION$ "InternalName",     "TBGL"
 #RESOURCE VERSION$ "OriginalFilename", "ThinBASIC_TBGL.dll"
 #RESOURCE VERSION$ "LegalCopyright",   "Copyright © thinBasic 2019"
 #RESOURCE VERSION$ "ProductName",      "TBGL"
-#RESOURCE VERSION$ "ProductVersion",   "1.10.6.1"
+#RESOURCE VERSION$ "ProductVersion",   "1.10.7.1"
 #RESOURCE VERSION$ "Comments",         "Support site: http://www.thinbasic.com/"
 
 ' -----------------------------------------------------------------------------
@@ -354,7 +354,7 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
   ' -- UDT
   ' -----------------------------------------------------------------------------
   thinBasic_AddUDT( _
-    "TYPE TBGL_tTexturingInfo" + $CRLF + _
+    "TYPE tbgl_tTexturingInfo" + $CRLF + _
     "  maxWidth     AS LONG" + $CRLF + _
     "  maxHeight    AS LONG" + $CRLF + _
     "  NPOTSupport  AS LONG" + $CRLF + _
@@ -362,7 +362,7 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
     )
 
   thinBasic_AddUDT( _
-    "  TYPE TBGL_tUseInfo" + $CRLF + _
+    "  TYPE tbgl_tUseInfo" + $CRLF + _
     "    Fog           AS LONG" + $CRLF + _
     "    Texturing     AS LONG" + $CRLF + _
     "    Blend         AS LONG" + $CRLF + _
@@ -376,14 +376,14 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
     )
 
     thinBasic_AddUDT(_
-    "TYPE TBGL_tEntityIdentifier" + $CRLF + _
+    "TYPE tbgl_tEntityIdentifier" + $CRLF + _
     "  scene   AS LONG" + $CRLF + _
     "  entity  AS LONG" + $CRLF + _
     "END TYPE" _
     )
 
     thinBasic_AddUDT(_
-    "TYPE TBGL_tFaceParameters" + $CRLF + _
+    "TYPE tbgl_tFaceParameters" + $CRLF + _
     "  R   AS BYTE" + $CRLF + _
     "  G   AS BYTE" + $CRLF + _
     "  B   AS BYTE" + $CRLF + _
@@ -392,7 +392,7 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
     )
 
     thinBasic_AddUDT(_
-    "TYPE TBGL_tVector3D" + $CRLF + _
+    "TYPE tbgl_tVector3D" + $CRLF + _
     "  x AS DOUBLE" + $CRLF + _
     "  y AS DOUBLE" + $CRLF + _
     "  z AS DOUBLE" + $CRLF + _
@@ -403,421 +403,421 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
   ' -- KEYWORDS
   ' -----------------------------------------------------------------------------
 
-  thinBasic_LoadSymbolEx  "TBGL_AlphaFunc"                        , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_AlphaFunc )                              , %thinBasic_ForceOverWrite, _
-                          "TBGL_AlphaFunc(BYVAL function AS NUMBER, BYVAL value AS NUMBER)", "Specifies the way alpha testing will be performed"
+  thinBasic_LoadSymbolEx  "tbgl_alphaFunc"                        , %thinBasic_ReturnNone                   , CODEPTR( Exec_tbgl_alphaFunc )                              , %thinBasic_ForceOverWrite, _
+                          "tbgl_alphaFunc(BYVAL function AS NUMBER, BYVAL value AS NUMBER)", "Specifies the way alpha testing will be performed"
 
-  thinBasic_LoadSymbolEx  "TBGL_BackColor"                        , %thinBasic_ReturnNone                   , CODEPTR( Exec_tbgl_BackColor )                              , %thinBasic_ForceOverWrite, _
-                          "TBGL_BackColor( R, G, B [, Alpha] )", "Sets implicit color for background of the scene"
+  thinBasic_LoadSymbolEx  "tbgl_backColor"                        , %thinBasic_ReturnNone                   , CODEPTR( Exec_tbgl_BackColor )                              , %thinBasic_ForceOverWrite, _
+                          "tbgl_backColor( R, G, B [, Alpha] )", "Sets implicit color for background of the scene"
 
-  thinBasic_LoadSymbolEx  "TBGL_BeginPoly"                        , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_BeginPoly )                              , %thinBasic_ForceOverWrite, _
-                          "TBGL_BeginPoly( Type )", "Starts the definition of verticesDepending on specified equate constant you can create points, lines and polys this way"
+  thinBasic_LoadSymbolEx  "tbgl_beginPoly"                        , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_BeginPoly )                              , %thinBasic_ForceOverWrite, _
+                          "tbgl_beginPoly( Type )", "Starts the definition of verticesDepending on specified equate constant you can create points, lines and polys this way"
 
-  thinBasic_LoadSymbolEx  "TBGL_BindCanvas"                       , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_BindCanvas )                             , %thinBasic_ForceOverWrite, _
-                          "TBGL_BindCanvas( hCtrl )", "This command allows to render 3D graphics over existing GUI control, it should be first TBGL command you use"
+  thinBasic_LoadSymbolEx  "tbgl_bindCanvas"                       , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_BindCanvas )                             , %thinBasic_ForceOverWrite, _
+                          "tbgl_bindCanvas( hCtrl )", "This command allows to render 3D graphics over existing GUI control, it should be first TBGL command you use"
 
-  thinBasic_LoadSymbolEx  "TBGL_BindTexture"                      , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_BindTexture )                            , %thinBasic_ForceOverWrite, _
-                          "TBGL_BindTexture( TextureIndex )", "Sets specified texture as current.This texture will be mapped automatically to following objects, if texturing is enabled"
+  thinBasic_LoadSymbolEx  "tbgl_bindTexture"                      , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_BindTexture )                            , %thinBasic_ForceOverWrite, _
+                          "tbgl_bindTexture( TextureIndex )", "Sets specified texture as current.This texture will be mapped automatically to following objects, if texturing is enabled"
 
-  thinBasic_LoadSymbolEx  "TBGL_BlendFunc"                        , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_BlendFunc )                              , %thinBasic_ForceOverWrite, _
-                          "TBGL_BlendFunc( sFactor, dFactor )", "Sets the default blending function for use when blending is enabled."
+  thinBasic_LoadSymbolEx  "tbgl_blendFunc"                        , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_BlendFunc )                              , %thinBasic_ForceOverWrite, _
+                          "tbgl_blendFunc( sFactor, dFactor )", "Sets the default blending function for use when blending is enabled."
 
-  thinBasic_LoadSymbolEx  "TBGL_Box"                              , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_Box )                                    , %thinBasic_ForceOverWrite, _
-                          "TBGL_Box( sX, sY, sZ )", "Creates box with predefined normal vectors and texture coordinates"
+  thinBasic_LoadSymbolEx  "tbgl_box"                              , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_Box )                                    , %thinBasic_ForceOverWrite, _
+                          "tbgl_box( sX, sY, sZ )", "Creates box with predefined normal vectors and texture coordinates"
 
-  thinBasic_LoadSymbolEx  "TBGL_BuildFont"                        , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_BuildFont )                              , %thinBasic_ForceOverWrite, _
-                          "TBGL_BuildFont( fontHandle [, fontSlot] )", "Creates OpenGL font from any Windows font, returns font slot"
+  thinBasic_LoadSymbolEx  "tbgl_buildFont"                        , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_BuildFont )                              , %thinBasic_ForceOverWrite, _
+                          "tbgl_buildFont( fontHandle [, fontSlot] )", "Creates OpenGL font from any Windows font, returns font slot"
 
-  thinBasic_LoadSymbolEx  "TBGL_CallList"                         , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_CallList )                               , %thinBasic_ForceOverWrite, _
-                          "TBGL_CallList( ListNumber )", "Calls a predefined display list."
+  thinBasic_LoadSymbolEx  "tbgl_callList"                         , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_CallList )                               , %thinBasic_ForceOverWrite, _
+                          "tbgl_callList( ListNumber )", "Calls a predefined display list."
 
-  thinBasic_LoadSymbolEx  "TBGL_Camera"                           , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_Camera )                                 , %thinBasic_ForceOverWrite, _
-                          "TBGL_Camera( x, y, z, x2, y2, z2 )", "Sets camera to determine how scene will be viewed"
+  thinBasic_LoadSymbolEx  "tbgl_camera"                           , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_Camera )                                 , %thinBasic_ForceOverWrite, _
+                          "tbgl_camera( x, y, z, x2, y2, z2 )", "Sets camera to determine how scene will be viewed"
 
-  thinBasic_LoadSymbolEx  "TBGL_CanvasBound"                      , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_CanvasBound )                            , %thinBasic_ForceOverWrite, _
-                          "TBGL_CanvasBound( hCtrl )", "Function to determine whether it is possible to render to canvas control or not"
+  thinBasic_LoadSymbolEx  "tbgl_canvasBound"                      , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_CanvasBound )                            , %thinBasic_ForceOverWrite, _
+                          "tbgl_canvasBound( hCtrl )", "Function to determine whether it is possible to render to canvas control or not"
 
-  thinBasic_LoadSymbolEx  "TBGL_CenterCursor"                     , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_CenterCursor )                           , %thinBasic_ForceOverWrite, _
-                          "TBGL_CenterCursor", "Places cursor in middle of client area"
+  thinBasic_LoadSymbolEx  "tbgl_centerCursor"                     , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_CenterCursor )                           , %thinBasic_ForceOverWrite, _
+                          "tbgl_centerCursor", "Places cursor in middle of client area"
 
-  thinBasic_LoadSymbolEx  "TBGL_ClearFrame"                       , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_ClearFrame )                             , %thinBasic_ForceOverWrite, _
-                          "TBGL_ClearFrame [( mode ) ]", "Prepares window for drawing."
+  thinBasic_LoadSymbolEx  "tbgl_clearFrame"                       , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_ClearFrame )                             , %thinBasic_ForceOverWrite, _
+                          "tbgl_clearFrame [( mode ) ]", "Prepares window for drawing."
 
-  thinBasic_LoadSymbolEx  "TBGL_Color"                            , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_Color )                                  , %thinBasic_ForceOverWrite, _
-                          "TBGL_Color( R, G, B[, A] )", "Sets default color for vertexes, objects ..."
+  thinBasic_LoadSymbolEx  "tbgl_color"                            , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_Color )                                  , %thinBasic_ForceOverWrite, _
+                          "tbgl_color( R, G, B[, A] )", "Sets default color for vertexes, objects ..."
 
-  thinBasic_LoadSymbolEx  "TBGL_ColorAlpha"                       , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_ColorAlpha )                             , %thinBasic_ForceOverWrite, _
-                          "TBGL_ColorAlpha( R, G, B, Alpha )", "Sets default color and alpha value for vertexes, objects ..."
+  thinBasic_LoadSymbolEx  "tbgl_colorAlpha"                       , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_ColorAlpha )                             , %thinBasic_ForceOverWrite, _
+                          "tbgl_colorAlpha( R, G, B, Alpha )", "Sets default color and alpha value for vertexes, objects ..."
 
-  thinBasic_LoadSymbolEx  "TBGL_CreateWindow"                     , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_CreateWindow )                           , %thinBasic_ForceOverWrite, _
-                          "TBGL_CreateWindow|TBGL_CreateWindow( Caption )|TBGL_CreateWindow( Caption, XResolution, YResolution, BitDepth )", "Creates TBGL window, OBSOLETE"
+  thinBasic_LoadSymbolEx  "tbgl_createWindow"                     , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_CreateWindow )                           , %thinBasic_ForceOverWrite, _
+                          "tbgl_createWindow|TBGL_CreateWindow( Caption )|TBGL_CreateWindow( Caption, XResolution, YResolution, BitDepth )", "Creates TBGL window, OBSOLETE"
 
-  thinBasic_LoadSymbolEx  "TBGL_CreateWindowEx"                   , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_CreateWindowEx )                         , %thinBasic_ForceOverWrite, _
-                          "TBGL_CreateWindowEx( Caption, XResolution, YResolution, BitDepth, windowFlags [, xPos , yPos ] )", "Creates TBGL window, it should be first TBGL command you use"
+  thinBasic_LoadSymbolEx  "tbgl_createWindowEx"                   , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_CreateWindowEx )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_createWindowEx( Caption, XResolution, YResolution, BitDepth, windowFlags [, xPos , yPos ] )", "Creates TBGL window, it should be first TBGL command you use"
 
-  thinBasic_LoadSymbolEx  "TBGL_Cylinder"                         , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_Cylinder )                               , %thinBasic_ForceOverWrite, _
-                          "TBGL_Cylinder( BottomRadius, TopRadius, Height )", "Creates cylinder with predefined normal vectors and texture coordinates"
+  thinBasic_LoadSymbolEx  "tbgl_cylinder"                         , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_Cylinder )                               , %thinBasic_ForceOverWrite, _
+                          "tbgl_cylinder( BottomRadius, TopRadius, Height )", "Creates cylinder with predefined normal vectors and texture coordinates"
 
-  thinBasic_LoadSymbolEx  "TBGL_DeleteList"                       , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_DeleteList )                             , %thinBasic_ForceOverWrite, _
-                          "TBGL_DeleteList( ListNumber )", "Deletes already defined display list"
+  thinBasic_LoadSymbolEx  "tbgl_deleteList"                       , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_DeleteList )                             , %thinBasic_ForceOverWrite, _
+                          "tbgl_deleteList( ListNumber )", "Deletes already defined display list"
 
-  thinBasic_LoadSymbolEx  "TBGL_DepthFunc"                        , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_DepthFunc )                              , %thinBasic_ForceOverWrite, _
-                          "TBGL_DepthFunc( function )", "Specifies the way depth testing will be performed"
+  thinBasic_LoadSymbolEx  "tbgl_depthFunc"                        , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_DepthFunc )                              , %thinBasic_ForceOverWrite, _
+                          "tbgl_depthFunc( function )", "Specifies the way depth testing will be performed"
 
 
-  thinBasic_LoadSymbolEx  "TBGL_DestroyWindow"                    , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_DestroyWindow )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_DestroyWindow", "Destroys TBGL window"
+  thinBasic_LoadSymbolEx  "tbgl_destroyWindow"                    , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_DestroyWindow )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_destroyWindow", "Destroys TBGL window"
 
-  thinBasic_LoadSymbolEx  "TBGL_DrawFrame"                        , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_DrawFrame )                              , %thinBasic_ForceOverWrite, _
-                          "TBGL_DrawFrame", "Swaps screen buffersUse it to perform rendering of the scene"
+  thinBasic_LoadSymbolEx  "tbgl_drawFrame"                        , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_DrawFrame )                              , %thinBasic_ForceOverWrite, _
+                          "tbgl_drawFrame", "Swaps screen buffersUse it to perform rendering of the scene"
 
-  thinBasic_LoadSymbolEx  "TBGL_EndList"                          , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EndList )                                , %thinBasic_ForceOverWrite, _
-                          "TBGL_EndList", "Ends the TBGL_NewList section."
+  thinBasic_LoadSymbolEx  "tbgl_endList"                          , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EndList )                                , %thinBasic_ForceOverWrite, _
+                          "tbgl_endList", "Ends the TBGL_NewList section."
 
-  thinBasic_LoadSymbolEx  "TBGL_EndPoly"                          , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EndPoly )                                , %thinBasic_ForceOverWrite, _
-                          "TBGL_EndPoly", "Ends the definition of vertices"
+  thinBasic_LoadSymbolEx  "tbgl_endPoly"                          , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EndPoly )                                , %thinBasic_ForceOverWrite, _
+                          "tbgl_endPoly", "Ends the definition of vertices"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityCopyTo"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCopyTo )                           , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityCopyTo( SceneID, EntityID, DestinationEntityID )", "Copies entity to empty slot"
+  thinBasic_LoadSymbolEx  "tbgl_entityCopyTo"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCopyTo )                           , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityCopyTo( SceneID, EntityID, DestinationEntityID )", "Copies entity to empty slot"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityCreateBox"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateBox )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityCreateBox( SceneID, EntityID [, ParentEntityID [, sX, sY, sZ [, Texture [, R, G, B ]]]] )", "Creates new box entity"
+  thinBasic_LoadSymbolEx  "tbgl_entityCreateBox"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateBox )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityCreateBox( SceneID, EntityID [, ParentEntityID [, sX, sY, sZ [, Texture [, R, G, B ]]]] )", "Creates new box entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityCreateCamera"               , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateCamera )                     , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityCreateCamera( SceneID, EntityID [, ParentEntityID ])", "Creates new camera entity"
+  thinBasic_LoadSymbolEx  "tbgl_entityCreateCamera"               , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateCamera )                     , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityCreateCamera( SceneID, EntityID [, ParentEntityID ])", "Creates new camera entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityCreateCylinder"             , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateCylinder )                   , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityCreateCylinder( SceneID, EntityID [, ParentEntityID [, RadiusLower [, RadiusHigher [, Height [, Tex [, R, G, B ]]]]]] )", "Creates new cylinder entity without capped bases"
+  thinBasic_LoadSymbolEx  "tbgl_entityCreateCylinder"             , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateCylinder )                   , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityCreateCylinder( SceneID, EntityID [, ParentEntityID [, RadiusLower [, RadiusHigher [, Height [, Tex [, R, G, B ]]]]]] )", "Creates new cylinder entity without capped bases"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityCreateCylinderCapped"       , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateCylinderCapped )             , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityCreateCylinderCapped( SceneID, EntityID [, ParentEntityID [, RadiusLower [, RadiusHigher [, Height [, Tex [, R, G, B ]]]]]] )", "Creates new cylinder entity with capped bases"
+  thinBasic_LoadSymbolEx  "tbgl_entityCreateCylinderCapped"       , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateCylinderCapped )             , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityCreateCylinderCapped( SceneID, EntityID [, ParentEntityID [, RadiusLower [, RadiusHigher [, Height [, Tex [, R, G, B ]]]]]] )", "Creates new cylinder entity with capped bases"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityCreateDLSlot"               , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateDLSlot )                     , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityCreateDLSlot( SceneID, EntityID, ParentEntityID, DisplayList )", "Binds display list to entity system"
+  thinBasic_LoadSymbolEx  "tbgl_entityCreateDLSlot"               , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateDLSlot )                     , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityCreateDLSlot( SceneID, EntityID, ParentEntityID, DisplayList )", "Binds display list to entity system"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityCreateFuncSlot"             , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateFuncSlot )                   , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityCreateFuncSlot( SceneID, EntityID, ParentEntityID, UserFunction )", "Creates new function slot entity"
+  thinBasic_LoadSymbolEx  "tbgl_entityCreateFuncSlot"             , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateFuncSlot )                   , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityCreateFuncSlot( SceneID, EntityID, ParentEntityID, UserFunction )", "Creates new function slot entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityCreateLight"                , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateLight )                      , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityCreateLight( SceneID, EntityID [, ParentEntityID [, Type ]] )", "Creates new light entity"
+  thinBasic_LoadSymbolEx  "tbgl_entityCreateLight"                , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateLight )                      , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityCreateLight( SceneID, EntityID [, ParentEntityID [, Type ]] )", "Creates new light entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityCreateModelSlot"            , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateModelSlot )                  , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityCreateModelSlot( SceneID, EntityID, ParentEntityID, ModelID )", "Binds model loaded using TBGL_m15LoadModel to entity system"
+  thinBasic_LoadSymbolEx  "tbgl_entityCreateModelSlot"            , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateModelSlot )                  , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityCreateModelSlot( SceneID, EntityID, ParentEntityID, ModelID )", "Binds model loaded using TBGL_m15LoadModel to entity system"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityCreatePivot"                , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreatePivot )                      , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityCreatePivot( SceneID, EntityID [, ParentEntityID [, X, Y, Z ]] )", "Creates new pivot entity"
+  thinBasic_LoadSymbolEx  "tbgl_entityCreatePivot"                , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreatePivot )                      , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityCreatePivot( SceneID, EntityID [, ParentEntityID [, X, Y, Z ]] )", "Creates new pivot entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityCreateSphere"               , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateSphere )                     , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityCreateSphere( SceneID, EntityID [, ParentEntityID [, Radius [, Tex [, R, G, B ]]]] )", "Creates new sphere entity"
+  thinBasic_LoadSymbolEx  "tbgl_entityCreateSphere"               , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateSphere )                     , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityCreateSphere( SceneID, EntityID [, ParentEntityID [, Radius [, Tex [, R, G, B ]]]] )", "Creates new sphere entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityCreateTorus"                , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateTorus )                      , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityCreateTorus( SceneID, EntityID [, ParentEntityID [, RadiusMinor [, RadiusMajor [, Tex [, R, G, B ]]]]] )", "Creates new torus entity"
+  thinBasic_LoadSymbolEx  "tbgl_entityCreateTorus"                , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityCreateTorus )                      , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityCreateTorus( SceneID, EntityID [, ParentEntityID [, RadiusMinor [, RadiusMajor [, Tex [, R, G, B ]]]]] )", "Creates new torus entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityDestroy"                    , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityDestroy )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityDestroy( SceneID, EntityID )", "Destroys entity and makes entity slot empty"
+  thinBasic_LoadSymbolEx  "tbgl_entityDestroy"                    , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityDestroy )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityDestroy( SceneID, EntityID )", "Destroys entity and makes entity slot empty"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityFindByPos"                  , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityFindByPos )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityFindByPos( SceneID, EntityType, x, y, z [, GlobalCoordinates ] )", "Returns ID of first entity of given type which has same x, y, z as passed parameters"
+  thinBasic_LoadSymbolEx  "tbgl_entityFindByPos"                  , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityFindByPos )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityFindByPos( SceneID, EntityType, x, y, z [, GlobalCoordinates ] )", "Returns ID of first entity of given type which has same x, y, z as passed parameters"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityFindNearest"                , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityFindNearest )                      , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityFindNearest( SceneID, EntityType, ReferenceEntity, rangeX, rangeY, rangeZ [, GlobalCoordinates ] )", "Returns ID of nearest entity of given type which fits in specified range"
+  thinBasic_LoadSymbolEx  "tbgl_entityFindNearest"                , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityFindNearest )                      , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityFindNearest( SceneID, EntityType, ReferenceEntity, rangeX, rangeY, rangeZ [, GlobalCoordinates ] )", "Returns ID of nearest entity of given type which fits in specified range"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityFindNearestByPos"           , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityFindNearestByPos )                 , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityFindNearestByPos( SceneID, EntityType, x, y, z, rangeX, rangeY, rangeZ [, GlobalCoordinates ] )", "Returns ID of nearest entity of given type which fits in specified range"
+  thinBasic_LoadSymbolEx  "tbgl_entityFindNearestByPos"           , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityFindNearestByPos )                 , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityFindNearestByPos( SceneID, EntityType, x, y, z, rangeX, rangeY, rangeZ [, GlobalCoordinates ] )", "Returns ID of nearest entity of given type which fits in specified range"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityGetAngleXY"                 , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetAngleXY )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityGetAngleXY( SceneID, EntityID, EntityTargetID, ForwardDirection )", "Returns angle between specified entity and reference entity, based on comparsion of positions in XY plane"
+  thinBasic_LoadSymbolEx  "tbgl_entityGetAngleXY"                 , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetAngleXY )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityGetAngleXY( SceneID, EntityID, EntityTargetID, ForwardDirection )", "Returns angle between specified entity and reference entity, based on comparsion of positions in XY plane"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityGetAngleXZ"                 , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetAngleXZ )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityGetAngleXZ( SceneID, EntityID, EntityTargetID, ForwardDirection )", "Returns angle between specified entity and reference entity, based on comparsion of positions in XZ plane"
+  thinBasic_LoadSymbolEx  "tbgl_entityGetAngleXZ"                 , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetAngleXZ )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityGetAngleXZ( SceneID, EntityID, EntityTargetID, ForwardDirection )", "Returns angle between specified entity and reference entity, based on comparsion of positions in XZ plane"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityGetAngleYZ"                 , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetAngleYZ )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityGetAngleYZ( SceneID, EntityID, EntityTargetID, ForwardDirection )", "Returns angle between specified entity and reference entity, based on comparsion of positions in YZ plane"
+  thinBasic_LoadSymbolEx  "tbgl_entityGetAngleYZ"                 , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetAngleYZ )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityGetAngleYZ( SceneID, EntityID, EntityTargetID, ForwardDirection )", "Returns angle between specified entity and reference entity, based on comparsion of positions in YZ plane"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityGetDistance"                , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetDistance )                      , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityGetDistance( SceneID, EntityID1, EntityID2 )", "Gets distance between two given entities"
+  thinBasic_LoadSymbolEx  "tbgl_entityGetDistance"                , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetDistance )                      , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityGetDistance( SceneID, EntityID1, EntityID2 )", "Gets distance between two given entities"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityGetDistancePos"             , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetDistancePos )                   , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityGetDistancePos( SceneID, EntityID, x, y, z )", "Gets distance between given entity and position"
+  thinBasic_LoadSymbolEx  "tbgl_entityGetDistancePos"             , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetDistancePos )                   , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityGetDistancePos( SceneID, EntityID, x, y, z )", "Gets distance between given entity and position"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityGetFreeID"                  , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetFreeID )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityGetFreeID( SceneID [, StartingEntityID] )", "Returns number of next free entityID slot"
+  thinBasic_LoadSymbolEx  "tbgl_entityGetFreeID"                  , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetFreeID )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityGetFreeID( SceneID [, StartingEntityID] )", "Returns number of next free entityID slot"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityGetName"                    , %thinBasic_ReturnString                 , CODEPTR( Exec_TBGL_EntityGetName )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityGetName( SceneID, EntityID )", "Retrieves name of an entity"
+  thinBasic_LoadSymbolEx  "tbgl_entityGetName"                    , %thinBasic_ReturnString                 , CODEPTR( Exec_TBGL_EntityGetName )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityGetName( SceneID, EntityID )", "Retrieves name of an entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityGetPos"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityGetPos )                           , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityGetPos( SceneID, EntityID, X, Y, Z [, GlobalCoordinates ] )", "Gets position of entity"
+  thinBasic_LoadSymbolEx  "tbgl_entityGetPos"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityGetPos )                           , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityGetPos( SceneID, EntityID, X, Y, Z [, GlobalCoordinates ] )", "Gets position of entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityGetUse"                     , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetUse )                           , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityGetUse( SceneID, EntityID )", "Determines whether entity is enabled or disabled"
+  thinBasic_LoadSymbolEx  "tbgl_entityGetUse"                     , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetUse )                           , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityGetUse( SceneID, EntityID )", "Determines whether entity is enabled or disabled"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityGetUserDataPointer"         , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetUserDataPointer )               , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityGetUserDataPointer( SceneID, EntityID )", "Returns pointer to data stored using TBGL_EntitySetUserData."
+  thinBasic_LoadSymbolEx  "tbgl_entityGetUserDataPointer"         , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetUserDataPointer )               , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityGetUserDataPointer( SceneID, EntityID )", "Returns pointer to data stored using TBGL_EntitySetUserData."
 
-  thinBasic_LoadSymbol  "TBGL_EntityGetUserPointer"             , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetUserPointer )                   , %thinBasic_ForceOverWrite
+  thinBasic_LoadSymbol  "tbgl_entityGetUserPointer"             , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetUserPointer )                   , %thinBasic_ForceOverWrite
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityGetXAxis"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityGetXAxis )                         , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityGetXAxis( SceneID, EntityID, X, Y, Z )", "Returns entity X axis in global coordinates"
+  thinBasic_LoadSymbolEx  "tbgl_entityGetXAxis"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityGetXAxis )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityGetXAxis( SceneID, EntityID, X, Y, Z )", "Returns entity X axis in global coordinates"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityGetYAxis"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityGetYAxis )                         , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityGetYAxis( SceneID, EntityID, X, Y, Z )", "Returns entity Y axis in global coordinates"
+  thinBasic_LoadSymbolEx  "tbgl_entityGetYAxis"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityGetYAxis )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityGetYAxis( SceneID, EntityID, X, Y, Z )", "Returns entity Y axis in global coordinates"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityGetZAxis"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityGetZAxis )                         , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityGetZAxis( SceneID, EntityID, X, Y, Z )", "Returns entity Z axis in global coordinates"
+  thinBasic_LoadSymbolEx  "tbgl_entityGetZAxis"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityGetZAxis )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityGetZAxis( SceneID, EntityID, X, Y, Z )", "Returns entity Z axis in global coordinates"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityMove"                       , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityMove )                             , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityMove( SceneID, EntityID, X, Y, Z )", "Adds specified values to x, y, z global position of entity"
+  thinBasic_LoadSymbolEx  "tbgl_entityMove"                       , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityMove )                             , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityMove( SceneID, EntityID, X, Y, Z )", "Adds specified values to x, y, z global position of entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityPush"                       , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityPush )                             , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityPush( SceneID, EntityID, X, Y, Z )", "Adds specified values to x, y, z in local coordinates of entity"
+  thinBasic_LoadSymbolEx  "tbgl_entityPush"                       , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityPush )                             , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityPush( SceneID, EntityID, X, Y, Z )", "Adds specified values to x, y, z in local coordinates of entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetAmbient"                 , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetAmbient )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetAmbient( SceneID, EntityID, R, G, B )", "Sets ambient color for light entity"
+  thinBasic_LoadSymbolEx  "tbgl_entitySetAmbient"                 , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetAmbient )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetAmbient( SceneID, EntityID, R, G, B )", "Sets ambient color for light entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetBorderFade"              , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetBorderFade )                    , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetBorderFade( SceneID, EntityID, BorderFade )", "Sets property to determine light distribution for spotlight"
+  thinBasic_LoadSymbolEx  "tbgl_entitySetBorderFade"              , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetBorderFade )                    , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetBorderFade( SceneID, EntityID, BorderFade )", "Sets property to determine light distribution for spotlight"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetColor"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetColor )                         , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetColor( SceneID, EntityID, R, G, B )", "Sets RGB color for whole entity"
+  thinBasic_LoadSymbolEx  "tbgl_entitySetColor"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetColor )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetColor( SceneID, EntityID, R, G, B )", "Sets RGB color for whole entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetColorMask"               , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetColorMask )                     , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetColorMask( SceneID, EntityID, Mask )", "Defines the way camera provides image of geometry from scene via color component filtering."
+  thinBasic_LoadSymbolEx  "tbgl_entitySetColorMask"               , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetColorMask )                     , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetColorMask( SceneID, EntityID, Mask )", "Defines the way camera provides image of geometry from scene via color component filtering."
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetCutoff"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetCutoff )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetCutoff( SceneID, EntityID, CutoffAngle )", "Sets cutoff angle for spotlight"
+  thinBasic_LoadSymbolEx  "tbgl_entitySetCutoff"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetCutoff )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetCutoff( SceneID, EntityID, CutoffAngle )", "Sets cutoff angle for spotlight"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetFOV"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetFOV )                           , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetFOV( SceneID, EntityID, Angle2 )", "Sets field of view for camera"
+  thinBasic_LoadSymbolEx  "tbgl_entitySetFOV"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetFOV )                           , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetFOV( SceneID, EntityID, Angle2 )", "Sets field of view for camera"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetName"                    , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetName )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetName( SceneID, EntityID, Name )", "Assigns name to an entity"
+  thinBasic_LoadSymbolEx  "tbgl_entitySetName"                    , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetName )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetName( SceneID, EntityID, Name )", "Assigns name to an entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetPos"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetPos )                           , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetPos( SceneID, EntityID, X, Y, Z )", "Sets position to entity"
+  thinBasic_LoadSymbolEx  "tbgl_entitySetPos"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetPos )                           , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetPos( SceneID, EntityID, X, Y, Z )", "Sets position to entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetRot"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetRot )                           , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetRot( SceneID, EntityID, X, Y, Z )", "Resets entity axes and sets angles of rotation"
+  thinBasic_LoadSymbolEx  "tbgl_entitySetRot"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetRot )                           , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetRot( SceneID, EntityID, X, Y, Z )", "Resets entity axes and sets angles of rotation"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetScale"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetScale )                         , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetScale( SceneID, EntityID, X, Y, Z )", "Scales entity by specified factors"
+  thinBasic_LoadSymbolEx  "tbgl_entitySetScale"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetScale )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetScale( SceneID, EntityID, X, Y, Z )", "Scales entity by specified factors"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityGetScale"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityGetScale )                         , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityGetScale( SceneID, EntityID, varX, varY, varZ )", "Retrieves entity scale to passed variables"
+  thinBasic_LoadSymbolEx  "tbgl_entityGetScale"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityGetScale )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityGetScale( SceneID, EntityID, varX, varY, varZ )", "Retrieves entity scale to passed variables"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetTarget"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetTarget )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetTarget( SceneID, EntityID, EntityToLookAt )|TBGL_EntitySetTarget( SceneID, EntityIDFrom, EntityIDTo, EntityToLookAt )", "Makes one or more entities to look at other entity"
+  thinBasic_LoadSymbolEx  "tbgl_entitySetTarget"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetTarget )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetTarget( SceneID, EntityID, EntityToLookAt )|TBGL_EntitySetTarget( SceneID, EntityIDFrom, EntityIDTo, EntityToLookAt )", "Makes one or more entities to look at other entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetTargetPos"               , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetTargetPos )                     , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetTargetPos( SceneID, EntityID, X, Y, Z )", "Makes entity look at specific position"
+  thinBasic_LoadSymbolEx  "tbgl_entitySetTargetPos"               , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetTargetPos )                     , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetTargetPos( SceneID, EntityID, X, Y, Z )", "Makes entity look at specific position"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetTexture"                 , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetTexture )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetTexture( SceneID, EntityID, textureIndex )", "Sets texture for whole entity"
+  thinBasic_LoadSymbolEx  "tbgl_entitySetTexture"                 , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetTexture )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetTexture( SceneID, EntityID, textureIndex )", "Sets texture for whole entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityGetTexture"                 , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_EntityGetTexture )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityGetTexture( SceneID, EntityID ) AS LONG", "Gets texture assgigned to entity"
+  thinBasic_LoadSymbolEx  "tbgl_entityGetTexture"                 , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_EntityGetTexture )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityGetTexture( SceneID, EntityID ) AS LONG", "Gets texture assgigned to entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetUse"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetUse )                           , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetUse( SceneID, EntityID, UseFlag )", "Sets whether entity will be considered in scene composition process"
+  thinBasic_LoadSymbolEx  "tbgl_entitySetUse"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetUse )                           , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetUse( SceneID, EntityID, UseFlag )", "Sets whether entity will be considered in scene composition process"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetUserData"                , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetUserData )                      , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetUserData( SceneID, EntityID, UserData )", "Assigns any user defined data to the entity."
+  thinBasic_LoadSymbolEx  "tbgl_entitySetUserData"                , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetUserData )                      , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetUserData( SceneID, EntityID, UserData )", "Assigns any user defined data to the entity."
 
-  thinBasic_LoadSymbol  "TBGL_EntitySetUserPointer"             , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetUserPointer )                   , %thinBasic_ForceOverWrite
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetXYAxis"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetXYAxis )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetXYAxis( SceneID, EntityID, xX, xY, xZ, yX, yY, yZ )", "Sets local X and Y axis to the entity"
+  thinBasic_LoadSymbol  "tbgl_entitySetUserPointer"             , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetUserPointer )                   , %thinBasic_ForceOverWrite
+  thinBasic_LoadSymbolEx  "tbgl_entitySetXYAxis"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetXYAxis )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetXYAxis( SceneID, EntityID, xX, xY, xZ, yX, yY, yZ )", "Sets local X and Y axis to the entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetXZAxis"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetXZAxis )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetXZAxis( SceneID, EntityID, xX, xY, xZ, zX, zY, zZ )", "Sets local X and Z axis to the entity"
+  thinBasic_LoadSymbolEx  "tbgl_entitySetXZAxis"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetXZAxis )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetXZAxis( SceneID, EntityID, xX, xY, xZ, zX, zY, zZ )", "Sets local X and Z axis to the entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetYZAxis"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetYZAxis )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetYZAxis( SceneID, EntityID, yX, yY, yZ, zX, zY, zZ )", "Sets local Y and Z axis to the entity"
+  thinBasic_LoadSymbolEx  "tbgl_entitySetYZAxis"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetYZAxis )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetYZAxis( SceneID, EntityID, yX, yY, yZ, zX, zY, zZ )", "Sets local Y and Z axis to the entity"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySyncAxes"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySyncAxes )                         , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySyncAxes( SceneID, EntityID, EntityID2, GlobalCoordinates )", "Allows to synchronize rotation of two entites"
+  thinBasic_LoadSymbolEx  "tbgl_entitySyncAxes"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySyncAxes )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySyncAxes( SceneID, EntityID, EntityID2, GlobalCoordinates )", "Allows to synchronize rotation of two entites"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityTrackPos"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityTrackPos )                         , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityTrackPos( SceneID, EntityID, localX, localY, localZ, globalX, globalY, globalZ   )", "Converts entity local coordinates to global coordinates"
+  thinBasic_LoadSymbolEx  "tbgl_entityTrackPos"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityTrackPos )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityTrackPos( SceneID, EntityID, localX, localY, localZ, globalX, globalY, globalZ   )", "Converts entity local coordinates to global coordinates"
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityTurn"                       , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityTurn )                             , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityTurn( SceneID, EntityID, X, Y, Z )", "Turns entity around its local axes by specified angles"
+  thinBasic_LoadSymbolEx  "tbgl_entityTurn"                       , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityTurn )                             , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityTurn( SceneID, EntityID, X, Y, Z )", "Turns entity around its local axes by specified angles"
 
-  thinBasic_LoadSymbolEx  "TBGL_ErrorMessages"                    , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_ErrorMessages )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_ErrorMessages Type", "Statement to specify way of TBGL run-time error notification"
+  thinBasic_LoadSymbolEx  "tbgl_errorMessages"                    , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_ErrorMessages )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_errorMessages Type", "Statement to specify way of TBGL run-time error notification"
 
-  thinBasic_LoadSymbolEx  "TBGL_EvaluatePOTMatch"                 , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EvaluatePOTMatch )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_EvaluatePOTMatch( resolutionX, resolutionY, varFitX, varFitY )", "Finds nearest safe match for non power of two resolution."
+  thinBasic_LoadSymbolEx  "tbgl_evaluatePOTMatch"                 , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EvaluatePOTMatch )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_evaluatePOTMatch( resolutionX, resolutionY, varFitX, varFitY )", "Finds nearest safe match for non power of two resolution."
 
-  thinBasic_LoadSymbolEx  "TBGL_FontHandle"                       , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_FontHandle )                             , %thinBasic_ForceOverWrite, _
-                          "TBGL_FontHandle( fontName, fontSize [, style ] )", "Returns handle to Windows font, this can be used with TBGL_BuildFont"
+  thinBasic_LoadSymbolEx  "tbgl_fontHandle"                       , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_FontHandle )                             , %thinBasic_ForceOverWrite, _
+                          "tbgl_fontHandle( fontName, fontSize [, style ] )", "Returns handle to Windows font, this can be used with TBGL_BuildFont"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetAsyncKeyState"                 , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetAsyncKeyState )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetAsyncKeyState( keyCode )", "Useful function for checking key status independently on actual window"
+  thinBasic_LoadSymbolEx  "tbgl_getAsyncKeyState"                 , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetAsyncKeyState )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_getAsyncKeyState( keyCode )", "Useful function for checking key status independently on actual window"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetDesktopInfo"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_GetDesktopInfo )                         , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetDesktopInfo( variableX, variableY, variableDepth )", "Fills passed variables with desktop size and color depth"
+  thinBasic_LoadSymbolEx  "tbgl_getDesktopInfo"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_GetDesktopInfo )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_getDesktopInfo( variableX, variableY, variableDepth )", "Fills passed variables with desktop size and color depth"
 
-  thinBasic_LoadSymbolEx  "TBGL_DisplayGetCount"                   , %thinBasic_ReturnCodeLong              , CODEPTR( Exec_TBGL_DisplayGetCount )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_DisplayGetCount()"                 , "Returns the count of displays currently attached"
+  thinBasic_LoadSymbolEx  "tbgl_displayGetCount"                   , %thinBasic_ReturnCodeLong              , CODEPTR( Exec_TBGL_DisplayGetCount )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_displayGetCount()"                 , "Returns the count of displays currently attached"
 
-  thinBasic_LoadSymbolEx  "TBGL_DisplayGetInfo"                   , %thinBasic_ReturnCodeLong              , CODEPTR( Exec_TBGL_DisplayGetInfo )                , %thinBasic_ForceOverWrite, _
-                          "TBGL_DisplayGetInfo( displayNumber, variableWidth, variableHeight, OPTIONAL variableDepth)", "Returns the resolution and bit depth of specified display"
+  thinBasic_LoadSymbolEx  "tbgl_displayGetInfo"                   , %thinBasic_ReturnCodeLong              , CODEPTR( Exec_TBGL_DisplayGetInfo )                , %thinBasic_ForceOverWrite, _
+                          "tbgl_displayGetInfo( displayNumber, variableWidth, variableHeight, OPTIONAL variableDepth)", "Returns the resolution and bit depth of specified display"
 
   thinBasic_LoadSymbolEx  "TBGL_SendWindowToDisplay"                   , %thinBasic_ReturnCodeLong              , CODEPTR( Exec_TBGL_SendWindowToDisplay )                , %thinBasic_ForceOverWrite, _
                           "TBGL_SendWindowToDisplay( windowHandle, displayNumber, OPTIONAL newX, newY)", "Sends window to specified display"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetWindowDisplay"                   , %thinBasic_ReturnCodeLong              , CODEPTR( Exec_TBGL_GetWindowDisplay )                , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetWindowDisplay( windowHandle)", "Retrieves number of display the window is present on"
+  thinBasic_LoadSymbolEx  "tbgl_getWindowDisplay"                   , %thinBasic_ReturnCodeLong              , CODEPTR( Exec_TBGL_GetWindowDisplay )                , %thinBasic_ForceOverWrite, _
+                          "tbgl_getWindowDisplay( windowHandle)", "Retrieves number of display the window is present on"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetWindowPos"                   , %thinBasic_ReturnNumber              , CODEPTR( Exec_TBGL_GetWindowPos )                , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetWindowPos( BYVAL windowHandle AS DWORD, BYREF X AS LONG, BYREF Y AS LONG)", "Retrieves position of the upper left corner of specified window"
+  thinBasic_LoadSymbolEx  "tbgl_getWindowPos"                   , %thinBasic_ReturnNumber              , CODEPTR( Exec_TBGL_GetWindowPos )                , %thinBasic_ForceOverWrite, _
+                          "tbgl_getWindowPos( BYVAL windowHandle AS DWORD, BYREF X AS LONG, BYREF Y AS LONG)", "Retrieves position of the upper left corner of specified window"
 
 
-  thinBasic_LoadSymbolEx  "TBGL_GetFullscreenModes"               , %thinBasic_ReturnString                 , CODEPTR( Exec_TBGL_GetFullscreenModes )                     , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetFullscreenModes", "Returns list of available fullscreen modes"
+  thinBasic_LoadSymbolEx  "tbgl_getFullscreenModes"               , %thinBasic_ReturnString                 , CODEPTR( Exec_TBGL_GetFullscreenModes )                     , %thinBasic_ForceOverWrite, _
+                          "tbgl_getFullscreenModes", "Returns list of available fullscreen modes"
 
 
   IF freq <> 0 THEN
-    thinBasic_LoadSymbolEx "TBGL_GetFrameRate", %thinBasic_ReturnNumber, CODEPTR( EXEC_TBGL_GetFrameRate_PERFCOUNTER ), %thinBasic_ForceOverWrite, _
-                          "TBGL_GetFramerate", "Returns current framerate based on time gap beetween last call and this"
+    thinBasic_LoadSymbolEx "tbgl_getFrameRate", %thinBasic_ReturnNumber, CODEPTR( EXEC_TBGL_GetFrameRate_PERFCOUNTER ), %thinBasic_ForceOverWrite, _
+                          "tbgl_getFramerate", "Returns current framerate based on time gap beetween last call and this"
 
   ELSE
-    thinBasic_LoadSymbolEx "TBGL_GetFrameRate", %thinBasic_ReturnNumber, CODEPTR( EXEC_TBGL_GetFrameRate_GETTICKCOUNT ), %thinBasic_ForceOverWrite, _
-                          "TBGL_GetFramerate", "Returns current framerate based on time gap beetween last call and this"
+    thinBasic_LoadSymbolEx "tbgl_getFrameRate", %thinBasic_ReturnNumber, CODEPTR( EXEC_TBGL_GetFrameRate_GETTICKCOUNT ), %thinBasic_ForceOverWrite, _
+                          "tbgl_getFramerate", "Returns current framerate based on time gap beetween last call and this"
 
   END IF
 
-  thinBasic_LoadSymbolEx  "TBGL_GetLastGLError"                   , %thinBasic_ReturnString                 , CODEPTR( Exec_TBGL_GetLastGLError )                         , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetLastGLError", "Returns text description of last OpenGL error"
+  thinBasic_LoadSymbolEx  "tbgl_getLastGLError"                   , %thinBasic_ReturnString                 , CODEPTR( Exec_TBGL_GetLastGLError )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_getLastGLError", "Returns text description of last OpenGL error"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetMultiAsyncKeyState"            , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetMultiAsyncKeyState )                  , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetMultiAsyncKeyState( keyCode1 [, keyCode2[, keyCode3]] )", "Useful function for checking if multiple keys are pressed independently on actual window"
+  thinBasic_LoadSymbolEx  "tbgl_getMultiAsyncKeyState"            , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetMultiAsyncKeyState )                  , %thinBasic_ForceOverWrite, _
+                          "tbgl_getMultiAsyncKeyState( keyCode1 [, keyCode2[, keyCode3]] )", "Useful function for checking if multiple keys are pressed independently on actual window"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetPixelInfo"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_GetPixelInfo )                           , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetPixelInfo( x, y, type, variable1, variable2, variable3 )", "Fills passed variables with requested values to obtain x,y,z position or RGB color from 3D world"
+  thinBasic_LoadSymbolEx  "tbgl_getPixelInfo"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_GetPixelInfo )                           , %thinBasic_ForceOverWrite, _
+                          "tbgl_getPixelInfo( x, y, type, variable1, variable2, variable3 )", "Fills passed variables with requested values to obtain x,y,z position or RGB color from 3D world"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetProcAddress"                   , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetProcAddress )                         , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetProcAddress( sExtensionFunction )", "Returns the address of an OpenGL extension function"
+  thinBasic_LoadSymbolEx  "tbgl_getProcAddress"                   , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetProcAddress )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_getProcAddress( sExtensionFunction )", "Returns the address of an OpenGL extension function"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetRenderMatrixMode"              , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetRenderMatrixMode )                    , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetRenderMatrixMode", "Command to determine whether TBGL is set to 2D or 3D drawing mode"
+  thinBasic_LoadSymbolEx  "tbgl_getRenderMatrixMode"              , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetRenderMatrixMode )                    , %thinBasic_ForceOverWrite, _
+                          "tbgl_getRenderMatrixMode", "Command to determine whether TBGL is set to 2D or 3D drawing mode"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetTextureData"                   , %thinBasic_ReturnString                 , CODEPTR( Exec_TBGL_GetTextureData )                         , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetTextureData( TextureIndex AS LONG, TypeOfData AS LONG  )", "Returns raw texture data in specified format"
+  thinBasic_LoadSymbolEx  "tbgl_getTextureData"                   , %thinBasic_ReturnString                 , CODEPTR( Exec_TBGL_GetTextureData )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_getTextureData( TextureIndex AS LONG, TypeOfData AS LONG  )", "Returns raw texture data in specified format"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetFreeTextureIndex"                   , %thinBasic_ReturnNumber               , CODEPTR( Exec_TBGL_GetFreeTextureIndex )                         , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetFreeTextureIndex()", "Returns number of texture index, to which no texture is loaded at the moment"
+  thinBasic_LoadSymbolEx  "tbgl_getFreeTextureIndex"                   , %thinBasic_ReturnNumber               , CODEPTR( Exec_TBGL_GetFreeTextureIndex )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_getFreeTextureIndex()", "Returns number of texture index, to which no texture is loaded at the moment"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetTextureHandle"                   , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetTextureHandle )                         , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetTextureHandle( TextureIndex AS LONG )", "Returns OpenGL handle of specified TBGL texture slot"
+  thinBasic_LoadSymbolEx  "tbgl_getTextureHandle"                   , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetTextureHandle )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_getTextureHandle( TextureIndex AS LONG )", "Returns OpenGL handle of specified TBGL texture slot"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetTextureList"                   , %thinBasic_ReturnString                 , CODEPTR( Exec_TBGL_GetTextureList )                         , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetTextureList", "Returns comma delimited list of textures loaded in memory"
+  thinBasic_LoadSymbolEx  "tbgl_getTextureList"                   , %thinBasic_ReturnString                 , CODEPTR( Exec_TBGL_GetTextureList )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_getTextureList", "Returns comma delimited list of textures loaded in memory"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetTextureName"                   , %thinBasic_ReturnString                 , CODEPTR( Exec_TBGL_GetTextureName )                         , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetTextureName( index )", "Returns name of texture at specified index"
+  thinBasic_LoadSymbolEx  "tbgl_getTextureName"                   , %thinBasic_ReturnString                 , CODEPTR( Exec_TBGL_GetTextureName )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_getTextureName( index )", "Returns name of texture at specified index"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetTextureResolution"             , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_GetTextureResolution )                   , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetTextureResolution( TextureIndex, nWidth, nHeight )", "Retrieves resolution of texture in pixels"
+  thinBasic_LoadSymbolEx  "tbgl_getTextureResolution"             , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_GetTextureResolution )                   , %thinBasic_ForceOverWrite, _
+                          "tbgl_getTextureResolution( TextureIndex, nWidth, nHeight )", "Retrieves resolution of texture in pixels"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetUseBlend"                      , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetUseBlend )                            , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetUseBlend", "Determines whether blending is enabled"
+  thinBasic_LoadSymbolEx  "tbgl_getUseBlend"                      , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetUseBlend )                            , %thinBasic_ForceOverWrite, _
+                          "tbgl_getUseBlend", "Determines whether blending is enabled"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetUseDepth"                      , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetUseDepth )                            , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetUseDepth", "Determines whether depth testing is enabled"
+  thinBasic_LoadSymbolEx  "tbgl_getUseDepth"                      , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetUseDepth )                            , %thinBasic_ForceOverWrite, _
+                          "tbgl_getUseDepth", "Determines whether depth testing is enabled"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetUseLighting"                   , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetUseLighting )                         , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetUseLighting", "Determines whether lighting is enabled"
+  thinBasic_LoadSymbolEx  "tbgl_getUseLighting"                   , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetUseLighting )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_getUseLighting", "Determines whether lighting is enabled"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetUseTexturing"                  , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetUseTexturing )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetUseTexturing", "Determines whether texturing is enabled"
+  thinBasic_LoadSymbolEx  "tbgl_getUseTexturing"                  , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetUseTexturing )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_getUseTexturing", "Determines whether texturing is enabled"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetWindowAnyKeyState"             , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetWindowAnyKeyState )                   , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetWindowAnyKeyState( hWnd, cKey1 [, vKey2[, vKey3[,vKey4]]] )", "Function to determine whether any of the passed keys has been pressed."
+  thinBasic_LoadSymbolEx  "tbgl_getWindowAnyKeyState"             , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetWindowAnyKeyState )                   , %thinBasic_ForceOverWrite, _
+                          "tbgl_getWindowAnyKeyState( hWnd, cKey1 [, vKey2[, vKey3[,vKey4]]] )", "Function to determine whether any of the passed keys has been pressed."
 
-  thinBasic_LoadSymbolEx  "TBGL_GetWindowBMP"                     , %thinBasic_ReturnString                 , CODEPTR( Exec_TBGL_GetWindowBMP )                           , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetWindowBMP( wHandle, [CaptureType [, Width[, Height]]] )", "It returns screenshot of specified window in BMP string"
+  thinBasic_LoadSymbolEx  "tbgl_getWindowBMP"                     , %thinBasic_ReturnString                 , CODEPTR( Exec_TBGL_GetWindowBMP )                           , %thinBasic_ForceOverWrite, _
+                          "tbgl_getWindowBMP( wHandle, [CaptureType [, Width[, Height]]] )", "It returns screenshot of specified window in BMP string"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetWindowClient"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_GetWindowClient )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetWindowClient( hWnd, variableX, variableY )", "Fills passed variables with window client width and height"
+  thinBasic_LoadSymbolEx  "tbgl_getWindowClient"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_GetWindowClient )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_getWindowClient( hWnd, variableX, variableY )", "Fills passed variables with window client width and height"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetWindowKeyOnce"                 , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_GetWindowKeyOnce )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetWindowKeyOnce( hWnd, keyCode )", "Useful function for checking if button was pressed down"
+  thinBasic_LoadSymbolEx  "tbgl_getWindowKeyOnce"                 , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_GetWindowKeyOnce )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_getWindowKeyOnce( hWnd, keyCode )", "Useful function for checking if button was pressed down"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetWindowKeyState"                , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetWindowKeyState )                      , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetWindowKeyState( hWnd, keyCode )", "Useful function for checking key status in specified window"
+  thinBasic_LoadSymbolEx  "tbgl_getWindowKeyState"                , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetWindowKeyState )                      , %thinBasic_ForceOverWrite, _
+                          "tbgl_getWindowKeyState( hWnd, keyCode )", "Useful function for checking key status in specified window"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetWindowMultiKeyState"           , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetWindowMultiKeyState )                 , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetWindowMultiKeyState( hWnd, keyCode1 [, keyCode2[, keyCode3]] )", "Useful function for checking if keys are pressed"
+  thinBasic_LoadSymbolEx  "tbgl_getWindowMultiKeyState"           , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetWindowMultiKeyState )                 , %thinBasic_ForceOverWrite, _
+                          "tbgl_getWindowMultiKeyState( hWnd, keyCode1 [, keyCode2[, keyCode3]] )", "Useful function for checking if keys are pressed"
 
-  thinBasic_LoadSymbolEx  "TBGL_IsFullscreen"                     , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_IsFullscreen )                           , %thinBasic_ForceOverWrite, _
-                          "TBGL_IsFullscreen( hWnd )", "Serves to determine whether TBGL window is fullscreen"
+  thinBasic_LoadSymbolEx  "tbgl_isFullscreen"                     , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_IsFullscreen )                           , %thinBasic_ForceOverWrite, _
+                          "tbgl_isFullscreen( hWnd )", "Serves to determine whether TBGL window is fullscreen"
 
-  thinBasic_LoadSymbolEx  "TBGL_IsPointBehindView"                , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_IsPointBehindView )                      , %thinBasic_ForceOverWrite, _
-                          "TBGL_IsPointBehindView( x, y, z )", "Returns non-zero value in case point is behind actual camera ( not visible )"
+  thinBasic_LoadSymbolEx  "tbgl_isPointBehindView"                , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_IsPointBehindView )                      , %thinBasic_ForceOverWrite, _
+                          "tbgl_isPointBehindView( x, y, z )", "Returns non-zero value in case point is behind actual camera ( not visible )"
 
-  thinBasic_LoadSymbolEx  "TBGL_IsPointVisible"                   , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_IsPointVisible )                         , %thinBasic_ForceOverWrite, _
-                          "TBGL_IsPointVisible( x, y, z )", "Returns non-zero value in case point is directly visible from current camera"
+  thinBasic_LoadSymbolEx  "tbgl_isPointVisible"                   , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_IsPointVisible )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_isPointVisible( x, y, z )", "Returns non-zero value in case point is directly visible from current camera"
 
-  thinBasic_LoadSymbolEx  "TBGL_IsWindow"                         , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_IsWindow )                               , %thinBasic_ForceOverWrite, _
-                          "TBGL_IsWindow(BYVAL hWnd AS DWORD)", "Checks for existence of window specified by handle"
+  thinBasic_LoadSymbolEx  "tbgl_isWindow"                         , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_IsWindow )                               , %thinBasic_ForceOverWrite, _
+                          "tbgl_isWindow(BYVAL hWnd AS DWORD)", "Checks for existence of window specified by handle"
 
-  thinBasic_LoadSymbolEx  "TBGL_KillFont"                         , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_KillFont )                               , %thinBasic_ForceOverWrite, _
-                          "TBGL_KillFont[( fontSlot ) ]", "Kills font created using TBGL_BuildFont"
+  thinBasic_LoadSymbolEx  "tbgl_killFont"                         , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_KillFont )                               , %thinBasic_ForceOverWrite, _
+                          "tbgl_killFont[( fontSlot ) ]", "Kills font created using TBGL_BuildFont"
 
-  thinBasic_LoadSymbolEx  "TBGL_LineStipple"                      , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_LineStipple )                            , %thinBasic_ForceOverWrite, _
-                          "TBGL_LineStipple factor, pattern", "Specifies the line stipple pattern"
+  thinBasic_LoadSymbolEx  "tbgl_lineStipple"                      , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_LineStipple )                            , %thinBasic_ForceOverWrite, _
+                          "tbgl_lineStipple factor, pattern", "Specifies the line stipple pattern"
 
-  thinBasic_LoadSymbolEx  "TBGL_LineWidth"                        , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_LineWidth )                              , %thinBasic_ForceOverWrite, _
-                          "TBGL_LineWidth pSize", "Sets width of lines created using %GL_LINES, %GL_LINE_LOOP and %GL_LINE_STRIP style"
+  thinBasic_LoadSymbolEx  "tbgl_lineWidth"                        , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_LineWidth )                              , %thinBasic_ForceOverWrite, _
+                          "tbgl_lineWidth pSize", "Sets width of lines created using %GL_LINES, %GL_LINE_LOOP and %GL_LINE_STRIP style"
 
-  thinBasic_LoadSymbolEx  "TBGL_LoadBMPFont"                      , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_LoadBMPFont )                               , %thinBasic_ForceOverWrite, _
-                          "TBGL_LoadBMPFont BitMapName [, Lines [, FontSlot ]]", "Creates ""font"" from bitmap, optimized for rendering in 3D mode"
+  thinBasic_LoadSymbolEx  "tbgl_loadBMPFont"                      , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_LoadBMPFont )                               , %thinBasic_ForceOverWrite, _
+                          "tbgl_loadBMPFont BitMapName [, Lines [, FontSlot ]]", "Creates ""font"" from bitmap, optimized for rendering in 3D mode"
 
-  thinBasic_LoadSymbolEx  "TBGL_LoadBMPFont2D"                    , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_LoadBMPFont2D )                               , %thinBasic_ForceOverWrite, _
-                          "TBGL_LoadBMPFont2D BitMapName [, Lines [, Columns[, FontSlot ]]]", "Creates ""font"" from bitmap, optimized for rendering in 2D mode"
+  thinBasic_LoadSymbolEx  "tbgl_loadBMPFont2D"                    , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_LoadBMPFont2D )                               , %thinBasic_ForceOverWrite, _
+                          "tbgl_loadBMPFont2D BitMapName [, Lines [, Columns[, FontSlot ]]]", "Creates ""font"" from bitmap, optimized for rendering in 2D mode"
 
-  thinBasic_LoadSymbolEx  "TBGL_BeginPrintBMP"                    , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_BeginPrintBMP )                               , %thinBasic_ForceOverWrite, _
-                          "TBGL_BeginPrintBMP", "Statement to prepare printing of font loaded by TBGL_LoadBMPFont or TBGL_LoadBMPFont2D"
+  thinBasic_LoadSymbolEx  "tbgl_beginPrintBMP"                    , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_BeginPrintBMP )                               , %thinBasic_ForceOverWrite, _
+                          "tbgl_beginPrintBMP", "Statement to prepare printing of font loaded by TBGL_LoadBMPFont or TBGL_LoadBMPFont2D"
 
-  thinBasic_LoadSymbolEx  "TBGL_EndPrintBMP"                      , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EndPrintBMP )                               , %thinBasic_ForceOverWrite, _
-                          "TBGL_EndPrintBMP", "Statement to finish printing of font loaded by TBGL_LoadBMPFont or TBGL_LoadBMPFont2D"
+  thinBasic_LoadSymbolEx  "tbgl_endPrintBMP"                      , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EndPrintBMP )                               , %thinBasic_ForceOverWrite, _
+                          "tbgl_endPrintBMP", "Statement to finish printing of font loaded by TBGL_LoadBMPFont or TBGL_LoadBMPFont2D"
 
 
-  thinBasic_LoadSymbol  "TBGL_LoadFont"                         , %thinBasic_ReturnNone                   , CODEPTR( Exec_tbgl_LoadBMPFont )                               , %thinBasic_ForceOverWrite
-  thinBasic_LoadSymbolEx  "TBGL_LoadTexture"                      , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_LoadTexture )                            , %thinBasic_ForceOverWrite, _
-                          "TBGL_LoadTexture TextureFile, TextureIndex, TextureFiltering [, AnisotropicLevel [, TransparentColor ]", _
+  thinBasic_LoadSymbol  "tbgl_loadFont"                         , %thinBasic_ReturnNone                   , CODEPTR( Exec_tbgl_LoadBMPFont )                               , %thinBasic_ForceOverWrite
+  thinBasic_LoadSymbolEx  "tbgl_loadTexture"                      , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_LoadTexture )                            , %thinBasic_ForceOverWrite, _
+                          "tbgl_loadTexture TextureFile, TextureIndex, TextureFiltering [, AnisotropicLevel [, TransparentColor ]", _
                           "Loads texture from following uncompressed file formats:BMP file with 8, 24 or 32 bit colorsTGA files - 32bit ( 24bit RGB + 8bit alpha )"
 
 
-  thinBasic_LoadSymbolEx  "TBGL_LoadTexturesFromTiles"            , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_LoadTexturesFromTiles )                            , %thinBasic_ForceOverWrite, _
-                          "TBGL_LoadTexturesFromTiles fileName, startIndex, numberOfColumns, numberOfRows, TextureFiltering [, AnisotropicLevel [, TransparentColor ]", "Function creates multiple textures from one"
+  thinBasic_LoadSymbolEx  "tbgl_loadTexturesFromTiles"            , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_LoadTexturesFromTiles )                            , %thinBasic_ForceOverWrite, _
+                          "tbgl_loadTexturesFromTiles fileName, startIndex, numberOfColumns, numberOfRows, TextureFiltering [, AnisotropicLevel [, TransparentColor ]", "Function creates multiple textures from one"
 
-  thinBasic_LoadSymbolEx  "TBGL_MakeTexture"                      , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_MakeTexture )                            , %thinBasic_ForceOverWrite, _
-                          "TBGL_MakeTexture StringBuffer, TypeOfData, Width, Height, TextureIndex, TextureFiltering [, AnisotropicLevel [, TransparentColor ]", "Makes texture from data in string in specified way"
+  thinBasic_LoadSymbolEx  "tbgl_makeTexture"                      , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_MakeTexture )                            , %thinBasic_ForceOverWrite, _
+                          "tbgl_makeTexture StringBuffer, TypeOfData, Width, Height, TextureIndex, TextureFiltering [, AnisotropicLevel [, TransparentColor ]", "Makes texture from data in string in specified way"
 
-  thinBasic_LoadSymbolEx  "TBGL_DeleteTexture"                    , %thinBasic_ReturnNone                     , CODEPTR( Exec_TBGL_DeleteTexture )                            , %thinBasic_ForceOverWrite, _
-                          "TBGL_DeleteTexture(TextureIndex)", "Deletes texture from memory."
+  thinBasic_LoadSymbolEx  "tbgl_deleteTexture"                    , %thinBasic_ReturnNone                     , CODEPTR( Exec_TBGL_DeleteTexture )                            , %thinBasic_ForceOverWrite, _
+                          "tbgl_deleteTexture(TextureIndex)", "Deletes texture from memory."
 
-  thinBasic_LoadSymbolEx  "TBGL_MouseInClient"                     , %thinBasic_ReturnCodeLong              , CODEPTR( EXEC_TBGL_MouseInClient )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_MouseInClient", "Tests whether mouse is in window client area"
+  thinBasic_LoadSymbolEx  "tbgl_mouseInClient"                     , %thinBasic_ReturnCodeLong              , CODEPTR( EXEC_TBGL_MouseInClient )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_mouseInClient", "Tests whether mouse is in window client area"
 
-  thinBasic_LoadSymbolEx  "TBGL_MouseGetLButton"                  , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_MouseGetLButton )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_MouseGetLButton", "Function which returns whether left mouse button is down or not"
+  thinBasic_LoadSymbolEx  "tbgl_mouseGetLButton"                  , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_MouseGetLButton )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_mouseGetLButton", "Function which returns whether left mouse button is down or not"
 
-  thinBasic_LoadSymbolEx  "TBGL_MouseGetMButton"                  , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_MouseGetMButton )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_MouseGetMButton", "Function which returns whether middle mouse button is down or not"
+  thinBasic_LoadSymbolEx  "tbgl_mouseGetMButton"                  , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_MouseGetMButton )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_mouseGetMButton", "Function which returns whether middle mouse button is down or not"
 
-  thinBasic_LoadSymbolEx  "TBGL_MouseGetPosX"                     , %thinBasic_ReturnCodeSingle             , CODEPTR( EXEC_TBGL_MouseGetPosX )                           , %thinBasic_ForceOverWrite, _
-                          "TBGL_MouseGetPosX", "Function which returns X position of mouse cursor"
+  thinBasic_LoadSymbolEx  "tbgl_mouseGetPosX"                     , %thinBasic_ReturnCodeSingle             , CODEPTR( EXEC_TBGL_MouseGetPosX )                           , %thinBasic_ForceOverWrite, _
+                          "tbgl_mouseGetPosX", "Function which returns X position of mouse cursor"
 
-  thinBasic_LoadSymbolEx  "TBGL_MouseGetPosY"                     , %thinBasic_ReturnCodeSingle             , CODEPTR( EXEC_TBGL_MouseGetPosY )                           , %thinBasic_ForceOverWrite, _
-                          "TBGL_MouseGetPosY", "Function which returns Y position of mouse cursor"
+  thinBasic_LoadSymbolEx  "tbgl_mouseGetPosY"                     , %thinBasic_ReturnCodeSingle             , CODEPTR( EXEC_TBGL_MouseGetPosY )                           , %thinBasic_ForceOverWrite, _
+                          "tbgl_mouseGetPosY", "Function which returns Y position of mouse cursor"
 
-  thinBasic_LoadSymbolEx  "TBGL_MouseGetRButton"                  , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_MouseGetRButton )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_MouseGetRButton", "Function which returns whether right mouse button is down or not"
+  thinBasic_LoadSymbolEx  "tbgl_mouseGetRButton"                  , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_MouseGetRButton )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_mouseGetRButton", "Function which returns whether right mouse button is down or not"
 
-  thinBasic_LoadSymbolEx  "TBGL_MouseGetWheelDelta"               , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_MouseGetWheelDelta )                     , %thinBasic_ForceOverWrite, _
-                          "TBGL_MouseGetWheelDelta", "Function which returns whether mouse wheel was scrolled down or up"
+  thinBasic_LoadSymbolEx  "tbgl_mouseGetWheelDelta"               , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_MouseGetWheelDelta )                     , %thinBasic_ForceOverWrite, _
+                          "tbgl_mouseGetWheelDelta", "Function which returns whether mouse wheel was scrolled down or up"
 
   thinBasic_LoadSymbolEx  "TBGL_NewList"                          , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_NewList )                                , %thinBasic_ForceOverWrite, _
                           "TBGL_NewList ListNumber", "Creates new display listPolygons defined beetween TBGL_NewList and TBGL_EndList can be accessed by TBGL_CallList function."
@@ -850,8 +850,8 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
   thinBasic_LoadSymbolEx  "TBGL_PrintFont2D"                      , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_PrintFont2D )                              , %thinBasic_ForceOverWrite, _
                           "TBGL_PrintFont2D( sText, x, y [, screenAlignment, anchorAlignment, maximumWidth ])", "Prints font created using TBGL_BuildFont to specified 2D position with possible anchor setup and length truncation"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetFontTextSize"                        , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_GetFontTextSize )             , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetFontTextSize( text, varWidth, varHeight )", "Returns size of the specified text for currently active font in pixels"
+  thinBasic_LoadSymbolEx  "tbgl_getFontTextSize"                        , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_GetFontTextSize )             , %thinBasic_ForceOverWrite, _
+                          "tbgl_getFontTextSize( text, varWidth, varHeight )", "Returns size of the specified text for currently active font in pixels"
 
   thinBasic_LoadSymbolEx  "TBGL_PushMatrix"                       , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_PushMatrix )                             , %thinBasic_ForceOverWrite, _
                           "TBGL_PushMatrix", "Push the current matrix stack."
@@ -1016,186 +1016,186 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
   thinBasic_LoadSymbolEx  "TBGL_Viewport"                         , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_Viewport )                               , %thinBasic_ForceOverWrite, _
                           "TBGL_Viewport( x, y, width, height [, ParameterType] )", "Allows to setup viewports in the current window."
 
-  thinBasic_LoadSymbolEx  "TBGL_m15AddBoneTreeItem"               , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15AddBoneTreeItem )                     , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15AddBoneTreeItem ModelID, BoneID, Level, ChildLevel", "Statement to define hierarchy between bones. You can define parent-child relation for the bones using this."
+  thinBasic_LoadSymbolEx  "tbgl_m15AddBoneTreeItem"               , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15AddBoneTreeItem )                     , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15AddBoneTreeItem ModelID, BoneID, Level, ChildLevel", "Statement to define hierarchy between bones. You can define parent-child relation for the bones using this."
 
-  thinBasic_LoadSymbolEx  "TBGL_m15ApplyBones"                    , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15ApplyBones )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15ApplyBones ModelID", "This statement performs the rotations defined by tbgl_m15RotBone"
+  thinBasic_LoadSymbolEx  "tbgl_m15ApplyBones"                    , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15ApplyBones )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15ApplyBones ModelID", "This statement performs the rotations defined by tbgl_m15RotBone"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15ClearModel"                    , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15ClearModel )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15ClearModel ModelID", "This statement will clear specified model slot"
+  thinBasic_LoadSymbolEx  "tbgl_m15ClearModel"                    , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15ClearModel )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15ClearModel ModelID", "This statement will clear specified model slot"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15DefBoneAddVertex"              , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15DefBoneAddVertex )                    , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15DefBoneAddVertex( ModelID, BoneID, VertexID )", "Adds vertex to specified bone"
+  thinBasic_LoadSymbolEx  "tbgl_m15DefBoneAddVertex"              , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15DefBoneAddVertex )                    , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15DefBoneAddVertex( ModelID, BoneID, VertexID )", "Adds vertex to specified bone"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15DefBoneAnchor"                 , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15DefBoneAnchor )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15DefBoneAnchor( ModelID, BoneID, x, y, z )", "Specifies anchor point for bone"
+  thinBasic_LoadSymbolEx  "tbgl_m15DefBoneAnchor"                 , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15DefBoneAnchor )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15DefBoneAnchor( ModelID, BoneID, x, y, z )", "Specifies anchor point for bone"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15DefBoneBox"                    , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15DefBoneBox )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15DefBoneBox ModelID, BoneID, minX, maxX, minY, maxY, minZ, maxZ, anchorX, anchorY, anchorZ", _
+  thinBasic_LoadSymbolEx  "tbgl_m15DefBoneBox"                    , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15DefBoneBox )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15DefBoneBox ModelID, BoneID, minX, maxX, minY, maxY, minZ, maxZ, anchorX, anchorY, anchorZ", _
                           "Statement to define area limited by sides of block. The vertices found in this area will be indexed for later use with this bone."
 
-  thinBasic_LoadSymbolEx  "TBGL_m15DefBoneColor"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15DefBoneColor )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15DefBoneColor( ModelID, BoneID, R, G, B, anchorX, anchorY, anchorZ )", "Statement to define bone according to vertex color, defined in M15 fileThe vertices found in this area will be indexed for later use with this bone."
+  thinBasic_LoadSymbolEx  "tbgl_m15DefBoneColor"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15DefBoneColor )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15DefBoneColor( ModelID, BoneID, R, G, B, anchorX, anchorY, anchorZ )", "Statement to define bone according to vertex color, defined in M15 fileThe vertices found in this area will be indexed for later use with this bone."
 
-  thinBasic_LoadSymbolEx  "TBGL_m15DefBoneEmpty"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15DefBoneEmpty )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15DefBoneEmpty( ModelID, BoneID )", "Erases all links to vertices the bone had and also erases links to all child bones"
+  thinBasic_LoadSymbolEx  "tbgl_m15DefBoneEmpty"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15DefBoneEmpty )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15DefBoneEmpty( ModelID, BoneID )", "Erases all links to vertices the bone had and also erases links to all child bones"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15DefBoneLayer"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15DefBoneLayer )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15DefBoneLayer ModelID, BoneID, LayerName, anchorX, anchorY, anchorZ", "Statement to define bone from layer, defined in M15 fileThe vertices found in this area will be indexed for later use with this bone."
+  thinBasic_LoadSymbolEx  "tbgl_m15DefBoneLayer"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15DefBoneLayer )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15DefBoneLayer ModelID, BoneID, LayerName, anchorX, anchorY, anchorZ", "Statement to define bone from layer, defined in M15 fileThe vertices found in this area will be indexed for later use with this bone."
 
-  thinBasic_LoadSymbolEx  "TBGL_m15DefBoneReset"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15DefBoneReset )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15DefBoneReset( ModelID, BoneID )", "Erases all links to vertices the bone had"
+  thinBasic_LoadSymbolEx  "tbgl_m15DefBoneReset"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15DefBoneReset )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15DefBoneReset( ModelID, BoneID )", "Erases all links to vertices the bone had"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15DrawModel"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15DrawModel )                           , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15DrawModel ModelID", "This statement will render specified model"
+  thinBasic_LoadSymbolEx  "tbgl_m15DrawModel"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15DrawModel )                           , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15DrawModel ModelID", "This statement will render specified model"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15EraseChildbones"               , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15EraseChildbones )                     , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15EraseChildbones( ModelID, BoneID )", "Erases links to all child bones"
+  thinBasic_LoadSymbolEx  "tbgl_m15EraseChildbones"               , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15EraseChildbones )                     , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15EraseChildbones( ModelID, BoneID )", "Erases links to all child bones"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetBoneChild"                  , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_m15GetBoneChild )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetBoneChild( ModelID, BoneID, N )", "Returns ID of N-th child bone"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetBoneChild"                  , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_m15GetBoneChild )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetBoneChild( ModelID, BoneID, N )", "Returns ID of N-th child bone"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetBoneChildCount"             , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_m15GetBoneChildCount )                   , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetBoneChildCount( ModelID, BoneID )", "Returns number child bones"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetBoneChildCount"             , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_m15GetBoneChildCount )                   , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetBoneChildCount( ModelID, BoneID )", "Returns number child bones"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetModelDimensions"            , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15GetModelDimensions )                  , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetModelDimensions( ModelID, varX, varY, varZ )", "Returns width(x), height(y) and length(z) of model in specified slot"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetModelDimensions"            , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15GetModelDimensions )                  , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetModelDimensions( ModelID, varX, varY, varZ )", "Returns width(x), height(y) and length(z) of model in specified slot"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetModelPolycount"             , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_m15GetModelPolycount )                   , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetModelPolycount( ModelID )", "Statement to get number of polygons of specified model slot"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetModelPolycount"             , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_m15GetModelPolycount )                   , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetModelPolycount( ModelID )", "Statement to get number of polygons of specified model slot"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetModelVertexcount"           , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_m15GetModelVertexcount )                 , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetModelVertexcount( ModelID )", "Function which returns number of vertices of specified model"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetModelVertexcount"           , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_m15GetModelVertexcount )                 , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetModelVertexcount( ModelID )", "Function which returns number of vertices of specified model"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetVertexB"                    , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexB )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetVertexB( ModelID, VertexIndex )", "Statement to get Blue component of specified vertex"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetVertexB"                    , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexB )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetVertexB( ModelID, VertexIndex )", "Statement to get Blue component of specified vertex"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetVertexG"                    , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexG )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetVertexG( ModelID, VertexIndex )", "Statement to get Green component of specified vertex"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetVertexG"                    , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexG )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetVertexG( ModelID, VertexIndex )", "Statement to get Green component of specified vertex"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetVertexLayer"                , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexLayer )                      , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetVertexLayer( ModelID, VertexIndex )", "Statement to get layer number of specified vertex"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetVertexLayer"                , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexLayer )                      , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetVertexLayer( ModelID, VertexIndex )", "Statement to get layer number of specified vertex"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetVertexPStop"                , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexPStop )                      , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetVertexPStop( ModelID, VertexIndex )", "Statement to get polygon end flag of specified vertex"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetVertexPStop"                , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexPStop )                      , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetVertexPStop( ModelID, VertexIndex )", "Statement to get polygon end flag of specified vertex"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetVertexParam"                , %thinBasic_ReturnCodeSingle             , CODEPTR( EXEC_TBGL_m15GetVertexParam )                      , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetVertexParam( ModelID, VertexIndex, Parameter )", "This statement allows you to read model parameters on the fly"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetVertexParam"                , %thinBasic_ReturnCodeSingle             , CODEPTR( EXEC_TBGL_m15GetVertexParam )                      , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetVertexParam( ModelID, VertexIndex, Parameter )", "This statement allows you to read model parameters on the fly"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetVertexR"                    , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexR )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetVertexR( ModelID, VertexIndex )", "Statement to get Red component of specified vertex"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetVertexR"                    , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexR )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetVertexR( ModelID, VertexIndex )", "Statement to get Red component of specified vertex"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetVertexRGB"                  , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15GetVertexRGB )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetVertexRGB( ModelID, VertexIndex, varR, varG, varB )", "Statement to get R, G and B color components of specified vertex to passed variables"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetVertexRGB"                  , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15GetVertexRGB )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetVertexRGB( ModelID, VertexIndex, varR, varG, varB )", "Statement to get R, G and B color components of specified vertex to passed variables"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetVertexTexN"                 , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexTexN )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetVertexTexN( ModelID, VertexIndex )", "Statement to get texture number of specified vertex"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetVertexTexN"                 , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexTexN )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetVertexTexN( ModelID, VertexIndex )", "Statement to get texture number of specified vertex"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetVertexTexX"                 , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexTexX )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetVertexTexX( ModelID, VertexIndex )", "Statement to get X texture coordinate ( also known as U ) of specified vertex"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetVertexTexX"                 , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexTexX )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetVertexTexX( ModelID, VertexIndex )", "Statement to get X texture coordinate ( also known as U ) of specified vertex"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetVertexTexXY"                , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15GetVertexTexXY )                      , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetVertexTexXY( ModelID, VertexIndex, varTexX, varTexY )", "Statement to get X, Y texture coordinates( also known as U, V ) of specified vertex to passed variables"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetVertexTexXY"                , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15GetVertexTexXY )                      , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetVertexTexXY( ModelID, VertexIndex, varTexX, varTexY )", "Statement to get X, Y texture coordinates( also known as U, V ) of specified vertex to passed variables"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetVertexTexY"                 , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexTexY )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetVertexTexY( ModelID, VertexIndex )", "Statement to get Y texture coordinate ( also known as V ) of specified vertex"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetVertexTexY"                 , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexTexY )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetVertexTexY( ModelID, VertexIndex )", "Statement to get Y texture coordinate ( also known as V ) of specified vertex"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetVertexX"                    , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexX )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetVertexX( ModelID, VertexIndex )", "Statement to get X coordinate of specified vertex"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetVertexX"                    , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexX )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetVertexX( ModelID, VertexIndex )", "Statement to get X coordinate of specified vertex"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetVertexXYZ"                  , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15GetVertexXYZ )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetVertexXYZ( ModelID, VertexIndex, varX, varY, varZ )", "Statement to get X, Y and Z coordinates of specified vertex to passed variables"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetVertexXYZ"                  , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15GetVertexXYZ )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetVertexXYZ( ModelID, VertexIndex, varX, varY, varZ )", "Statement to get X, Y and Z coordinates of specified vertex to passed variables"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetVertexY"                    , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexY )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetVertexY( ModelID, VertexIndex )", "Statement to get Y coordinate of specified vertex"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetVertexY"                    , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexY )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetVertexY( ModelID, VertexIndex )", "Statement to get Y coordinate of specified vertex"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15GetVertexZ"                    , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexZ )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15GetVertexZ( ModelID, VertexIndex )", "Statement to get Z coordinate of specified vertex"
+  thinBasic_LoadSymbolEx  "tbgl_m15GetVertexZ"                    , %thinBasic_ReturnNumber                 , CODEPTR( EXEC_TBGL_m15GetVertexZ )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15GetVertexZ( ModelID, VertexIndex )", "Statement to get Z coordinate of specified vertex"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15InitModelBuffers"              , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_m15InitModelBuffers )                    , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15InitModelBuffers NumModels, NumVertices", "It serves to allocate memory for models"
+  thinBasic_LoadSymbolEx  "tbgl_m15InitModelBuffers"              , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_m15InitModelBuffers )                    , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15InitModelBuffers NumModels, NumVertices", "It serves to allocate memory for models"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15LoadModel"                     , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_m15LoadModel )                           , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15LoadModel ModelFile, TextureSubdirectory, ModelID, TargetedDisplayList, NormalVectorMethod", "This statement loads the M15 model from file for later use"
+  thinBasic_LoadSymbolEx  "tbgl_m15LoadModel"                     , %thinBasic_ReturnCodeLong               , CODEPTR( EXEC_TBGL_m15LoadModel )                           , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15LoadModel ModelFile, TextureSubdirectory, ModelID, TargetedDisplayList, NormalVectorMethod", "This statement loads the M15 model from file for later use"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15RecalcNormals"                 , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15RecalcNormals )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15RecalcNormals ModelID, NormalVectorMethod [, layer]", "This statement will force recalculation of model normals"
+  thinBasic_LoadSymbolEx  "tbgl_m15RecalcNormals"                 , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15RecalcNormals )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15RecalcNormals ModelID, NormalVectorMethod [, layer]", "This statement will force recalculation of model normals"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15ResetBones"                    , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15ResetBones )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15ResetBones ModelID", "This statement resets all bone transformations"
+  thinBasic_LoadSymbolEx  "tbgl_m15ResetBones"                    , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15ResetBones )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15ResetBones ModelID", "This statement resets all bone transformations"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15RotBone"                       , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15RotBone )                             , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15RotBone ModelID, BoneID, angleX, angleY, angleZ", "This statement sets bone angle"
+  thinBasic_LoadSymbolEx  "tbgl_m15RotBone"                       , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15RotBone )                             , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15RotBone ModelID, BoneID, angleX, angleY, angleZ", "This statement sets bone angle"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15RotBoneX"                      , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15RotBoneX )                            , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15RotBoneX ModelID, BoneID, angleX", "This statement sets bone rotation around X axis"
+  thinBasic_LoadSymbolEx  "tbgl_m15RotBoneX"                      , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15RotBoneX )                            , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15RotBoneX ModelID, BoneID, angleX", "This statement sets bone rotation around X axis"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15RotBoneY"                      , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15RotBoneY )                            , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15RotBoneY ModelID, BoneID, angleX", "This statement sets bone rotation around Y axis"
+  thinBasic_LoadSymbolEx  "tbgl_m15RotBoneY"                      , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15RotBoneY )                            , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15RotBoneY ModelID, BoneID, angleX", "This statement sets bone rotation around Y axis"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15RotBoneZ"                      , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15RotBoneZ )                            , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15RotBoneZ ModelID, BoneID, angleX", "This statement sets bone rotation around Z axis"
+  thinBasic_LoadSymbolEx  "tbgl_m15RotBoneZ"                      , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15RotBoneZ )                            , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15RotBoneZ ModelID, BoneID, angleX", "This statement sets bone rotation around Z axis"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetBoneChild"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15SetBoneChild )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetBoneChild( ModelID, BoneID, ChildBoneID )", "Adds child bone for specified bone"
+  thinBasic_LoadSymbolEx  "tbgl_m15SetBoneChild"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15SetBoneChild )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetBoneChild( ModelID, BoneID, ChildBoneID )", "Adds child bone for specified bone"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetDefaultTextureFilter"       , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15SetDefaultTextureFilter )             , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetDefaultTextureFilter( TextureFiltering [, AnisotropicLevel ] )", "Sets default texture filtering for models loaded after this command"
+  thinBasic_LoadSymbolEx  "tbgl_m15SetDefaultTextureFilter"       , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_m15SetDefaultTextureFilter )             , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetDefaultTextureFilter( TextureFiltering [, AnisotropicLevel ] )", "Sets default texture filtering for models loaded after this command"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetModelVertexcount"           , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetModelVertexcount )                 , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetModelVertexcount( ModelID, Value )", "Overrides information about number of vertices"
+  thinBasic_LoadSymbolEx  "tbgl_m15SetModelVertexcount"           , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetModelVertexcount )                 , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetModelVertexcount( ModelID, Value )", "Overrides information about number of vertices"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetVertexB"                    , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexB )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetVertexB( ModelID, VertexIndex, b)|TBGL_m15SetVertexB( ModelID, IndexFrom, IndexTo, b)", "Statement to set Blue color component of model vertex."
+  thinBasic_LoadSymbolEx  "tbgl_m15SetVertexB"                    , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexB )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetVertexB( ModelID, VertexIndex, b)|TBGL_m15SetVertexB( ModelID, IndexFrom, IndexTo, b)", "Statement to set Blue color component of model vertex."
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetVertexG"                    , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexG )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetVertexG( ModelID, VertexIndex, g)|TBGL_m15SetVertexG( ModelID, IndexFrom, IndexTo, g)", "Statement to set Green color component of model vertex."
+  thinBasic_LoadSymbolEx  "tbgl_m15SetVertexG"                    , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexG )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetVertexG( ModelID, VertexIndex, g)|TBGL_m15SetVertexG( ModelID, IndexFrom, IndexTo, g)", "Statement to set Green color component of model vertex."
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetVertexLayer"                , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexLayer )                      , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetVertexLayer( ModelID, VertexIndex, layer)|TBGL_m15SetVertexLayer( ModelID, IndexFrom, IndexTo, layer)", "Statement to set layer number to vertex."
+  thinBasic_LoadSymbolEx  "tbgl_m15SetVertexLayer"                , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexLayer )                      , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetVertexLayer( ModelID, VertexIndex, layer)|TBGL_m15SetVertexLayer( ModelID, IndexFrom, IndexTo, layer)", "Statement to set layer number to vertex."
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetVertexPStop"                , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexPStop )                      , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetVertexPStop( ModelID, VertexIndex, pStop)|TBGL_m15SetVertexPStop( ModelID, IndexFrom, IndexTo, pStop)", "Statement to set flag for end of model polygon."
+  thinBasic_LoadSymbolEx  "tbgl_m15SetVertexPStop"                , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexPStop )                      , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetVertexPStop( ModelID, VertexIndex, pStop)|TBGL_m15SetVertexPStop( ModelID, IndexFrom, IndexTo, pStop)", "Statement to set flag for end of model polygon."
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetVertexParam"                , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexParam )                      , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetVertexParam( ModelID, VertexIndex, Parameter, NewValue )", "This statement allows you to modify model parameters on the fly"
+  thinBasic_LoadSymbolEx  "tbgl_m15SetVertexParam"                , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexParam )                      , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetVertexParam( ModelID, VertexIndex, Parameter, NewValue )", "This statement allows you to modify model parameters on the fly"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetVertexR"                    , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexR )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetVertexR( ModelID, VertexIndex, r)|TBGL_m15SetVertexR( ModelID, IndexFrom, IndexTo, r)", "Statement to set Red color component of model vertex."
+  thinBasic_LoadSymbolEx  "tbgl_m15SetVertexR"                    , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexR )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetVertexR( ModelID, VertexIndex, r)|TBGL_m15SetVertexR( ModelID, IndexFrom, IndexTo, r)", "Statement to set Red color component of model vertex."
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetVertexRGB"                  , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexRGB )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetVertexRGB( ModelID, VertexIndex, R, G, B )|TBGL_m15SetVertexRGB( ModelID, IndexFrom, IndexTo, R, G, B )", "Statement to set R, G and B color component to specified vertex ( vertices )"
+  thinBasic_LoadSymbolEx  "tbgl_m15SetVertexRGB"                  , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexRGB )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetVertexRGB( ModelID, VertexIndex, R, G, B )|TBGL_m15SetVertexRGB( ModelID, IndexFrom, IndexTo, R, G, B )", "Statement to set R, G and B color component to specified vertex ( vertices )"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetVertexRGB"                  , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexRGB )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetVertexRGB( ModelID, VertexIndex, R, G, B )|TBGL_m15SetVertexRGB( ModelID, IndexFrom, IndexTo, R, G, B )", "Statement to set R, G and B color component to specified vertex ( vertices )"
+  thinBasic_LoadSymbolEx  "tbgl_m15SetVertexRGB"                  , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexRGB )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetVertexRGB( ModelID, VertexIndex, R, G, B )|TBGL_m15SetVertexRGB( ModelID, IndexFrom, IndexTo, R, G, B )", "Statement to set R, G and B color component to specified vertex ( vertices )"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetVertexTexN"                 , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexTexN )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetVertexTexN( ModelID, VertexIndex, texN)|TBGL_m15SetVertexTexN( ModelID, IndexFrom, IndexTo, texN)", "Statement to set texture index of model vertex."
+  thinBasic_LoadSymbolEx  "tbgl_m15SetVertexTexN"                 , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexTexN )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetVertexTexN( ModelID, VertexIndex, texN)|TBGL_m15SetVertexTexN( ModelID, IndexFrom, IndexTo, texN)", "Statement to set texture index of model vertex."
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetVertexTexX"                 , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexTexX )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetVertexTexX( ModelID, VertexIndex, texX)|TBGL_m15SetVertexTexX( ModelID, IndexFrom, IndexTo, texX)", "Statement to set texture X cooridinate ( also known as U ) of model vertex."
+  thinBasic_LoadSymbolEx  "tbgl_m15SetVertexTexX"                 , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexTexX )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetVertexTexX( ModelID, VertexIndex, texX)|TBGL_m15SetVertexTexX( ModelID, IndexFrom, IndexTo, texX)", "Statement to set texture X cooridinate ( also known as U ) of model vertex."
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetVertexTexXY"                , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexTexXY )                      , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetVertexTexXY( ModelID, VertexIndex, x, y )|TBGL_m15SetVertexTexXY( ModelID, IndexFrom, IndexTo, x, y )", "Statement to set X, Y ( also known as U, V ) coordinates for texturing."
+  thinBasic_LoadSymbolEx  "tbgl_m15SetVertexTexXY"                , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexTexXY )                      , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetVertexTexXY( ModelID, VertexIndex, x, y )|TBGL_m15SetVertexTexXY( ModelID, IndexFrom, IndexTo, x, y )", "Statement to set X, Y ( also known as U, V ) coordinates for texturing."
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetVertexTexY"                 , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexTexY )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetVertexTexY( ModelID, VertexIndex, texY)|TBGL_m15SetVertexTexY( ModelID, IndexFrom, IndexTo, texY)", "Statement to set texture Y cooridinate ( also known as V ) of model vertex."
+  thinBasic_LoadSymbolEx  "tbgl_m15SetVertexTexY"                 , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexTexY )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetVertexTexY( ModelID, VertexIndex, texY)|TBGL_m15SetVertexTexY( ModelID, IndexFrom, IndexTo, texY)", "Statement to set texture Y cooridinate ( also known as V ) of model vertex."
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetVertexX"                    , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexX )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetVertexX( ModelID, VertexIndex, x)|TBGL_m15SetVertexX( ModelID, IndexFrom, IndexTo, x)", "Statement to set X coordinate of model vertex."
+  thinBasic_LoadSymbolEx  "tbgl_m15SetVertexX"                    , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexX )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetVertexX( ModelID, VertexIndex, x)|TBGL_m15SetVertexX( ModelID, IndexFrom, IndexTo, x)", "Statement to set X coordinate of model vertex."
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetVertexXYZ"                  , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexXYZ )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetVertexXYZ( ModelID, VertexIndex, x, y, z )|TBGL_m15SetVertexXYZ( ModelID, IndexFrom, IndexTo, x, y, z )", "Statement to set X, Y and Z coordinates to specified vertex ( vertices )"
+  thinBasic_LoadSymbolEx  "tbgl_m15SetVertexXYZ"                  , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexXYZ )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetVertexXYZ( ModelID, VertexIndex, x, y, z )|TBGL_m15SetVertexXYZ( ModelID, IndexFrom, IndexTo, x, y, z )", "Statement to set X, Y and Z coordinates to specified vertex ( vertices )"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetVertexXYZ"                  , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexXYZ )                        , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetVertexXYZ( ModelID, VertexIndex, x, y, z )|TBGL_m15SetVertexXYZ( ModelID, IndexFrom, IndexTo, x, y, z )", "Statement to set X, Y and Z coordinates to specified vertex ( vertices )"
+  thinBasic_LoadSymbolEx  "tbgl_m15SetVertexXYZ"                  , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexXYZ )                        , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetVertexXYZ( ModelID, VertexIndex, x, y, z )|TBGL_m15SetVertexXYZ( ModelID, IndexFrom, IndexTo, x, y, z )", "Statement to set X, Y and Z coordinates to specified vertex ( vertices )"
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetVertexY"                    , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexY )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetVertexY( ModelID, VertexIndex, y)|TBGL_m15SetVertexY( ModelID, IndexFrom, IndexTo, y)", "Statement to set Y coordinate of model vertex."
+  thinBasic_LoadSymbolEx  "tbgl_m15SetVertexY"                    , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexY )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetVertexY( ModelID, VertexIndex, y)|TBGL_m15SetVertexY( ModelID, IndexFrom, IndexTo, y)", "Statement to set Y coordinate of model vertex."
 
-  thinBasic_LoadSymbolEx  "TBGL_m15SetVertexZ"                    , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexZ )                          , %thinBasic_ForceOverWrite, _
-                          "TBGL_m15SetVertexZ( ModelID, VertexIndex, z)|TBGL_m15SetVertexZ( ModelID, IndexFrom, IndexTo, z)", "Statement to set Z coordinate of model vertex."
+  thinBasic_LoadSymbolEx  "tbgl_m15SetVertexZ"                    , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexZ )                          , %thinBasic_ForceOverWrite, _
+                          "tbgl_m15SetVertexZ( ModelID, VertexIndex, z)|TBGL_m15SetVertexZ( ModelID, IndexFrom, IndexTo, z)", "Statement to set Z coordinate of model vertex."
 
   thinBasic_LoadSymbolEx  "TBGL_oglDeviceContext"              , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_oglDeviceContext )                    , %thinBasic_ForceOverWrite, _
                           "TBGL_oglDeviceContext()", "Function to return device context used by TBGL"
@@ -1221,8 +1221,8 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
   thinBasic_LoadSymbolEx  "TBGL_Rect"                             , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_Rect )                                 , %thinBasic_ForceOverWrite, _
                           "TBGL_Rect( x1, y1, x2, y2 )|TBGL_Rect( x1, y1, z1, x2, y2, z2 )", "Draw a rectangle defined by 2 points."
 
-  thinBasic_LoadSymbolEx  "TBGL_Line"                             , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_Line )                                 , %thinBasic_ForceOverWrite, _
-                          "TBGL_Line( x1, y1, x2, y2 )|TBGL_Line( x1, y1, z1, x2, y2, z2 )", "Draws a line defined by 2 points."
+  thinBasic_LoadSymbolEx  "tbgl_line"                             , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_Line )                                 , %thinBasic_ForceOverWrite, _
+                          "tbgl_line( x1, y1, x2, y2 )|TBGL_Line( x1, y1, z1, x2, y2, z2 )", "Draws a line defined by 2 points."
 
   thinBasic_LoadSymbolEx  "TBGL_Point"                            , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_Point )                                , %thinBasic_ForceOverWrite, _
                           "TBGL_Point( xPos, yPos [, zPos ] )", "Draws a point."
@@ -1612,12 +1612,12 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
   thinBasic_LoadSymbolEx  "TBGL_PopDepthFunc"                         , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_PopDepthFunc )                       , %thinBasic_ForceOverWrite, _
                           "TBGL_PopDepthFunc", "Ends block of isolated depth test function and returns back previous state"
 
-  thinBasic_LoadSymbolEx  "TBGL_CallingEntity"                    , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_CallingEntity )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_CallingEntity", "Retrieves information about entity calling function"
+  thinBasic_LoadSymbolEx  "tbgl_callingEntity"                    , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_CallingEntity )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_callingEntity", "Retrieves information about entity calling function"
 
   ''
-  thinBasic_LoadSymbolEx  "TBGL_BindPeriodicFunction"             , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_BindPeriodicFunction )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_BindPeriodicFunction( hWnd, functionName, interval )", "Selects script function to be called periodically once TBGL_ProcessPeriodicFunction is called."
+  thinBasic_LoadSymbolEx  "tbgl_bindPeriodicFunction"             , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_BindPeriodicFunction )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_bindPeriodicFunction( hWnd, functionName, interval )", "Selects script function to be called periodically once TBGL_ProcessPeriodicFunction is called."
 
   thinBasic_LoadSymbolEx  "TBGL_UnBindPeriodicFunction"           , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_UnBindPeriodicFunction )                       , %thinBasic_ForceOverWrite, _
                           "TBGL_UnBindPeriodicFunction( hWnd )", "Releases function bound by TBGL_BindPeriodicFunction and executed by TBGL_ProcessPeriodicFunction from being called periodically."
@@ -1643,42 +1643,42 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
 
   ''
 
-  thinBasic_LoadSymbolEx  "TBGL_CallingWindow"                    , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_CallingWindow )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_CallingWindow", "Returns handle of window in function invoked by TBGL_ProcessPeriodicFunction."
+  thinBasic_LoadSymbolEx  "tbgl_callingWindow"                    , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_CallingWindow )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_callingWindow", "Returns handle of window in function invoked by TBGL_ProcessPeriodicFunction."
 
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityAttach"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityAttach )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityAttach( SceneID, EntityID, ParentEntityID, Mode )", "Attaches entity to another entity."
+  thinBasic_LoadSymbolEx  "tbgl_entityAttach"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityAttach )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityAttach( SceneID, EntityID, ParentEntityID, Mode )", "Attaches entity to another entity."
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityDetach"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityDetach )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityDetach( SceneID, EntityID, Mode )", "Detaches given entity from parent entity."
-
-
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetParent"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetParent )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetParent( SceneID, EntityID, ParentEntityID )", "Sets new parent entity for given entity."
-
-  thinBasic_LoadSymbolEx  "TBGL_EntityGetParent"                  , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetParent )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityGetParent( SceneID, EntityID )", "Returns parent entity of given entity."
+  thinBasic_LoadSymbolEx  "tbgl_entityDetach"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityDetach )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityDetach( SceneID, EntityID, Mode )", "Detaches given entity from parent entity."
 
 
-  thinBasic_LoadSymbol  "TBGL_EntityGetCollisionInfo"           , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetCollisionInfo )                       , %thinBasic_ForceOverWrite
+  thinBasic_LoadSymbolEx  "tbgl_entitySetParent"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetParent )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetParent( SceneID, EntityID, ParentEntityID )", "Sets new parent entity for given entity."
+
+  thinBasic_LoadSymbolEx  "tbgl_entityGetParent"                  , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetParent )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityGetParent( SceneID, EntityID )", "Returns parent entity of given entity."
+
+
+  thinBasic_LoadSymbol  "tbgl_entityGetCollisionInfo"           , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityGetCollisionInfo )                       , %thinBasic_ForceOverWrite
 
   thinBasic_LoadSymbolEx  "TBGL_NewListSpace"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_NewListSpace )                       , %thinBasic_ForceOverWrite, _
                           "TBGL_NewListSpace( firstArrayItem [, howManyLists] )", "Creates new display lists slots, while passing their IDs to given array."
 
-  thinBasic_LoadSymbolEx  "TBGL_DeleteListSpace"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_DeleteListSpace )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_DeleteListSpace( firstArrayItem [, howManyLists] )", "Deletes all display lists slots generated by TBGL_NewListSpace to given array."
+  thinBasic_LoadSymbolEx  "tbgl_deleteListSpace"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_DeleteListSpace )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_deleteListSpace( firstArrayItem [, howManyLists] )", "Deletes all display lists slots generated by TBGL_NewListSpace to given array."
 
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetSpecular"                , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetSpecular )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetSpecular( SceneID, EntityID, R, G, B )", "Sets specular color for light entity"
+  thinBasic_LoadSymbolEx  "tbgl_entitySetSpecular"                , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetSpecular )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetSpecular( SceneID, EntityID, R, G, B )", "Sets specular color for light entity"
 
 
   thinBasic_LoadSymbolEx  "TBGL_NewMaterial"                      , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_NewMaterial )                       , %thinBasic_ForceOverWrite, _
                           "TBGL_NewMaterial", "Creates new material you can set properties to."
 
-  thinBasic_LoadSymbolEx  "TBGL_DeleteMaterial"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_DeleteMaterial )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_DeleteMaterial( hMaterial )", "Deletes existing material."
+  thinBasic_LoadSymbolEx  "tbgl_deleteMaterial"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_DeleteMaterial )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_deleteMaterial( hMaterial )", "Deletes existing material."
 
   thinBasic_LoadSymbolEx  "TBGL_PushMaterial"                     , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_PushMaterial )                       , %thinBasic_ForceOverWrite, _
                           "TBGL_PushMaterial( hMaterial )", "Enables existing material for use."
@@ -1704,26 +1704,26 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
   thinBasic_LoadSymbolEx  "TBGL_SpriteSetAnimType"                , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_SpriteSetAnimType )                       , %thinBasic_ForceOverWrite, _
                           "TBGL_SpriteSetAnimType( spriteID , animType [, animGroup ] )", "Set the animation type of an animation group of sprite"
 
-  thinBasic_LoadSymbolEx  "TBGL_GetVSyncMaxFramerate"             , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetVSyncMaxFramerate )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_GetVSyncMaxFrameRate()", "Function to retrieve the maximum framerate achievable after call to TBGL_UseVSync(1)."
+  thinBasic_LoadSymbolEx  "tbgl_getVSyncMaxFramerate"             , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_GetVSyncMaxFramerate )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_getVSyncMaxFrameRate()", "Function to retrieve the maximum framerate achievable after call to TBGL_UseVSync(1)."
 
   thinBasic_LoadSymbolEx  "TBGL_SetMaterialTexture"               , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_SetMaterialTexture )                       , %thinBasic_ForceOverWrite, _
                           "TBGL_SetMaterialTexture(BYVAL material AS NUMBER, BYVAL textureIndex AS NUMBER)", "Function to assign texture ID to the material."
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityGetMatrix"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityGetMatrix )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityGetMatrix(BYVAL SceneID AS LONG, BYVAL EntityID AS LONG, BYREF Matrix() AS SINGLE)", "Function to retrieve transformation or just rotation matrix from entity."
+  thinBasic_LoadSymbolEx  "tbgl_entityGetMatrix"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntityGetMatrix )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityGetMatrix(BYVAL SceneID AS LONG, BYVAL EntityID AS LONG, BYREF Matrix() AS SINGLE)", "Function to retrieve transformation or just rotation matrix from entity."
 
-  thinBasic_LoadSymbolEx  "TBGL_EntitySetMatrix"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetMatrix )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntitySetMatrix(BYVAL SceneID AS LONG, BYVAL EntityID AS LONG, BYREF Matrix() AS SINGLE)", "Function to set transformation or just rotation matrix to entity."
+  thinBasic_LoadSymbolEx  "tbgl_entitySetMatrix"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetMatrix )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_entitySetMatrix(BYVAL SceneID AS LONG, BYVAL EntityID AS LONG, BYREF Matrix() AS SINGLE)", "Function to set transformation or just rotation matrix to entity."
 
-  thinBasic_LoadSymbolEx  "TBGL_EntityEnumByDataSignature"        , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityEnumByDataSignature )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_EntityEnumByDataSignature(BYVAL SceneID AS LONG, BYREF EntityIDs() AS LONG, BYVAL Signature AS LONG) AS LONG", "Function to pass IDs of all entities with matching data signature to array, returning their count."
+  thinBasic_LoadSymbolEx  "tbgl_entityEnumByDataSignature"        , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_EntityEnumByDataSignature )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_entityEnumByDataSignature(BYVAL SceneID AS LONG, BYREF EntityIDs() AS LONG, BYVAL Signature AS LONG) AS LONG", "Function to pass IDs of all entities with matching data signature to array, returning their count."
 
-  thinBasic_LoadSymbolEx  "TBGL_BindWindowEvent"        , %thinBasic_ReturnCodeLong                 , CODEPTR( Exec_TBGL_BindWindowEvent )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_BindWindowEvent(BYVAL hWindow AS DWORD, BYVAL eventCode AS LONG, BYVAL eventHandler AS FUNCTION) AS LONG", "Function to enable custom handling of the event"
+  thinBasic_LoadSymbolEx  "tbgl_bindWindowEvent"        , %thinBasic_ReturnCodeLong                 , CODEPTR( Exec_TBGL_BindWindowEvent )                       , %thinBasic_ForceOverWrite, _
+                          "tbgl_bindWindowEvent(BYVAL hWindow AS DWORD, BYVAL eventCode AS LONG, BYVAL eventHandler AS FUNCTION) AS LONG", "Function to enable custom handling of the event"
 
   thinBasic_LoadSymbolEx  "TBGL_UnBindWindowEvent"        , %thinBasic_ReturnCodeLong                 , CODEPTR( Exec_TBGL_UnBindWindowEvent )                       , %thinBasic_ForceOverWrite, _
-                          "TBGL_BindWindowEvent(BYVAL hWindow AS DWORD, BYVAL eventCode AS LONG) AS LONG", "Function to disable custom handling of the event"
+                          "tbgl_bindWindowEvent(BYVAL hWindow AS DWORD, BYVAL eventCode AS LONG) AS LONG", "Function to disable custom handling of the event"
 
   thinBasic_LoadSymbolEx  "TBGL_OnDropFiles_GetFileCount"        , %thinBasic_ReturnCodeLong             , CODEPTR( Exec_TBGL_OnDropFiles_GetFileCount )                       , %thinBasic_ForceOverWrite, _
                           "TBGL_OnDropFiles_GetFileCount() AS LONG", "Function to return number of files passed to window"
