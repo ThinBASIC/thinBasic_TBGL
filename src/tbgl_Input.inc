@@ -374,3 +374,72 @@ function Exec_TBGL_GetWindowAnyKeyState() as long
     next
   end if
 end function
+
+'
+
+%TBGL_KEY_PRESSED            = 1
+%TBGL_KEY_RELEASED           = 2
+%TBGL_KEY_PRESSED_FIRST_TIME = 4
+function implementation_TBGL_GetKeys(byval hWnd as dword, byref keys() as long) as long
+
+  if GetForegroundWindow <> hWnd then
+    function = 0
+    exit function
+  end if
+
+  register i as long
+  local result as long
+  local lastValue as long
+  local keyDown as long
+
+  for i = lbound(keys) to ubound(keys)
+    GetAsyncKeyState(i)
+    lastValue = keys(i)
+    keyDown = iif(GetAsyncKeyState(i) <> 0, 1, 0)
+
+    if lastValue = 0 and keyDown then
+      keys(i) = %TBGL_KEY_PRESSED_FIRST_TIME
+      result or= %TBGL_KEY_PRESSED_FIRST_TIME
+    elseif lastValue = %TBGL_KEY_RELEASED and keyDown = 0 then
+      keys(i) = 0
+    elseif lastValue <> 0 and keyDown = 0 then
+      keys(i) = %TBGL_KEY_RELEASED
+      result or= %TBGL_KEY_RELEASED
+    elseif keyDown then
+      keys(i) = %TBGL_KEY_PRESSED
+      result or= %TBGL_KEY_PRESSED
+    else
+      keys(i) = 0
+    end if
+
+  next
+
+  function = result
+
+end function
+
+function Exec_TBGL_GetKeys() as long
+  ' -- Input parsing
+  local parensPresent as long
+  if thinBasic_CheckOpenParens_Optional = %TRUE then parensPresent = %TRUE
+
+  local hWnd as ext
+  thinBasic_ParseNumber hWnd
+
+  thinBasic_CheckComma_Mandatory
+
+  local arrayCellPtr, mainType, subType, elementsAreFixed, totalElements, elementSize, variablePtrOdd, arrayCellAbsPos as long
+  thinBasic_ParseVariableInfo(arrayCellPtr, mainType, subType, elementsAreFixed, totalElements, elementSize, variablePtrOdd, arrayCellAbsPos)
+
+  if subType <> %VarSubType_Long or totalElements <> 256 then
+    tbglError "TBGL_GetKeys: Parameter 'keys' must be an array of long with 256 elements"
+  end if
+
+  ' -- Implementation
+  dim keys(1 to totalElements) as long at variablePtrOdd
+  function = implementation_TBGL_GetKeys(hWnd, keys())
+
+  ' -- Final touch in parsing
+  if parensPresent = %TRUE then thinBasic_CheckCloseParens_Mandatory
+
+end function
