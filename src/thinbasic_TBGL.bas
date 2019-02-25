@@ -653,6 +653,9 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
   thinBasic_LoadSymbolEx  "tbgl_getAsyncKeyState"                 , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetAsyncKeyState )                       , %thinBasic_ForceOverWrite, _
                           "tbgl_getAsyncKeyState( keyCode )", "Useful function for checking key status independently on actual window"
 
+  thinBasic_LoadSymbolEx  "tbgl_getKeys"                          , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetKeys )                                , %thinBasic_ForceOverWrite, _
+                          "tbgl_getKeys(hWnd, keys())", "Retrieves current state of all the keys"
+
   thinBasic_LoadSymbolEx  "tbgl_getDesktopInfo"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_GetDesktopInfo )                         , %thinBasic_ForceOverWrite, _
                           "tbgl_getDesktopInfo( variableX, variableY, variableDepth )", "Fills passed variables with desktop size and color depth"
 
@@ -2101,6 +2104,10 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
 
   thinBasic_AddEquate   "%TBGL_PIXEL_PERFECT_2D"   , "" , %TBGL_PIXEL_PERFECT_2D
   thinBasic_AddEquate   "%TBGL_OPENGL_ORTHO_2D"    , "" , %TBGL_OPENGL_ORTHO_2D
+
+  thinBasic_AddEquate   "%TBGL_KEY_PRESSED"           , "" , %TBGL_KEY_PRESSED
+  thinBasic_AddEquate   "%TBGL_KEY_RELEASED"          , "" , %TBGL_KEY_RELEASED
+  thinBasic_AddEquate   "%TBGL_KEY_PRESSED_FIRST_TIME", "" , %TBGL_KEY_PRESSED_FIRST_TIME
 
 END FUNCTION
 
