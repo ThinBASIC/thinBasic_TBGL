@@ -418,33 +418,6 @@ function implementation_TBGL_GetKeys(byval hWnd as dword, byref keys() as long) 
 
 end function
 
-function Exec_TBGL_GetKeys() as long
-  ' -- Input parsing
-  local parensPresent as long
-  if thinBasic_CheckOpenParens_Optional = %TRUE then parensPresent = %TRUE
-
-  local hWnd as ext
-  thinBasic_ParseNumber hWnd
-
-  thinBasic_CheckComma_Mandatory
-
-  local arrayCellPtr, mainType, subType, elementsAreFixed, totalElements, elementSize, variablePtrOdd, arrayCellAbsPos as long
-  thinBasic_ParseVariableInfo(arrayCellPtr, mainType, subType, elementsAreFixed, totalElements, elementSize, variablePtrOdd, arrayCellAbsPos)
-
-  if subType <> %VarSubType_Long or totalElements <> 256 then
-    tbglError "TBGL_GetKeys: Parameter 'keys' must be an array of long with 256 elements"
-  end if
-
-  ' -- Implementation
-  dim keys(1 to totalElements) as long at variablePtrOdd
-  function = implementation_TBGL_GetKeys(hWnd, keys())
-
-  ' -- Final touch in parsing
-  if parensPresent = %TRUE then thinBasic_CheckCloseParens_Mandatory
-
-end function
-
-
 function Exec_TBGL_GetKeysPressed() as long
 
   thinBasic_CheckOpenParens_Mandatory
