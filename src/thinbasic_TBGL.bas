@@ -653,6 +653,9 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
   thinBasic_LoadSymbolEx  "tbgl_getAsyncKeyState"                 , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetAsyncKeyState )                       , %thinBasic_ForceOverWrite, _
                           "tbgl_getAsyncKeyState( keyCode )", "Useful function for checking key status independently on actual window"
 
+  thinBasic_LoadSymbolEx  "tbgl_getKeysPressed"                   , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetKeysPressed )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_getKeysPressed(hWnd, keys())", "Retrieves pressed keys to passed array and returns their count"
+
   thinBasic_LoadSymbolEx  "tbgl_getDesktopInfo"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_GetDesktopInfo )                         , %thinBasic_ForceOverWrite, _
                           "tbgl_getDesktopInfo( variableX, variableY, variableDepth )", "Fills passed variables with desktop size and color depth"
 
