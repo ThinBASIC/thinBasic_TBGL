@@ -2105,10 +2105,6 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
   thinBasic_AddEquate   "%TBGL_PIXEL_PERFECT_2D"   , "" , %TBGL_PIXEL_PERFECT_2D
   thinBasic_AddEquate   "%TBGL_OPENGL_ORTHO_2D"    , "" , %TBGL_OPENGL_ORTHO_2D
 
-  thinBasic_AddEquate   "%TBGL_KEY_PRESSED"           , "" , %TBGL_KEY_PRESSED
-  thinBasic_AddEquate   "%TBGL_KEY_RELEASED"          , "" , %TBGL_KEY_RELEASED
-  thinBasic_AddEquate   "%TBGL_KEY_PRESSED_FIRST_TIME", "" , %TBGL_KEY_PRESSED_FIRST_TIME
-
 END FUNCTION
 
 '----------------------------------------------------------------------------
