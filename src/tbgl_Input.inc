@@ -443,3 +443,44 @@ function Exec_TBGL_GetKeys() as long
   if parensPresent = %TRUE then thinBasic_CheckCloseParens_Mandatory
 
 end function
+
+
+function Exec_TBGL_GetKeysPressed() as long
+
+  thinBasic_CheckOpenParens_Mandatory
+
+  local hWnd as ext
+  thinBasic_ParseNumber hWnd
+
+  thinBasic_CheckComma_Mandatory
+
+  local arrayCellPtr, mainType, subType, elementsAreFixed, totalElements, elementSize, variablePtrOdd, arrayCellAbsPos as long
+  thinBasic_ParseVariableInfo(arrayCellPtr, mainType, subType, elementsAreFixed, totalElements, elementSize, variablePtrOdd, arrayCellAbsPos)
+
+  thinBasic_CheckCloseParens_Mandatory
+
+  dim pressedKeys(1 to totalElements) as long at variablePtrOdd
+
+  dim keys(1 to 256) as long
+  dim result as long
+  result = implementation_TBGL_GetKeys(hWnd, keys())
+
+  register i as long
+
+  dim keyNow as long
+  for i = 1 to 256
+    if keys(i) = %TBGL_KEY_PRESSED_FIRST_TIME then
+      incr keyNow
+      pressedKeys(keyNow) = i
+
+      if keyNow = totalElements then exit for
+    end if
+  next
+
+  for i = keyNow+1 to totalElements
+    pressedKeys(i) = 0
+  next
+
+  function = keyNow
+
+end function

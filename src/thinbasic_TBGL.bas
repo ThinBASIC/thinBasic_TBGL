@@ -9,8 +9,8 @@
 ' -----------------------------------------------------------------------------
 #RESOURCE ICON, PROGRAM, "TBGL.ICO"
 #RESOURCE VERSIONINFO
-#RESOURCE FILEVERSION 1, 10, 7, 1
-#RESOURCE PRODUCTVERSION 1, 10, 7, 1
+#RESOURCE FILEVERSION 1, 10, 7, 0
+#RESOURCE PRODUCTVERSION 1, 10, 7, 0
 
 #RESOURCE STRINGINFO "0409", "04B0"
 
@@ -655,6 +655,9 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
 
   thinBasic_LoadSymbolEx  "tbgl_getKeys"                          , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetKeys )                                , %thinBasic_ForceOverWrite, _
                           "tbgl_getKeys(hWnd, keys())", "Retrieves current state of all the keys"
+
+  thinBasic_LoadSymbolEx  "tbgl_getKeysPressed"                   , %thinBasic_ReturnCodeLong               , CODEPTR( Exec_TBGL_GetKeysPressed )                         , %thinBasic_ForceOverWrite, _
+                          "tbgl_getKeysPressed(hWnd, keys())", "Retrieves pressed keys to passed array and returns their count"
 
   thinBasic_LoadSymbolEx  "tbgl_getDesktopInfo"                   , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_GetDesktopInfo )                         , %thinBasic_ForceOverWrite, _
                           "tbgl_getDesktopInfo( variableX, variableY, variableDepth )", "Fills passed variables with desktop size and color depth"
