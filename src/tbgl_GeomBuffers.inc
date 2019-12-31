@@ -301,6 +301,12 @@ FUNCTION Exec_TBGL_GBufferDefineFromArray() AS LONG
         ' -- VERTEX
         IF thinBasic_CheckComma( ) AND thinBasic_ErrorFree THEN
           thinBasic_ParseVariableInfo(lArrayCellPtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, VariablePtrOdd, lArrayCellAbsPos)
+
+          if eItems > TotElements then
+              ReportError "tbgl_gBufferDefineFromArray, VertexArray() parameter", _
+                          "Passed number of items ("+format$(eItems)+") is higher than number of items in passed array ("+format$(TotElements)+")"
+          end if
+
           VariablePtrOdd = VariablePtrOdd + (lArrayCellAbsPos-1)*ElementSize
           IF gBuffer(0).gKind = %TBGL_DYNAMIC THEN
             gBuffer(0).vertexInfo.pData = VariablePtrOdd
@@ -312,6 +318,12 @@ FUNCTION Exec_TBGL_GBufferDefineFromArray() AS LONG
           ' -- COLOR
           IF thinBasic_CheckComma_Optional( ) AND thinBasic_ErrorFree THEN
             thinBasic_ParseVariableInfo(lArrayCellPtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, VariablePtrOdd, lArrayCellAbsPos)
+
+            if eItems > TotElements then
+                ReportError "tbgl_gBufferDefineFromArray, ColorArray() parameter", _
+                            "Passed number of items ("+format$(eItems)+") is higher than number of items in passed array ("+format$(TotElements)+")"
+            end if
+
             VariablePtrOdd = VariablePtrOdd + (lArrayCellAbsPos-1)*ElementSize
             IF gBuffer(0).gKind = %TBGL_DYNAMIC THEN
               gBuffer(0).colorInfo.pData       = VariablePtrOdd
@@ -324,6 +336,12 @@ FUNCTION Exec_TBGL_GBufferDefineFromArray() AS LONG
             ' -- NORMAL
             IF thinBasic_CheckComma_Optional( ) AND thinBasic_ErrorFree THEN
               thinBasic_ParseVariableInfo(lArrayCellPtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, VariablePtrOdd, lArrayCellAbsPos)
+
+              if eItems > TotElements then
+                  ReportError "tbgl_gBufferDefineFromArray, NormalArray() parameter", _
+                              "Passed number of items ("+format$(eItems)+") is higher than number of items in passed array ("+format$(TotElements)+")"
+              end if
+
               VariablePtrOdd = VariablePtrOdd + (lArrayCellAbsPos-1)*ElementSize
               IF gBuffer(0).gKind = %TBGL_DYNAMIC THEN
                 gBuffer(0).normalInfo.pData = VariablePtrOdd
@@ -336,6 +354,12 @@ FUNCTION Exec_TBGL_GBufferDefineFromArray() AS LONG
               FOR i = 1 TO 4
                 IF thinBasic_CheckComma_Optional( ) AND thinBasic_ErrorFree THEN
                   thinBasic_ParseVariableInfo(lArrayCellPtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, VariablePtrOdd, lArrayCellAbsPos)
+
+                  if eItems > TotElements then
+                      ReportError "tbgl_gBufferDefineFromArray, TexCoordArray() parameter", _
+                                  "Passed number of items ("+format$(eItems)+") is higher than number of items in passed array ("+format$(TotElements)+")"
+                  end if
+
                   VariablePtrOdd = VariablePtrOdd + (lArrayCellAbsPos-1)*ElementSize
                   IF gBuffer(0).gKind = %TBGL_DYNAMIC THEN
                     gBuffer(0).coordInfo(i).pData = VariablePtrOdd

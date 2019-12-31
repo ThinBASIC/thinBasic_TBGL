@@ -66,6 +66,13 @@ FUNCTION TBGLError ( mtext AS STRING ) AS LONG
 
 END FUNCTION
 
+sub ReportError(errorContext as string, description as string)
+  dim errorMessage as string
+  errorMessage = "Context:" + $TAB + errorContext + $CRLF + "Problem:" + $TAB + description
+
+  TBGLError(errorMessage)
+end sub
+
 ' -- Returns last error in OpenGL
 FUNCTION Exec_TBGL_GetLastGLError ( ) AS STRING
 
