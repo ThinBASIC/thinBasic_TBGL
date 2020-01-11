@@ -193,7 +193,10 @@ sub Exec_TBGL_RenderMatrix2D( )
   glMatrixMode( %GL_PROJECTION )
 
   glLoadIdentity( )
-  glOrtho(minx-g_renderMatrix2d.pixelOffsetX, maxx-g_renderMatrix2d.pixelOffsetX, miny-g_renderMatrix2d.pixelOffsetY, maxy-g_renderMatrix2d.pixelOffsetY, 0, 1)
+
+  ' [!] The nearVal, farVal combo of -1, 1 is essential for Sprite functionality
+  glOrtho(minx-g_renderMatrix2d.pixelOffsetX, maxx-g_renderMatrix2d.pixelOffsetX, miny-g_renderMatrix2d.pixelOffsetY, maxy-g_renderMatrix2d.pixelOffsetY, -1, 1)
+
   glMatrixMode( %GL_MODELVIEW )
 
   g_Win.RenderMatrixMode = %TBGL_2D
