@@ -13,6 +13,7 @@
 TYPE TBGL_tDataDescriptor
   pData         AS DWORD
   nComponents   AS LONG
+  componentType AS LONG
 END TYPE
 
 TYPE TBGL_tGBuffer
@@ -50,6 +51,19 @@ TYPE TBGL_tRGBA
   G AS BYTE
   B AS BYTE
   A AS BYTE
+END TYPE
+
+TYPE TBGL_tRGB_f32
+  R AS SINGLE
+  G AS SINGLE
+  B AS SINGLE
+END TYPE
+
+TYPE TBGL_tRGBA_f32
+  R AS SINGLE
+  G AS SINGLE
+  B AS SINGLE
+  A AS SINGLE
 END TYPE
 
 %TBGL_Dynamic = 1
@@ -175,6 +189,23 @@ SUB declare_GBuffers()
   "END TYPE" _
   )
 
+  thinBasic_AddUDT( _
+  "TYPE TBGL_tRGB_f32"+$CRLF+ _
+  "  R AS SINGLE"+$CRLF+ _
+  "  G AS SINGLE"+$CRLF+ _
+  "  B AS SINGLE"+$CRLF+ _
+  "END TYPE" _
+  )
+
+  thinBasic_AddUDT( _
+  "TYPE TBGL_tRGBA_f32"+$CRLF+ _
+  "  R AS SINGLE"+$CRLF+ _
+  "  G AS SINGLE"+$CRLF+ _
+  "  B AS SINGLE"+$CRLF+ _
+  "  A AS SINGLE"+$CRLF+ _
+  "END TYPE" _
+  )
+
   ' -----
 
   thinBasic_LoadSymbolEx  "TBGL_GBufferCreate"               , %thinBasic_ReturnCodeLong             , CODEPTR( Exec_TBGL_GBufferCreate )                       , %thinBasic_ForceOverWrite, _
@@ -234,26 +265,33 @@ FUNCTION Exec_TBGL_GBufferCreate() AS LONG
 
   gBuffer(0).items        = 0 ' -- Filled once data are passed
 
-  gBuffer(0).vertexInfo.pData       = 0
-  gBuffer(0).vertexInfo.nComponents = IIF(eDims = %TBGL_2D, 2, 3)
+  gBuffer(0).vertexInfo.pData           = 0
+  gBuffer(0).vertexInfo.nComponents     = IIF(eDims = %TBGL_2D, 2, 3)
+  gBuffer(0).vertexInfo.componentType   = %GL_FLOAT
 
-  gBuffer(0).colorInfo.pData        = 0
-  gBuffer(0).colorInfo.nComponents  = 0 ' -- To be determined on assignment
+  gBuffer(0).colorInfo.pData            = 0
+  gBuffer(0).colorInfo.nComponents      = 0 ' -- To be determined on assignment
+  gBuffer(0).colorInfo.componentType    = 0 ' -- To be determined on assignment
 
-  gBuffer(0).normalInfo.pData       = 0
-  gBuffer(0).normalInfo.nComponents = 3 ' Always
+  gBuffer(0).normalInfo.pData           = 0
+  gBuffer(0).normalInfo.nComponents     = 3 ' Always
+  gBuffer(0).normalInfo.componentType   = %GL_FLOAT
 
-  gBuffer(0).coordInfo(1).pData       = 0
-  gBuffer(0).coordInfo(1).nComponents = 2 ' Always
+  gBuffer(0).coordInfo(1).pData         = 0
+  gBuffer(0).coordInfo(1).nComponents   = 2 ' Always
+  gBuffer(0).coordInfo(1).componentType = %GL_FLOAT
 
-  gBuffer(0).coordInfo(2).pData       = 0
-  gBuffer(0).coordInfo(2).nComponents = 2 ' Always
+  gBuffer(0).coordInfo(2).pData         = 0
+  gBuffer(0).coordInfo(2).nComponents   = 2 ' Always
+  gBuffer(0).coordInfo(2).componentType = %GL_FLOAT
 
-  gBuffer(0).coordInfo(3).pData       = 0
-  gBuffer(0).coordInfo(3).nComponents = 2 ' Always
+  gBuffer(0).coordInfo(3).pData         = 0
+  gBuffer(0).coordInfo(3).nComponents   = 2 ' Always
+  gBuffer(0).coordInfo(3).componentType = %GL_FLOAT
 
-  gBuffer(0).coordInfo(4).pData       = 0
-  gBuffer(0).coordInfo(4).nComponents = 2 ' Always
+  gBuffer(0).coordInfo(4).pData         = 0
+  gBuffer(0).coordInfo(4).nComponents   = 2 ' Always
+  gBuffer(0).coordInfo(4).componentType = %GL_FLOAT
 
   FUNCTION = gbHandle
 
@@ -331,7 +369,24 @@ FUNCTION Exec_TBGL_GBufferDefineFromArray() AS LONG
               gBuffer(0).colorInfo.pData = Mem_Alloc(eItems*ElementSize)
               Mem_Copy(VariablePtrOdd, gBuffer(0).colorInfo.pData, eItems*ElementSize)
             END IF
-            gBuffer(0).colorInfo.nComponents = ElementSize    ' 3 OR 4
+
+            select case as long ElementSize
+              case sizeOf(TBGL_tRGB)
+                gBuffer(0).colorInfo.nComponents   = 3
+                gBuffer(0).colorInfo.componentType = %GL_UNSIGNED_BYTE
+
+              case sizeOf(TBGL_tRGBA)
+                gBuffer(0).colorInfo.nComponents   = 4
+                gBuffer(0).colorInfo.componentType = %GL_UNSIGNED_BYTE
+
+              case sizeOf(TBGL_tRGB_f32)
+                gBuffer(0).colorInfo.nComponents   = 3
+                gBuffer(0).colorInfo.componentType = %GL_FLOAT
+
+              case sizeOf(TBGL_tRGBA_f32)
+                gBuffer(0).colorInfo.nComponents   = 4
+                gBuffer(0).colorInfo.componentType = %GL_FLOAT
+            end select
 
             ' -- NORMAL
             IF thinBasic_CheckComma_Optional( ) AND thinBasic_ErrorFree THEN
@@ -397,22 +452,22 @@ FUNCTION Exec_TBGL_GBufferRender() AS LONG
   ' -- Bind the data
   IF gBuffer(0).normalInfo.pData THEN
     glEnableClientState(%GL_NORMAL_ARRAY)
-    glNormalPointer  (%GL_FLOAT, 0, BYVAL gBuffer(0).normalInfo.pData)
+    glNormalPointer  (gBuffer(0).normalInfo.componentType, 0, BYVAL gBuffer(0).normalInfo.pData)
   END IF
 
   IF gBuffer(0).colorInfo.pData THEN
     glEnableClientState(%GL_COLOR_ARRAY)
-    glColorPointer(gBuffer(0).colorInfo.nComponents, %GL_UNSIGNED_BYTE, 0, BYVAL gBuffer(0).colorInfo.pData)
+    glColorPointer(gBuffer(0).colorInfo.nComponents, gBuffer(0).colorInfo.componentType, 0, BYVAL gBuffer(0).colorInfo.pData)
   END IF
 
   IF gBuffer(0).coordInfo(1).pData THEN
     glEnableClientState(%GL_TEXTURE_COORD_ARRAY)
-    glTexCoordPointer(gBuffer(0).coordInfo(1).nComponents, %GL_FLOAT, 0, BYVAL gBuffer(0).coordInfo(1).pData)
+    glTexCoordPointer(gBuffer(0).coordInfo(1).nComponents, gBuffer(0).coordInfo(1).componentType, 0, BYVAL gBuffer(0).coordInfo(1).pData)
   END IF
 
   IF gBuffer(0).vertexInfo.pData THEN
     glEnableClientState(%GL_VERTEX_ARRAY)
-    glVertexPointer(gBuffer(0).vertexInfo.nComponents, %GL_FLOAT, 0, BYVAL gBuffer(0).vertexInfo.pData)
+    glVertexPointer(gBuffer(0).vertexInfo.nComponents, gBuffer(0).vertexInfo.componentType, 0, BYVAL gBuffer(0).vertexInfo.pData)
   END IF
 
   ' -- Render it
