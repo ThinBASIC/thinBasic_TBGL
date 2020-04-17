@@ -3,3 +3,9 @@
 
 *.inc linguist-language=PowerBASIC
 *.bas linguist-language=PowerBASIC
+
+*.tbasic eol=crlf
+*.tbasicu eol=crlf
+
+*.tbasic text diff
+*.tbasicu text diff
