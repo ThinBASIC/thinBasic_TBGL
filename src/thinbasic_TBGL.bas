@@ -9,19 +9,19 @@
 ' -----------------------------------------------------------------------------
 #RESOURCE ICON, PROGRAM, "TBGL.ICO"
 #RESOURCE VERSIONINFO
-#RESOURCE FILEVERSION 1, 11, 2, 3
-#RESOURCE PRODUCTVERSION 1, 11, 2, 3
+#RESOURCE FILEVERSION 1, 11, 6, 1
+#RESOURCE PRODUCTVERSION 1, 11, 6, 1
 
 #RESOURCE STRINGINFO "0409", "04B0"
 
 #RESOURCE VERSION$ "CompanyName",      "thinBasic"
 #RESOURCE VERSION$ "FileDescription",  "thinBASIC module for 2D/3D graphics"
-#RESOURCE VERSION$ "FileVersion",      "1.11.2.3"
+#RESOURCE VERSION$ "FileVersion",      "1.11.6.1"
 #RESOURCE VERSION$ "InternalName",     "TBGL"
 #RESOURCE VERSION$ "OriginalFilename", "ThinBASIC_TBGL.dll"
 #RESOURCE VERSION$ "LegalCopyright",   "Copyright © thinBasic 2020"
 #RESOURCE VERSION$ "ProductName",      "TBGL"
-#RESOURCE VERSION$ "ProductVersion",   "1.11.2.3"
+#RESOURCE VERSION$ "ProductVersion",   "1.11.6.1"
 #RESOURCE VERSION$ "Comments",         "Support site: http://www.thinbasic.com/"
 
 ' -----------------------------------------------------------------------------
@@ -449,7 +449,7 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
                           "tbgl_colorAlpha( R, G, B, Alpha )", "Sets default color and alpha value for vertexes, objects ..."
 
   thinBasic_LoadSymbolEx  "tbgl_createWindow"                     , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_CreateWindow )                           , %thinBasic_ForceOverWrite, _
-                          "tbgl_createWindow|TBGL_CreateWindow( Caption )|TBGL_CreateWindow( Caption, XResolution, YResolution, BitDepth )", "Creates TBGL window, OBSOLETE"
+                          "tbgl_createWindow\ntbgl_createWindow( Caption )\ntbgl_createWindow( Caption, XResolution, YResolution, BitDepth )", "Creates TBGL window, OBSOLETE"
 
   thinBasic_LoadSymbolEx  "tbgl_createWindowEx"                   , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_CreateWindowEx )                         , %thinBasic_ForceOverWrite, _
                           "tbgl_createWindowEx( Caption, XResolution, YResolution, BitDepth, windowFlags [, xPos , yPos ] )", "Creates TBGL window, it should be first TBGL command you use"
@@ -605,7 +605,7 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
                           "tbgl_entityGetScale( SceneID, EntityID, varX, varY, varZ )", "Retrieves entity scale to passed variables"
 
   thinBasic_LoadSymbolEx  "tbgl_entitySetTarget"                  , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetTarget )                        , %thinBasic_ForceOverWrite, _
-                          "tbgl_entitySetTarget( SceneID, EntityID, EntityToLookAt )|TBGL_EntitySetTarget( SceneID, EntityIDFrom, EntityIDTo, EntityToLookAt )", "Makes one or more entities to look at other entity"
+                          "tbgl_entitySetTarget( SceneID, EntityID, EntityToLookAt )\ntbgl_entitySetTarget( SceneID, EntityIDFrom, EntityIDTo, EntityToLookAt )", "Makes one or more entities to look at other entity"
 
   thinBasic_LoadSymbolEx  "tbgl_entitySetTargetPos"               , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_EntitySetTargetPos )                     , %thinBasic_ForceOverWrite, _
                           "tbgl_entitySetTargetPos( SceneID, EntityID, X, Y, Z )", "Makes entity look at specific position"
@@ -1150,55 +1150,55 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
                           "tbgl_m15SetModelVertexcount( ModelID, Value )", "Overrides information about number of vertices"
 
   thinBasic_LoadSymbolEx  "tbgl_m15SetVertexB"                    , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexB )                          , %thinBasic_ForceOverWrite, _
-                          "tbgl_m15SetVertexB( ModelID, VertexIndex, b)|TBGL_m15SetVertexB( ModelID, IndexFrom, IndexTo, b)", "Statement to set Blue color component of model vertex."
+                          "tbgl_m15SetVertexB( ModelID, VertexIndex, b)\ntbgl_m15SetVertexB( ModelID, IndexFrom, IndexTo, b)", "Statement to set Blue color component of model vertex."
 
   thinBasic_LoadSymbolEx  "tbgl_m15SetVertexG"                    , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexG )                          , %thinBasic_ForceOverWrite, _
-                          "tbgl_m15SetVertexG( ModelID, VertexIndex, g)|TBGL_m15SetVertexG( ModelID, IndexFrom, IndexTo, g)", "Statement to set Green color component of model vertex."
+                          "tbgl_m15SetVertexG( ModelID, VertexIndex, g)\ntbgl_m15SetVertexG( ModelID, IndexFrom, IndexTo, g)", "Statement to set Green color component of model vertex."
 
   thinBasic_LoadSymbolEx  "tbgl_m15SetVertexLayer"                , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexLayer )                      , %thinBasic_ForceOverWrite, _
-                          "tbgl_m15SetVertexLayer( ModelID, VertexIndex, layer)|TBGL_m15SetVertexLayer( ModelID, IndexFrom, IndexTo, layer)", "Statement to set layer number to vertex."
+                          "tbgl_m15SetVertexLayer( ModelID, VertexIndex, layer)\ntbgl_m15SetVertexLayer( ModelID, IndexFrom, IndexTo, layer)", "Statement to set layer number to vertex."
 
   thinBasic_LoadSymbolEx  "tbgl_m15SetVertexPStop"                , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexPStop )                      , %thinBasic_ForceOverWrite, _
-                          "tbgl_m15SetVertexPStop( ModelID, VertexIndex, pStop)|TBGL_m15SetVertexPStop( ModelID, IndexFrom, IndexTo, pStop)", "Statement to set flag for end of model polygon."
+                          "tbgl_m15SetVertexPStop( ModelID, VertexIndex, pStop)\ntbgl_m15SetVertexPStop( ModelID, IndexFrom, IndexTo, pStop)", "Statement to set flag for end of model polygon."
 
   thinBasic_LoadSymbolEx  "tbgl_m15SetVertexParam"                , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexParam )                      , %thinBasic_ForceOverWrite, _
                           "tbgl_m15SetVertexParam( ModelID, VertexIndex, Parameter, NewValue )", "This statement allows you to modify model parameters on the fly"
 
   thinBasic_LoadSymbolEx  "tbgl_m15SetVertexR"                    , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexR )                          , %thinBasic_ForceOverWrite, _
-                          "tbgl_m15SetVertexR( ModelID, VertexIndex, r)|TBGL_m15SetVertexR( ModelID, IndexFrom, IndexTo, r)", "Statement to set Red color component of model vertex."
+                          "tbgl_m15SetVertexR( ModelID, VertexIndex, r)\ntbgl_m15SetVertexR( ModelID, IndexFrom, IndexTo, r)", "Statement to set Red color component of model vertex."
 
   thinBasic_LoadSymbolEx  "tbgl_m15SetVertexRGB"                  , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexRGB )                        , %thinBasic_ForceOverWrite, _
-                          "tbgl_m15SetVertexRGB( ModelID, VertexIndex, R, G, B )|TBGL_m15SetVertexRGB( ModelID, IndexFrom, IndexTo, R, G, B )", "Statement to set R, G and B color component to specified vertex ( vertices )"
+                          "tbgl_m15SetVertexRGB( ModelID, VertexIndex, R, G, B )\ntbgl_m15SetVertexRGB( ModelID, IndexFrom, IndexTo, R, G, B )", "Statement to set R, G and B color component to specified vertex ( vertices )"
 
   thinBasic_LoadSymbolEx  "tbgl_m15SetVertexRGB"                  , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexRGB )                        , %thinBasic_ForceOverWrite, _
-                          "tbgl_m15SetVertexRGB( ModelID, VertexIndex, R, G, B )|TBGL_m15SetVertexRGB( ModelID, IndexFrom, IndexTo, R, G, B )", "Statement to set R, G and B color component to specified vertex ( vertices )"
+                          "tbgl_m15SetVertexRGB( ModelID, VertexIndex, R, G, B )\ntbgl_m15SetVertexRGB( ModelID, IndexFrom, IndexTo, R, G, B )", "Statement to set R, G and B color component to specified vertex ( vertices )"
 
   thinBasic_LoadSymbolEx  "tbgl_m15SetVertexTexN"                 , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexTexN )                       , %thinBasic_ForceOverWrite, _
-                          "tbgl_m15SetVertexTexN( ModelID, VertexIndex, texN)|TBGL_m15SetVertexTexN( ModelID, IndexFrom, IndexTo, texN)", "Statement to set texture index of model vertex."
+                          "tbgl_m15SetVertexTexN( ModelID, VertexIndex, texN)\ntbgl_m15SetVertexTexN( ModelID, IndexFrom, IndexTo, texN)", "Statement to set texture index of model vertex."
 
   thinBasic_LoadSymbolEx  "tbgl_m15SetVertexTexX"                 , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexTexX )                       , %thinBasic_ForceOverWrite, _
-                          "tbgl_m15SetVertexTexX( ModelID, VertexIndex, texX)|TBGL_m15SetVertexTexX( ModelID, IndexFrom, IndexTo, texX)", "Statement to set texture X cooridinate ( also known as U ) of model vertex."
+                          "tbgl_m15SetVertexTexX( ModelID, VertexIndex, texX)\ntbgl_m15SetVertexTexX( ModelID, IndexFrom, IndexTo, texX)", "Statement to set texture X cooridinate ( also known as U ) of model vertex."
 
   thinBasic_LoadSymbolEx  "tbgl_m15SetVertexTexXY"                , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexTexXY )                      , %thinBasic_ForceOverWrite, _
-                          "tbgl_m15SetVertexTexXY( ModelID, VertexIndex, x, y )|TBGL_m15SetVertexTexXY( ModelID, IndexFrom, IndexTo, x, y )", "Statement to set X, Y ( also known as U, V ) coordinates for texturing."
+                          "tbgl_m15SetVertexTexXY( ModelID, VertexIndex, x, y )\ntbgl_m15SetVertexTexXY( ModelID, IndexFrom, IndexTo, x, y )", "Statement to set X, Y ( also known as U, V ) coordinates for texturing."
 
   thinBasic_LoadSymbolEx  "tbgl_m15SetVertexTexY"                 , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexTexY )                       , %thinBasic_ForceOverWrite, _
-                          "tbgl_m15SetVertexTexY( ModelID, VertexIndex, texY)|TBGL_m15SetVertexTexY( ModelID, IndexFrom, IndexTo, texY)", "Statement to set texture Y cooridinate ( also known as V ) of model vertex."
+                          "tbgl_m15SetVertexTexY( ModelID, VertexIndex, texY)\ntbgl_m15SetVertexTexY( ModelID, IndexFrom, IndexTo, texY)", "Statement to set texture Y cooridinate ( also known as V ) of model vertex."
 
   thinBasic_LoadSymbolEx  "tbgl_m15SetVertexX"                    , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexX )                          , %thinBasic_ForceOverWrite, _
-                          "tbgl_m15SetVertexX( ModelID, VertexIndex, x)|TBGL_m15SetVertexX( ModelID, IndexFrom, IndexTo, x)", "Statement to set X coordinate of model vertex."
+                          "tbgl_m15SetVertexX( ModelID, VertexIndex, x)\ntbgl_m15SetVertexX( ModelID, IndexFrom, IndexTo, x)", "Statement to set X coordinate of model vertex."
 
   thinBasic_LoadSymbolEx  "tbgl_m15SetVertexXYZ"                  , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexXYZ )                        , %thinBasic_ForceOverWrite, _
-                          "tbgl_m15SetVertexXYZ( ModelID, VertexIndex, x, y, z )|TBGL_m15SetVertexXYZ( ModelID, IndexFrom, IndexTo, x, y, z )", "Statement to set X, Y and Z coordinates to specified vertex ( vertices )"
+                          "tbgl_m15SetVertexXYZ( ModelID, VertexIndex, x, y, z )\ntbgl_m15SetVertexXYZ( ModelID, IndexFrom, IndexTo, x, y, z )", "Statement to set X, Y and Z coordinates to specified vertex ( vertices )"
 
   thinBasic_LoadSymbolEx  "tbgl_m15SetVertexXYZ"                  , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexXYZ )                        , %thinBasic_ForceOverWrite, _
-                          "tbgl_m15SetVertexXYZ( ModelID, VertexIndex, x, y, z )|TBGL_m15SetVertexXYZ( ModelID, IndexFrom, IndexTo, x, y, z )", "Statement to set X, Y and Z coordinates to specified vertex ( vertices )"
+                          "tbgl_m15SetVertexXYZ( ModelID, VertexIndex, x, y, z )\ntbgl_m15SetVertexXYZ( ModelID, IndexFrom, IndexTo, x, y, z )", "Statement to set X, Y and Z coordinates to specified vertex ( vertices )"
 
   thinBasic_LoadSymbolEx  "tbgl_m15SetVertexY"                    , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexY )                          , %thinBasic_ForceOverWrite, _
-                          "tbgl_m15SetVertexY( ModelID, VertexIndex, y)|TBGL_m15SetVertexY( ModelID, IndexFrom, IndexTo, y)", "Statement to set Y coordinate of model vertex."
+                          "tbgl_m15SetVertexY( ModelID, VertexIndex, y)\ntbgl_m15SetVertexY( ModelID, IndexFrom, IndexTo, y)", "Statement to set Y coordinate of model vertex."
 
   thinBasic_LoadSymbolEx  "tbgl_m15SetVertexZ"                    , %thinBasic_ReturnNone                   , CODEPTR( EXEC_TBGL_m15SetVertexZ )                          , %thinBasic_ForceOverWrite, _
-                          "tbgl_m15SetVertexZ( ModelID, VertexIndex, z)|TBGL_m15SetVertexZ( ModelID, IndexFrom, IndexTo, z)", "Statement to set Z coordinate of model vertex."
+                          "tbgl_m15SetVertexZ( ModelID, VertexIndex, z)\ntbgl_m15SetVertexZ( ModelID, IndexFrom, IndexTo, z)", "Statement to set Z coordinate of model vertex."
 
   thinBasic_LoadSymbolEx  "tbgl_oglDeviceContext"              , %thinBasic_ReturnNumber                 , CODEPTR( Exec_TBGL_oglDeviceContext )                    , %thinBasic_ForceOverWrite, _
                           "tbgl_oglDeviceContext()", "Function to return device context used by TBGL"
@@ -1222,10 +1222,10 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
                           "tbgl_oglVersion( Major, Minor )", "Function to determine OpenGL version supported in driver"
 
   thinBasic_LoadSymbolEx  "tbgl_rect"                             , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_Rect )                                 , %thinBasic_ForceOverWrite, _
-                          "tbgl_rect( x1, y1, x2, y2 )|TBGL_Rect( x1, y1, z1, x2, y2, z2 )", "Draw a rectangle defined by 2 points."
+                          "tbgl_rect( x1, y1, x2, y2 )\ntbgl_rect( x1, y1, z1, x2, y2, z2 )", "Draw a rectangle defined by 2 points."
 
   thinBasic_LoadSymbolEx  "tbgl_line"                             , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_Line )                                 , %thinBasic_ForceOverWrite, _
-                          "tbgl_line( x1, y1, x2, y2 )|TBGL_Line( x1, y1, z1, x2, y2, z2 )", "Draws a line defined by 2 points."
+                          "tbgl_line( x1, y1, x2, y2 )\ntbgl_line( x1, y1, z1, x2, y2, z2 )", "Draws a line defined by 2 points."
 
   thinBasic_LoadSymbolEx  "tbgl_point"                            , %thinBasic_ReturnNone                   , CODEPTR( Exec_TBGL_Point )                                , %thinBasic_ForceOverWrite, _
                           "tbgl_point( xPos, yPos [, zPos ] )", "Draws a point."

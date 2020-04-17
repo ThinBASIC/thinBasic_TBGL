@@ -1,0 +1,150 @@
+﻿'
+' Script to generate calltips data for thinAir
+' Output file should be placed to thinBasic\thinAir\Syntax\thinBasic
+'
+
+uses "console", "file", "dt"
+
+$SOURCE = "..\src\"
+$OUTPUT = app_sourcePath + "thinBasic_CallTips_Module_TBGL.xml"
+
+function tbMain()
+  string incFiles()
+  int32 incFileCount = DIR_ListArray(incFiles, $SOURCE, "*.inc")
+
+  string callTips = GetCalltipsForFile($SOURCE + "thinBasic_TBGL.bas")
+
+  for i as int32 = 1 to incFileCount
+    callTips += GetCalltipsForFile($SOURCE + incFiles(i))
+  next
+
+  callTips = getCalltipsHeader() + callTips + getCalltipsFooter()
+  callTips = trim$(callTips, $CRLF)
+
+  file_save($OUTPUT, callTips)
+end function
+
+function getCalltipsForFile(fileName as string) as string
+  string content = file_load(fileName)
+
+  string lines()
+  int32 i
+
+  parse(content, lines, $CRLF)
+
+  string keyName, syntax, description
+
+  dim template as string = $TAB(3)+"<Key name = ""$KEYNAME"">" + $CRLF +
+                           $TAB(4)+"<Syntax>$SYNTAX</Syntax>" + $CRLF +
+                           $TAB(4)+"<Description>$DESCRIPTION</Description>" + $CRLF + 
+                           $TAB(3)+"</Key>"
+
+  string output = ""
+  string record
+  
+  int32 descriptionLine
+  int32 syntaxLine
+  for i = 1 to CountOf(lines)
+    lines(i) = trim$(lines(i))
+    
+    if StartsWith(lines(i), "thinBasic_LoadSymbolEx") then
+      keyName = grab$(lines(i), """", """")
+      
+      syntaxLine = i+1
+      
+      syntax = grab$(lines(syntaxLine), """", """", 1)
+      if instr(lines(syntaxLine), """+_") then ' Continued on next line?
+        syntaxLine += 1
+        syntax += grab$(lines(syntaxLine), """", """", 1)
+      end if
+      
+      descriptionLine = syntaxLine
+      if instr(lines(syntaxLine), ", _") then
+        descriptionLine += 1 
+        description = grab$(lines(descriptionLine), """", """", 1)
+      else
+        description = grab$(lines(descriptionLine), """", """", 3)
+      end if
+      
+      printl keyName
+      
+      record = template
+      record = replace$(record, "$KEYNAME", keyName)
+      record = replace$(record, "$DESCRIPTION", description)
+      record = replace$(record, "$SYNTAX", syntax)
+      output += record + $CRLF(2)
+    end if
+
+  next
+  
+  return output
+  
+end function
+
+function getCalltipsHeader() as String
+	dim header as string = "
+  <?xml version="1.0" encoding="utf-8"?>
+  $TAB<!--
+  $TAB$TABCopyright (c) Eros Olmi
+
+  $TAB$TABPermission is hereby granted, free of charge, to any person obtaining a copy
+  $TAB$TABof this software and associated documentation files (the "Software"), to deal
+  $TAB$TABin the Software without restriction, including without limitation the rights
+  $TAB$TABto use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  $TAB$TABcopies of the Software, and to permit persons to whom the Software is
+  $TAB$TABfurnished to do so, subject to the following conditions:
+
+  $TAB$TABThe above copyright notice and this permission notice shall be included in all
+  $TAB$TABcopies or substantial portions of the Software.
+
+  $TAB$TABTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  $TAB$TABIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  $TAB$TABFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  $TAB$TABAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  $TAB$TABLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  $TAB$TABOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  $TAB$TABSOFTWARE.
+  $TAB-->
+
+  $TAB<!-- 
+  $TAB$TABIMPORTANT: Never change this file! It will be replaced at every thinBasic update
+  $TAB--> 
+
+  <ThinAirCallTips version = "1" parent = "">
+  $TAB<Info>
+  $TAB$TAB<!-- Version of souce code example --> 
+  $TAB$TAB<Version>1.0</Version>
+
+  $TAB$TAB<!-- Last update date --> 
+  $TAB$TAB<UpdateDate>{TODAYSDATE}</UpdateDate>
+  $TAB$TAB<!-- Author information --> 
+  $TAB$TAB<Author_Name>Petr Schreiber</Author_Name>
+  $TAB$TAB<Author_eMail>petr.schreiber@thinbasic.com</Author_eMail>
+  $TAB$TAB<Author_WebSite>https://www.thinbasic.com</Author_WebSite>
+  $TAB</Info>
+
+  $TAB<CallTips>
+
+  $TAB$TAB<Module name = "TBGL">
+  "
+
+	
+  dim today as new CDATETIME
+  today.Today
+  
+  header = replace$(header, "{TODAYSDATE}", format$(today.year)+ "/" + format$(today.month, "00")+ "/" + format$(today.day, "00"))
+  header = replace$(header, "$TAB", $TAB)
+  return header
+End Function
+
+function getCalltipsFooter() as string
+  dim footer as string = "
+  $TAB$TAB</Module>
+
+  $TAB</CallTips>
+
+  </ThinAirCallTips>
+  "
+  footer = replace$(footer, "$TAB", $TAB)
+  return footer
+end function
