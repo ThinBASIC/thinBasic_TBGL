@@ -78,6 +78,7 @@ END SUB
 SUB Exec_TBGL_DrawFrame( )
 
   wglSwapBuffers( g_Win.hDC )
+  dialog doevents
 
 END SUB
 
