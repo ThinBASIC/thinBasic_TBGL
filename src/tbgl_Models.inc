@@ -13,6 +13,7 @@
 
   TYPE tM15Data
     vertexCount   AS LONG
+    isTextured    as long
     ' -- isTriangles, isQuads ...
   END TYPE
 
@@ -278,6 +279,8 @@ FUNCTION Exec_TBGL_m15LoadModel() AS LONG
               CASE "TEXLIST"
                   ' -- Loading textures
                   texList = MID$(fSRCLine(i), INSTR(fSRCLine(i), ",")+1, LEN(fSRCLine(i)))
+
+                  m15ModelData(Model).isTextured = %TRUE
 
                   FOR j = 1 TO PARSECOUNT(texList, ",")
                     TextureToLoad = PARSE$(texList, ",", j)
@@ -553,6 +556,7 @@ SUB Exec_TBGL_m15SetVertexParam()
       m15ModelBuffer_Overlay(i).PStop = value
     CASE %TBGL_M15TEXN
       m15ModelBuffer_Overlay(i).TexN = value
+      m15ModelData(Model).isTextured = m15ModelBuffer_Overlay(i).TexN > 0
     CASE %TBGL_M15TEXX
       m15ModelBuffer_Overlay(i).TexXY(0) = value
     CASE %TBGL_M15TEXY
@@ -1008,10 +1012,11 @@ SUB Exec_TBGL_m15SetVertexTexN()
   ELSEIF nFound = 4 THEN
     FOR i = index TO Num1
       m15ModelBuffer_Overlay(i).TexN = Num2
-
     NEXT
 
   END IF
+
+  m15ModelData(Model).isTextured = m15ModelBuffer_Overlay(index).TexN > 0
 
 END SUB
 
@@ -1461,17 +1466,19 @@ SUB internal_DrawModel( BYVAL ModelID AS LONG, ForceTexture AS LONG, ForceR AS L
 
   REGISTER i AS LONG
   LOCAL VertexCount AS LONG
-
+  local TexturingNeeded as long
   VertexCount = m15ModelData(ModelID).vertexCount
+  TexturingNeeded = m15ModelData(ModelID).isTextured or (ForceTexture > 0)
 
   REDIM m15ModelBuffer_Overlay(1 TO VertexCount) AT STRPTR(m15ModelBuffer(ModelID))
 
   IF VertexCount = 0 THEN EXIT SUB
 
   ' -- If model uses texture, we enable it
-  IF gUseTexture = 0 THEN glEnable (%GL_TEXTURE_2D)
-
-  glBindTexture %GL_TEXTURE_2D, lpTexture( IIF( ForceTexture > 0, ForceTexture, m15ModelBuffer_Overlay(1).TexN ))
+  if TexturingNeeded then
+    IF gUseTexture = 0 THEN glEnable (%GL_TEXTURE_2D)
+    glBindTexture %GL_TEXTURE_2D, lpTexture( IIF( ForceTexture > 0, ForceTexture, m15ModelBuffer_Overlay(1).TexN ))
+  end if
 
   ' -- Enabling vertex arrays
   glEnableClientState( %GL_NORMAL_ARRAY )
@@ -1606,6 +1613,8 @@ SUB internal_DrawModel( BYVAL ModelID AS LONG, ForceTexture AS LONG, ForceR AS L
   IF ForceR < 0 THEN glDisableClientState( %GL_COLOR_ARRAY )
   glDisableClientState( %GL_NORMAL_ARRAY )
 
-  IF gUseTexture = 0 THEN glDisable %GL_TEXTURE_2D
+  if TexturingNeeded then
+    IF gUseTexture = 0 THEN glDisable %GL_TEXTURE_2D
+  end if
 
 END SUB
