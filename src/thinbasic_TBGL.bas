@@ -9,19 +9,19 @@
 ' -----------------------------------------------------------------------------
 #RESOURCE ICON, PROGRAM, "TBGL.ICO"
 #RESOURCE VERSIONINFO
-#RESOURCE FILEVERSION 1, 11, 7, 1
-#RESOURCE PRODUCTVERSION 1, 11, 7, 1
+#RESOURCE FILEVERSION 1, 14, 0, 0
+#RESOURCE PRODUCTVERSION 1, 14, 0, 0
 
 #RESOURCE STRINGINFO "0409", "04B0"
 
 #RESOURCE VERSION$ "CompanyName",      "thinBasic"
 #RESOURCE VERSION$ "FileDescription",  "thinBASIC module for 2D/3D graphics"
-#RESOURCE VERSION$ "FileVersion",      "1.11.7.1"
+#RESOURCE VERSION$ "FileVersion",      "1.14.0.0"
 #RESOURCE VERSION$ "InternalName",     "TBGL"
 #RESOURCE VERSION$ "OriginalFilename", "ThinBASIC_TBGL.dll"
-#RESOURCE VERSION$ "LegalCopyright",   "Copyright © thinBasic 2020"
+#RESOURCE VERSION$ "LegalCopyright",   "Copyright © thinBasic 2025"
 #RESOURCE VERSION$ "ProductName",      "TBGL"
-#RESOURCE VERSION$ "ProductVersion",   "1.11.7.1"
+#RESOURCE VERSION$ "ProductVersion",   "1.14.0.0"
 #RESOURCE VERSION$ "Comments",         "Support site: http://www.thinbasic.com/"
 
 ' -----------------------------------------------------------------------------

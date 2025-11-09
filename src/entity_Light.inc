@@ -7,7 +7,7 @@
 ' -----------------------------------------------------------------------------
 
 ' -- Equates for cType
-%TBGL_LIGHTTYPE_POINT  = 0
+%TBGL_LIGHTTYPE_POINT       = 0
 %TBGL_LIGHTTYPE_DIRECTIONAL = 1
 %TBGL_LIGHTTYPE_SPOT        = 2
 
@@ -16,7 +16,7 @@ TYPE t_Entity_Light
   rgba(0 TO 3)     AS SINGLE  ' rgba diffuse color, expressed in [0..1] floats
   ambient(0 TO 3)  AS SINGLE  ' rgba ambient color
   specular(0 TO 3) AS SINGLE  ' rgba specular color
-  BorderFade       AS SINGLE  ' border fade ratio
+  borderFade       AS SINGLE  ' border fade ratio
   cutoff           AS SINGLE  ' cutoff angle
 END TYPE
 
@@ -32,22 +32,22 @@ MACRO macro_t_Entity_Light_MemPos(pStart)  = STRPTR(pStart) + SIZEOF(t_EntityInf
 MACRO macro_t_Entity_Light_FillData(ptrTo_t_EntityInfo, nType)
 
   @ptrTo_t_EntityInfo.cType       = nType
-  @ptrTo_t_EntityInfo.BorderFade  = 0
+  @ptrTo_t_EntityInfo.borderFade  = 0
   @ptrTo_t_EntityInfo.cutoff      = IIF( nType <> %TBGL_LIGHTTYPE_SPOT, 180, 45)
 
-  @ptrTo_t_EntityInfo.RGBA(0)     = 1!
-  @ptrTo_t_EntityInfo.RGBA(1)     = 1!
-  @ptrTo_t_EntityInfo.RGBA(2)     = 1!
-  @ptrTo_t_EntityInfo.RGBA(3)     = 1!
+  @ptrTo_t_EntityInfo.RGBA(0)     = 1
+  @ptrTo_t_EntityInfo.RGBA(1)     = 1
+  @ptrTo_t_EntityInfo.RGBA(2)     = 1
+  @ptrTo_t_EntityInfo.RGBA(3)     = 1
 
-  @ptrTo_t_EntityInfo.ambient(0)  = 0!
-  @ptrTo_t_EntityInfo.ambient(1)  = 0!
-  @ptrTo_t_EntityInfo.ambient(2)  = 0!
+  @ptrTo_t_EntityInfo.ambient(0)  = 0
+  @ptrTo_t_EntityInfo.ambient(1)  = 0
+  @ptrTo_t_EntityInfo.ambient(2)  = 0
   @ptrTo_t_EntityInfo.ambient(3)  = 1
 
-  @ptrTo_t_EntityInfo.specular(0) = 0!
-  @ptrTo_t_EntityInfo.specular(1) = 0!
-  @ptrTo_t_EntityInfo.specular(2) = 0!
+  @ptrTo_t_EntityInfo.specular(0) = 0
+  @ptrTo_t_EntityInfo.specular(1) = 0
+  @ptrTo_t_EntityInfo.specular(2) = 0
   @ptrTo_t_EntityInfo.specular(3) = 1
 
 END MACRO
@@ -56,11 +56,12 @@ SUB Exec_TBGL_EntityCreateLight()
 
   LOCAL ScriptSceneID AS EXT
   LOCAL EntityID AS EXT
+  LOCAL ParentEntityId AS EXT
   LOCAL Param AS EXT
-  LOCAL PARENT AS EXT
+
 
   Param = %TBGL_LIGHTTYPE_POINT
-  thinBASIC_ParseXNumbers( 2, 4, ScriptSceneID, EntityID, PARENT, Param )
+  thinBASIC_ParseXNumbers( 2, 4, ScriptSceneID, EntityID, ParentEntityId, Param )
 
   internal_EntityRedimArrayIfNeeded(ScriptSceneID, EntityID)
 
@@ -71,7 +72,7 @@ SUB Exec_TBGL_EntityCreateLight()
 
   '---Now point the object info pointer to point to the first byte (remember here there is the space for t_ObjectInfo
     dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
-    macro_t_EntityInfo_FillData(dummy_PtrTo_t_EntityInfo, %TBGL_ENTITY_LIGHT, PARENT, 1, 0, 0, 0)', 0, 0, 0)
+    macro_t_EntityInfo_FillData(dummy_PtrTo_t_EntityInfo, %TBGL_ENTITY_LIGHT, ParentEntityId, 1, 0, 0, 0)
 
   '---Now point the object info pointer to point to the initial of the specific object data.
     dummy_PtrTo_t_Entity_Light = macro_t_Entity_Light_MemPos(TBGLSceneEntities(EntityID))
@@ -120,8 +121,8 @@ SUB Exec_TBGL_EntitySetBorderFade()
   IF @dummy_PtrTo_t_EntityInfo.EntType = %TBGL_ENTITY_LIGHT THEN
       dummy_PtrTo_t_Entity_LIGHT = macro_t_Entity_Light_MemPos(TBGLSceneEntities(EntityID))
 
-      ' -- OpenGL uses scale 0 - 128 instead of 0 - 1
-      @dummy_PtrTo_t_Entity_LIGHT.BorderFade = exponent*1.28
+      ' -- OpenGL uses scale 0 - 128 instead of 0 - 100
+      @dummy_PtrTo_t_Entity_LIGHT.borderFade = exponent*1.28
   END IF
 
 END SUB
