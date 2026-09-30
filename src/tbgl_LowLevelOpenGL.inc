@@ -18,144 +18,76 @@ GLOBAL Viewport()    AS LONG
 GLOBAL ptr_wglSwapIntervalEXT AS DWORD
 DECLARE FUNCTION prototype_wglSwapIntervalEXT( BYVAL NUMBER AS LONG ) AS LONG
 
-' -- Tests support for passed extensions
-FUNCTION Exec_TBGL_oglExtensionSupport( ) AS EXT
+' -- Tests support for passed extensions (space separated list, all must be supported)
+FUNCTION tbgl_oglExtensionSupport ALIAS "tbgl_oglExtensionSupport" ( BYVAL Extensions AS STRING ) EXPORT AS LONG
 
-  LOCAL Extensions AS STRING
-  Extensions = thinBasic_Parse1String
   FUNCTION = internal_IsExtensionSupported( Extensions )
 
 END FUNCTION
 
 ' -- Tests whether AT LEAST passed version is supported
-FUNCTION Exec_TBGL_oglVersionSupport( ) AS EXT
-
-  LOCAL Major, Minor AS EXT
-
-  thinBasic_Parse2Numbers( Major, Minor )
+FUNCTION tbgl_oglVersionSupport ALIAS "tbgl_oglVersionSupport" ( BYVAL Major AS LONG, BYVAL Minor AS LONG ) EXPORT AS LONG
 
   FUNCTION = IIF( gvOpenGL >= Major * 1000 + Minor * 100, %TRUE, %FALSE )
 
 END FUNCTION
 
-' -- Returns OpenGL version
-FUNCTION Exec_TBGL_oglVersion( ) AS STRING
-
-  LOCAL Major, Minor AS EXT
+' -- Returns OpenGL version string, major and minor version are returned via parameters
+FUNCTION tbgl_oglVersion ALIAS "tbgl_oglVersion" ( BYREF Major AS LONG, BYREF Minor AS LONG ) EXPORT AS STRING
 
   LOCAL pVersion AS ASCIIZ PTR
   LOCAL sVersion AS STRING
   pVersion = glGetString(%GL_VERSION)
   sVersion = TRIM$(@pVersion)
+
+  Major = VAL(PARSE$(sVersion, ".", 1))
+  Minor = VAL(PARSE$(sVersion, ".", 2))
+
   FUNCTION = sVersion
-
-  LOCAL lVariablePtr1 AS LONG
-  LOCAL lVariableAbsPos1 AS LONG
-
-  LOCAL lVariablePtr2 AS LONG
-  LOCAL lVariableAbsPos2 AS LONG
-
-  IF thinBasic_CheckOpenParens_Mandatory() THEN
-    IF thinBasic_CheckCloseParens_Optional() = 0 AND thinBasic_ErrorFree THEN
-      thinBasic_VariableParse( lVariablePtr1, lVariableAbsPos1 )
-      IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-        thinBasic_VariableParse( lVariablePtr2, lVariableAbsPos2 )
-        IF thinBasic_CheckCloseParens_Mandatory() THEN
-
-          '---Now assign values to referenced variables
-          thinBasic_ChangeVariableNumberDirect( lVariablePtr1, lVariableAbsPos1, VAL(PARSE$(sVersion, ".", 1)) )
-          thinBasic_ChangeVariableNumberDirect( lVariablePtr2, lVariableAbsPos2, VAL(PARSE$(sVersion, ".", 2)) )
-
-        END IF
-      END IF
-    END IF
-  END IF
 
 END FUNCTION
 
 ' -- Returns OpenGL renderer
-FUNCTION Exec_TBGL_oglRenderer( ) AS STRING
+FUNCTION tbgl_oglRenderer ALIAS "tbgl_oglRenderer" ( ) EXPORT AS STRING
 
   LOCAL pRenderer AS ASCIIZ PTR
   LOCAL sRenderer AS STRING
   pRenderer = glGetString(%GL_RENDERER)
   sRenderer = TRIM$(@pRenderer)
 
-  IF thinBasic_CheckOpenParens_Optional() THEN
-    thinBasic_CheckCloseParens_Optional()
-  END IF
-
   FUNCTION = sRenderer
 END FUNCTION
 
 ' -- Returns >active< OpenGL rendering context
-FUNCTION Exec_TBGL_oglRenderContext( ) AS EXT
-
-  IF thinBasic_CheckOpenParens_Optional() THEN
-    thinBasic_CheckCloseParens_Optional()
-  END IF
+FUNCTION tbgl_oglRenderContext ALIAS "tbgl_oglRenderContext" ( ) EXPORT AS DWORD
 
   '[!] Needs to be changed for multiwindow with smarter query?
   FUNCTION = g_Win.hRC
 
-'  LOCAL hPassed AS ext
-'
-'
-'  hPassed = thinBasic_Parse1Number()
-'
-'  '[!] Needs to be changed for multiwindow with smarter query
-'  if g_Win.handle = hPassed then
-'    function = g_Win.hRC
-'  else
-'    FUNCTION = %NULL
-'  end if
-
 END FUNCTION
 
-FUNCTION Exec_TBGL_oglDeviceContext( ) AS EXT
-
-  IF thinBasic_CheckOpenParens_Optional() THEN
-    thinBasic_CheckCloseParens_Optional()
-  END IF
+FUNCTION tbgl_oglDeviceContext ALIAS "tbgl_oglDeviceContext" ( ) EXPORT AS DWORD
 
   '[!] Needs to be changed for multiwindow with smarter query?
   FUNCTION = g_Win.hDC
-
-'  LOCAL hPassed AS ext
-'
-'
-'  hPassed = thinBasic_Parse1Number()
-'
-'  '[!] Needs to be changed for multiwindow with smarter query
-'  if g_Win.handle = hPassed then
-'    function = g_Win.hRC
-'  else
-'    FUNCTION = %NULL
-'  end if
 
 END FUNCTION
 
 
 ' -- Returns whether openGL is accelerated renderer
-FUNCTION Exec_TBGL_oglIsAccelerated( ) AS EXT
+FUNCTION tbgl_oglIsAccelerated ALIAS "tbgl_oglIsAccelerated" ( ) EXPORT AS LONG
 
   LOCAL pVendor AS ASCIIZ PTR
   LOCAL sVendor AS STRING
   pVendor = glGetString(%GL_VENDOR)
   sVendor = UCASE$(TRIM$(@pVendor))
 
-  IF thinBasic_CheckOpenParens_Optional() THEN
-    thinBasic_CheckCloseParens_Optional()
-  END IF
-
   FUNCTION = IIF(INSTR(sVendor, "MICROSOFT"), %FALSE, %TRUE)
 END FUNCTION
 
 ' -- Returns OpenGL 1.1+ entry points
-FUNCTION Exec_TBGL_GetProcAddress( ) AS EXT
+FUNCTION tbgl_GetProcAddress ALIAS "tbgl_GetProcAddress" ( BYVAL Extension AS STRING ) EXPORT AS DWORD
   ' -- [!] Extend for TBGL extensions later
-  LOCAL Extension AS STRING
-  Extension = thinBasic_Parse1String
   FUNCTION = wglGetProcAddress( Extension + "" )
 
 END FUNCTION
@@ -169,17 +101,12 @@ GLOBAL StateProtectStackDepth AS LONG
 ' -- It detects whether some of the states are active,
 ' -- if yes, then it disables them and only those it
 ' -- remember for re-activation
-SUB Exec_TBGL_PushStateProtect( )
+SUB tbgl_PushStateProtect ALIAS "tbgl_PushStateProtect" ( BYVAL bitMask AS LONG ) EXPORT
 
-  LOCAL parameter AS EXT
-  LOCAL bitMask AS LONG
   LOCAL b AS BYTE
 
   INCR StateProtectStackDepth
   IF StateProtectStackDepth > UBOUND(StateProtectStack) THEN REDIM PRESERVE StateProtectStack(1 TO StateProtectStackDepth+4)
-
-  thinBasic_ParseNumber parameter
-  bitMask = parameter
 
   ' -- Unwanted states list truly just those states, which must be turned back ( which ARE enabled in fact )
   LOCAL UnWantedStates AS LONG
@@ -210,7 +137,7 @@ SUB Exec_TBGL_PushStateProtect( )
 END SUB
 
 ' -- Ends protection from states
-SUB Exec_TBGL_PopStateProtect( )
+SUB tbgl_PopStateProtect ALIAS "tbgl_PopStateProtect" ( ) EXPORT
 
   IF StateProtectStackDepth = 0 THEN
     IF gOpenGLStarted THEN
@@ -243,16 +170,10 @@ GLOBAL StateStackDepth AS LONG
 
 ' -- Enables states in given section, and makes sure they
 ' -- are disabled on the end
-SUB Exec_TBGL_PushState( )
-
-  LOCAL parameter AS EXT
-  LOCAL bitMask AS LONG
+SUB tbgl_PushState ALIAS "tbgl_PushState" ( BYVAL bitMask AS LONG ) EXPORT
 
   INCR StateStackDepth
   IF StateStackDepth > UBOUND(StateStack) THEN REDIM PRESERVE StateStack(1 TO StateStackDepth+4)
-
-  thinBasic_ParseNumber parameter
-  bitMask = parameter
 
   ' bits 0 to 7 are:
   ' 0 FOG
@@ -277,7 +198,7 @@ SUB Exec_TBGL_PushState( )
 END SUB
 
 ' -- Ends states
-SUB Exec_TBGL_PopState( )
+SUB tbgl_PopState ALIAS "tbgl_PopState" ( ) EXPORT
 
   IF StateStackDepth = 0 THEN
     IF gOpenGLStarted THEN
@@ -309,23 +230,20 @@ GLOBAL LineWidthStackDepth AS LONG
 
 
 ' -- Enables line width in given section, and makes sure it is returned back on the end
-SUB Exec_TBGL_PushLineWidth( )
-
-  LOCAL parameter AS EXT
+SUB tbgl_PushLineWidth ALIAS "tbgl_PushLineWidth" ( BYVAL lineWidth AS SINGLE ) EXPORT
 
   INCR LineWidthStackDepth
   IF LineWidthStackDepth > UBOUND(LineWidthStack) THEN REDIM PRESERVE LineWidthStack(1 TO LineWidthStackDepth+4)
 
-  thinBasic_ParseNumber parameter
   ' -- Backup the line width
   glGetIntegerV(%GL_LINE_WIDTH, LineWidthStack(LineWidthStackDepth))
 
   ' -- Set the new one
-  glLineWidth(parameter)
+  glLineWidth(lineWidth)
 END SUB
 
 ' -- Ends line width region
-SUB Exec_TBGL_PopLineWidth( )
+SUB tbgl_PopLineWidth ALIAS "tbgl_PopLineWidth" ( ) EXPORT
 
   IF LineWidthStackDepth = 0 THEN
     IF gOpenGLStarted THEN
@@ -351,14 +269,11 @@ GLOBAL LineStippleStackDepth AS LONG
 
 
 ' -- Enables line stipple in given section, and makes sure it is returned back on the end
-SUB Exec_TBGL_PushLineStipple( )
-
-  LOCAL factor, pattern AS EXT
+SUB tbgl_PushLineStipple ALIAS "tbgl_PushLineStipple" ( BYVAL factor AS LONG, BYVAL pattern AS WORD ) EXPORT
 
   INCR LineStippleStackDepth
   IF LineStippleStackDepth > UBOUND(LineStippleStack) THEN REDIM PRESERVE LineStippleStack(1 TO LineStippleStackDepth+4)
 
-  thinBasic_Parse2Numbers factor, pattern
   ' -- Backup the line width
   glGetIntegerV(%GL_LINE_STIPPLE_REPEAT, LineStippleStack(LineStippleStackDepth).factor)
   glGetIntegerV(%GL_LINE_STIPPLE_PATTERN, LineStippleStack(LineStippleStackDepth).pattern)
@@ -368,7 +283,7 @@ SUB Exec_TBGL_PushLineStipple( )
 END SUB
 
 ' -- Ends line stipple region
-SUB Exec_TBGL_PopLineStipple( )
+SUB tbgl_PopLineStipple ALIAS "tbgl_PopLineStipple" ( ) EXPORT
 
   IF LineStippleStackDepth = 0 THEN
     IF gOpenGLStarted THEN
@@ -390,23 +305,20 @@ GLOBAL PointSizeStackDepth AS LONG
 
 
 ' -- Enables point size in given section, and makes sure it is returned back on the end
-SUB Exec_TBGL_PushPointSize( )
-
-  LOCAL parameter AS EXT
+SUB tbgl_PushPointSize ALIAS "tbgl_PushPointSize" ( BYVAL pointSize AS SINGLE ) EXPORT
 
   INCR PointSizeStackDepth
   IF PointSizeStackDepth > UBOUND(PointSizeStack) THEN REDIM PRESERVE PointSizeStack(1 TO PointSizeStackDepth+4)
 
-  thinBasic_ParseNumber parameter
   ' -- Backup the line width
   glGetIntegerV(%GL_POINT_SIZE, PointSizeStack(PointSizeStackDepth))
 
   ' -- Set the new one
-  glPointSize(parameter)
+  glPointSize(pointSize)
 END SUB
 
 ' -- Ends point size region
-SUB Exec_TBGL_PopPointSize( )
+SUB tbgl_PopPointSize ALIAS "tbgl_PopPointSize" ( ) EXPORT
 
   IF PointSizeStackDepth = 0 THEN
     IF gOpenGLStarted THEN
@@ -434,26 +346,28 @@ GLOBAL ColorStackDepth AS LONG
 
 
 ' -- Enables point size in given section, and makes sure it is returned back on the end
-SUB Exec_TBGL_PushColor( )
+SUB tbgl_PushColor ALIAS "tbgl_PushColor" ( BYVAL r AS BYTE, BYVAL g AS BYTE, BYVAL b AS BYTE, BYVAL a AS BYTE ) EXPORT
 
-  LOCAL r, g, b, a, n AS EXT
+  internal_PushColorF( r / 255, g / 255, b / 255, a / 255 )
+
+END SUB
+
+' -- Components in 0..1, not clamped (thinBasic keyword passes script values / 255 unrounded)
+SUB internal_PushColorF( BYVAL r AS SINGLE, BYVAL g AS SINGLE, BYVAL b AS SINGLE, BYVAL a AS SINGLE )
 
   INCR ColorStackDepth
   IF ColorStackDepth > UBOUND(ColorStack) THEN REDIM PRESERVE ColorStack(1 TO ColorStackDepth+4)
-
-  a = 255
-  n = thinBasic_ParseXNumbers( 3, 4, r, g, b, a )
 
   ' -- Backup the line width
   glGetFloatV(%GL_CURRENT_COLOR, BYVAL VARPTR(ColorStack(ColorStackDepth)))
 
   ' -- Set the new one
-  glColor4f(r/255, g/255, b/255, a/255)
+  glColor4f(r, g, b, a)
 
 END SUB
 
 ' -- Ends point size region
-SUB Exec_TBGL_PopColor( )
+SUB tbgl_PopColor ALIAS "tbgl_PopColor" ( ) EXPORT
 
   IF ColorStackDepth = 0 THEN
     IF gOpenGLStarted THEN
@@ -474,23 +388,20 @@ GLOBAL PolygonLookStackDepth AS LONG
 
 
 ' -- Enables line width in given section, and makes sure it is returned back on the end
-SUB Exec_TBGL_PushPolygonLook( )
-
-  LOCAL parameter AS EXT
+SUB tbgl_PushPolygonLook ALIAS "tbgl_PushPolygonLook" ( BYVAL polygonMode AS DWORD ) EXPORT
 
   INCR PolygonLookStackDepth
   IF PolygonLookStackDepth > UBOUND(PolygonLookStack) THEN REDIM PRESERVE PolygonLookStack(1 TO PolygonLookStackDepth+4)
 
-  thinBasic_ParseNumber parameter
   ' -- Backup the line width
   glGetIntegerV(%GL_POLYGON_MODE, PolygonLookStack(PolygonLookStackDepth))
 
   ' -- Set the new one
-  glPolygonMode(%GL_FRONT_AND_BACK, parameter)
+  glPolygonMode(%GL_FRONT_AND_BACK, polygonMode)
 END SUB
 
 ' -- Ends line width region
-SUB Exec_TBGL_PopPolygonLook( )
+SUB tbgl_PopPolygonLook ALIAS "tbgl_PopPolygonLook" ( ) EXPORT
 
   IF PolygonLookStackDepth = 0 THEN
     IF gOpenGLStarted THEN
@@ -508,7 +419,7 @@ END SUB
 
 ' =============================================================================
 ' -- Checks whether extension is supported
-FUNCTION internal_IsExtensionSupported( Extensions AS STRING ) AS EXT
+FUNCTION internal_IsExtensionSupported( Extensions AS STRING ) AS LONG
 
   REGISTER i AS LONG, j AS LONG
 
@@ -541,3 +452,169 @@ FUNCTION internal_IsExtensionSupported( Extensions AS STRING ) AS EXT
   FUNCTION = found
 
 END FUNCTION
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+FUNCTION Exec_TBGL_oglExtensionSupport( ) AS EXT
+  FUNCTION = tbgl_oglExtensionSupport( thinBasic_Parse1String )
+END FUNCTION
+
+FUNCTION Exec_TBGL_oglVersionSupport( ) AS EXT
+  LOCAL Major, Minor AS EXT
+
+  thinBasic_Parse2Numbers( Major, Minor )
+  FUNCTION = tbgl_oglVersionSupport( Major, Minor )
+
+END FUNCTION
+
+' -- Optional "( majorVariable, minorVariable )" receive version numbers
+FUNCTION Exec_TBGL_oglVersion( ) AS STRING
+
+  LOCAL Major, Minor AS LONG
+  FUNCTION = tbgl_oglVersion( Major, Minor )
+
+  LOCAL lVariablePtr1 AS LONG
+  LOCAL lVariableAbsPos1 AS LONG
+
+  LOCAL lVariablePtr2 AS LONG
+  LOCAL lVariableAbsPos2 AS LONG
+
+  IF thinBasic_CheckOpenParens_Mandatory() THEN
+    IF thinBasic_CheckCloseParens_Optional() = 0 AND thinBasic_ErrorFree THEN
+      thinBasic_VariableParse( lVariablePtr1, lVariableAbsPos1 )
+      IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+        thinBasic_VariableParse( lVariablePtr2, lVariableAbsPos2 )
+        IF thinBasic_CheckCloseParens_Mandatory() THEN
+
+          '---Now assign values to referenced variables
+          thinBasic_ChangeVariableNumberDirect( lVariablePtr1, lVariableAbsPos1, Major )
+          thinBasic_ChangeVariableNumberDirect( lVariablePtr2, lVariableAbsPos2, Minor )
+
+        END IF
+      END IF
+    END IF
+  END IF
+
+END FUNCTION
+
+' -- Parses optional empty "()"
+SUB internal_ParseOptionalEmptyParens( )
+  IF thinBasic_CheckOpenParens_Optional() THEN
+    thinBasic_CheckCloseParens_Optional()
+  END IF
+END SUB
+
+FUNCTION Exec_TBGL_oglRenderer( ) AS STRING
+  internal_ParseOptionalEmptyParens( )
+  FUNCTION = tbgl_oglRenderer( )
+END FUNCTION
+
+FUNCTION Exec_TBGL_oglRenderContext( ) AS EXT
+  internal_ParseOptionalEmptyParens( )
+  FUNCTION = tbgl_oglRenderContext( )
+END FUNCTION
+
+FUNCTION Exec_TBGL_oglDeviceContext( ) AS EXT
+  internal_ParseOptionalEmptyParens( )
+  FUNCTION = tbgl_oglDeviceContext( )
+END FUNCTION
+
+FUNCTION Exec_TBGL_oglIsAccelerated( ) AS EXT
+  internal_ParseOptionalEmptyParens( )
+  FUNCTION = tbgl_oglIsAccelerated( )
+END FUNCTION
+
+FUNCTION Exec_TBGL_GetProcAddress( ) AS EXT
+  FUNCTION = tbgl_GetProcAddress( thinBasic_Parse1String )
+END FUNCTION
+
+SUB Exec_TBGL_PushStateProtect( )
+  LOCAL parameter AS EXT
+
+  thinBasic_ParseNumber parameter
+  tbgl_PushStateProtect( parameter )
+
+END SUB
+
+SUB Exec_TBGL_PopStateProtect( )
+  tbgl_PopStateProtect( )
+END SUB
+
+SUB Exec_TBGL_PushState( )
+  LOCAL parameter AS EXT
+
+  thinBasic_ParseNumber parameter
+  tbgl_PushState( parameter )
+
+END SUB
+
+SUB Exec_TBGL_PopState( )
+  tbgl_PopState( )
+END SUB
+
+SUB Exec_TBGL_PushLineWidth( )
+  LOCAL parameter AS EXT
+
+  thinBasic_ParseNumber parameter
+  tbgl_PushLineWidth( parameter )
+
+END SUB
+
+SUB Exec_TBGL_PopLineWidth( )
+  tbgl_PopLineWidth( )
+END SUB
+
+SUB Exec_TBGL_PushLineStipple( )
+  LOCAL factor, pattern AS EXT
+
+  thinBasic_Parse2Numbers factor, pattern
+  tbgl_PushLineStipple( factor, pattern )
+
+END SUB
+
+SUB Exec_TBGL_PopLineStipple( )
+  tbgl_PopLineStipple( )
+END SUB
+
+SUB Exec_TBGL_PushPointSize( )
+  LOCAL parameter AS EXT
+
+  thinBasic_ParseNumber parameter
+  tbgl_PushPointSize( parameter )
+
+END SUB
+
+SUB Exec_TBGL_PopPointSize( )
+  tbgl_PopPointSize( )
+END SUB
+
+' -- Alpha defaults to 255
+SUB Exec_TBGL_PushColor( )
+  LOCAL r, g, b, a AS EXT
+
+  a = 255
+  thinBasic_ParseXNumbers( 3, 4, r, g, b, a )
+  internal_PushColorF( r / 255, g / 255, b / 255, a / 255 )
+
+END SUB
+
+SUB Exec_TBGL_PopColor( )
+  tbgl_PopColor( )
+END SUB
+
+SUB Exec_TBGL_PushPolygonLook( )
+  LOCAL parameter AS EXT
+
+  thinBasic_ParseNumber parameter
+  tbgl_PushPolygonLook( parameter )
+
+END SUB
+
+SUB Exec_TBGL_PopPolygonLook( )
+  tbgl_PopPolygonLook( )
+END SUB
+
+#ENDIF

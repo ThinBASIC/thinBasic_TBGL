@@ -30,13 +30,7 @@ MACRO macro_t_Entity_Camera_FillData(ptrTo_t_EntityInfo, nType)
 END MACRO
 
 ' -- Creates entity
-SUB Exec_TBGL_EntityCreateCamera()
-
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL PARENT AS EXT
-
-  thinBASIC_ParseXNumbers(2,3,ScriptSceneID , EntityID, PARENT)
+SUB tbgl_EntityCreateCamera ALIAS "tbgl_EntityCreateCamera" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL PARENT AS LONG ) EXPORT
 
   internal_EntityRedimArrayIfNeeded(ScriptSceneID, EntityID)
 
@@ -59,15 +53,9 @@ SUB Exec_TBGL_EntityCreateCamera()
 
 END SUB
 
-' -- Sets field of view
-SUB Exec_TBGL_EntitySetFOV()
-  REGISTER i AS LONG
+' -- Sets field of view, %TBGL_DEFAULT restores default
+SUB tbgl_EntitySetFOV ALIAS "tbgl_EntitySetFOV" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL fov AS DOUBLE ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL fov AS EXT
-
-  thinBASIC_Parse3Numbers(ScriptSceneID, EntityID, fov)
   internal_SetEntityOverlay(ScriptSceneID)
 
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
@@ -86,16 +74,9 @@ SUB Exec_TBGL_EntitySetFOV()
 
 END SUB
 
-' -- Sets color mask ( filter )
-SUB Exec_TBGL_EntitySetColorMask()
-  REGISTER i AS LONG
+' -- Sets color mask ( filter ), %TBGL_DEFAULT restores default
+SUB tbgl_EntitySetColorMask ALIAS "tbgl_EntitySetColorMask" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL lcm AS LONG ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL cm AS EXT, lcm AS LONG
-
-  thinBASIC_Parse3Numbers(ScriptSceneID, EntityID, cm)
-  lcm = cm
   internal_SetEntityOverlay(ScriptSceneID)
 
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
@@ -109,3 +90,40 @@ SUB Exec_TBGL_EntitySetColorMask()
   END IF
 
 END SUB
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+SUB Exec_TBGL_EntityCreateCamera()
+  LOCAL ScriptSceneID AS EXT
+  LOCAL EntityID AS EXT
+  LOCAL PARENT AS EXT
+
+  thinBASIC_ParseXNumbers(2,3,ScriptSceneID , EntityID, PARENT)
+  tbgl_EntityCreateCamera(ScriptSceneID, EntityID, PARENT)
+
+END SUB
+
+SUB Exec_TBGL_EntitySetFOV()
+  LOCAL ScriptSceneID AS EXT
+  LOCAL EntityID AS EXT
+  LOCAL fov AS EXT
+
+  thinBASIC_Parse3Numbers(ScriptSceneID, EntityID, fov)
+  tbgl_EntitySetFOV(ScriptSceneID, EntityID, fov)
+
+END SUB
+
+SUB Exec_TBGL_EntitySetColorMask()
+  LOCAL ScriptSceneID AS EXT
+  LOCAL EntityID AS EXT
+  LOCAL cm AS EXT
+
+  thinBASIC_Parse3Numbers(ScriptSceneID, EntityID, cm)
+  tbgl_EntitySetColorMask(ScriptSceneID, EntityID, cm)
+
+END SUB
+
+#ENDIF

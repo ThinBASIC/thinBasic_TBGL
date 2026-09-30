@@ -88,20 +88,12 @@ END SUB
 ' -- TTF fonts
 ' -----------------------------------------------------------------------------
 
-' -- Creates windows font and returns its handle
-FUNCTION Exec_TBGL_FontHandle( ) AS EXT
+' -- Creates windows font and returns its handle, lStyle combines %TBGL_BOLD, %TBGL_ITALICS
+FUNCTION tbgl_FontHandle ALIAS "tbgl_FontHandle" ( BYVAL sFntName AS STRING, BYVAL fFntSize AS SINGLE, BYVAL lStyle AS LONG ) EXPORT AS DWORD
 
-  LOCAL sFntName AS STRING
-  LOCAL fFntSize, fStyle AS EXT
-  LOCAL lStyle AS LONG
   LOCAL lWeight, lItalic, lCharSet AS LONG
   lCharset = %DEFAULT_CHARSET
 
-  LOCAL n AS LONG
-
-  n = thinBasic_Parse1StringXNumbers( 1, 2, sFntName, fFntSize, fStyle )
-
-  lStyle = fStyle
   lWeight = IIF( BIT( lStyle, 0 ) = 0, %FW_NORMAL, %FW_BOLD )
   lItalic = IIF( BIT( lStyle, 1 ) = 0, %FALSE, %TRUE )
 
@@ -131,11 +123,7 @@ FUNCTION Exec_TBGL_FontHandle( ) AS EXT
 END FUNCTION
 
 ' -- Creates OpenGL vector font from Windows font handle
-FUNCTION Exec_TBGL_BuildFont( ) AS EXT
-
-  LOCAL x, SlotNumber AS EXT
-  SlotNumber = 1
-  thinBasic_ParseXNumbers( 1, 2, x, SlotNumber )
+FUNCTION tbgl_BuildFont ALIAS "tbgl_BuildFont" ( BYVAL x AS DWORD, BYVAL SlotNumber AS LONG ) EXPORT AS LONG
 
   IF SlotNumber < 1 OR SlotNumber > %LIMIT_MAX_FONTINDEX + 1 THEN
     TBGLError "Statement:" + $TAB + "TBGL_BuildFont" + $CRLF + "Problem:" + $TAB + $TAB + "Font slot ID must be in range [1," + STR$( %LIMIT_MAX_FONTINDEX + 1 ) + "]" + $CRLF + $CRLF + "Passed:" + $TAB + FORMAT$( SlotNumber )
@@ -154,10 +142,8 @@ FUNCTION Exec_TBGL_BuildFont( ) AS EXT
 END FUNCTION
 
 ' -- Sets active TTF font
-SUB Exec_TBGL_SetActiveFont( )
-  LOCAL SlotNumber AS LONG
+SUB tbgl_SetActiveFont ALIAS "tbgl_SetActiveFont" ( BYVAL SlotNumber AS LONG ) EXPORT
 
-  SlotNumber = thinBASIC_Parse1Number( )
   IF SlotNumber < 1 OR SlotNumber > %LIMIT_MAX_FONTINDEX + 1 THEN
     TBGLError "Statement:" + $TAB + "TBGL_SetActiveFont" + $CRLF + "Problem:" + $TAB + $TAB + "Font slot ID must be in range [1," + STR$( %LIMIT_MAX_FONTINDEX + 1 ) + "]" + $CRLF + $CRLF + "Passed:" + $TAB + FORMAT$( SlotNumber )
   ELSE
@@ -166,22 +152,8 @@ SUB Exec_TBGL_SetActiveFont( )
 
 END SUB
 
-' -- Prints font on screen
-SUB Exec_TBGL_PrintFont( )
-
-  LOCAL textik AS ASCIIZ * 256, stext AS STRING
-  LOCAL x, y, z AS EXT
-  LOCAL nParams AS LONG
-
-  nParams = thinBasic_Parse1StringXNumbers( 2, 3, stext, x, y, z )
-
-  textik = stext
-
-  IF nParams = 2 THEN
-    internal_ManagedRasterPos(x, y, 0)
-  ELSE
-    glRasterPos3f(x, y, z)
-  END IF
+' -- Calls display lists of active TTF font for the text
+SUB internal_PrintFontLists( BYREF textik AS ASCIIZ )
 
   glPushAttrib %GL_LIST_BIT
     glListBase g_WinFont( g_TBGL_SetActiveFont ).ListBase
@@ -191,23 +163,48 @@ SUB Exec_TBGL_PrintFont( )
 
 END SUB
 
-' -- Prints font on screen
-SUB Exec_TBGL_PrintFont2D( )
+' -- Prints font on screen, at 2D raster position
+SUB tbgl_PrintFont ALIAS "tbgl_PrintFont" ( BYVAL stext AS STRING, BYVAL x AS SINGLE, BYVAL y AS SINGLE ) EXPORT
+
+  LOCAL textik AS ASCIIZ * 256
+
+  textik = stext
+
+  internal_ManagedRasterPos(x, y, 0)
+  internal_PrintFontLists( textik )
+
+END SUB
+
+' -- Prints font on screen, at 3D raster position
+SUB tbgl_PrintFont3D ALIAS "tbgl_PrintFont3D" ( BYVAL stext AS STRING, BYVAL x AS SINGLE, BYVAL y AS SINGLE, BYVAL z AS SINGLE ) EXPORT
+
+  LOCAL textik AS ASCIIZ * 256
+
+  textik = stext
+
+  glRasterPos3f(x, y, z)
+  internal_PrintFontLists( textik )
+
+END SUB
+
+' -- Prints font on screen, screenAlignment %TBGL_ALIGN_NONE, anchorAlignment %TBGL_ALIGN_LEFT_DOWN and maximumWidth -1 mean no adjustment
+SUB tbgl_PrintFont2D ALIAS "tbgl_PrintFont2D" ( _
+    BYVAL stext AS STRING _
+  , BYVAL x AS SINGLE _
+  , BYVAL y AS SINGLE _
+  , BYVAL screenAlignment AS LONG _
+  , BYVAL anchorAlignment AS LONG _
+  , BYVAL maximumWidth AS LONG _
+  ) EXPORT
 
   IF g_Win.RenderMatrixMode <> %TBGL_2D THEN
     TBGLError "Statement:" + $TAB + "TBGL_PrintFont2D" + $CRLF + "Problem:" + $TAB + $TAB + "You can use this command only in TBGL_RenderMatrix2D mode"
     EXIT SUB
   END IF
 
-  LOCAL textik AS ASCIIZ * 256, stext AS STRING
-  LOCAL x, y, screenAlignment, anchorAlignment, maximumWidth AS EXT
+  LOCAL textik AS ASCIIZ * 256
   LOCAL l AS sizel
   l.cx            = -1
-  maximumWidth    = -1
-  screenAlignment = %TBGL_ALIGN_NONE
-  anchorAlignment = %TBGL_ALIGN_LEFT_DOWN
-
-  thinBasic_Parse1StringXNumbers( 2, 6, stext, x, y, screenAlignment, anchorAlignment, maximumWidth )
 
   ' -- Text width correction
   IF maximumWidth <> -1 THEN
@@ -305,11 +302,7 @@ SUB Exec_TBGL_PrintFont2D( )
   textik = stext
 
   internal_ManagedRasterPos(x, y, 0)
-  glPushAttrib %GL_LIST_BIT
-    glListBase g_WinFont( g_TBGL_SetActiveFont ).ListBase
-    glCallLists LEN( textik ), %GL_UNSIGNED_BYTE, textik
-    glListBase 0
-  glPopAttrib
+  internal_PrintFontLists( textik )
 
   ' -- OLD CODE FROM SCREEN ALIGNMENT
 '    DIM mxProjection(0 TO 15) AS DOUBLE
@@ -335,49 +328,18 @@ SUB Exec_TBGL_PrintFont2D( )
 END SUB
 
 ' -- Measures size of the text in specified font in pixels
-SUB Exec_TBGL_GetFontTextSize()
-  LOCAL outX, outY AS EXT
-  LOCAL sText AS STRING
-  LOCAL lVariablePtr1 AS LONG
-  LOCAL lVariableAbsPos1 AS LONG
+SUB tbgl_GetFontTextSize ALIAS "tbgl_GetFontTextSize" ( BYVAL sText AS STRING, BYREF outX AS LONG, BYREF outY AS LONG ) EXPORT
+  LOCAL l AS sizel
 
-  LOCAL lVariablePtr2 AS LONG
-  LOCAL lVariableAbsPos2 AS LONG
-
-  IF thinBasic_CheckOpenParens_Mandatory THEN
-    thinBasic_ParseString sText
-    IF thinBasic_Checkcomma_Mandatory THEN
-    thinBasic_VariableParse( lVariablePtr1, lVariableAbsPos1 )
-      IF thinBasic_Checkcomma_Mandatory THEN
-        thinBasic_VariableParse( lVariablePtr2, lVariableAbsPos2 )
-        IF thinBasic_CheckCloseParens_Mandatory() THEN
-          LOCAL l AS sizel
-
-          SelectObject(g_Win.hDC, g_WinFont( g_TBGL_SetActiveFont ).fHandle    )
-          GetTextExtentPoint32(g_Win.hDC, sText+"", LEN(sText), l)
-          outX = l.cx
-          outY = l.cy
-
-          thinBasic_ChangeVariableNumberDirect( lVariablePtr1, lVariableAbsPos1, outX )
-          thinBasic_ChangeVariableNumberDirect( lVariablePtr2, lVariableAbsPos2, outY )
-        END IF
-      END IF
-    END IF
-  END IF
+  SelectObject(g_Win.hDC, g_WinFont( g_TBGL_SetActiveFont ).fHandle    )
+  GetTextExtentPoint32(g_Win.hDC, sText+"", LEN(sText), l)
+  outX = l.cx
+  outY = l.cy
 
 END SUB
 
 ' -- Kills font
-SUB Exec_TBGL_KillFont( )
-
-  LOCAL SlotNumber AS EXT
-
-  IF thinBasic_CheckOpenParens_Optional THEN
-    thinBASIC_ParseNumber( SlotNumber )
-    thinBasic_CheckCloseParens_Mandatory
-  ELSE
-    SlotNumber = 1
-  END IF
+SUB tbgl_KillFont ALIAS "tbgl_KillFont" ( BYVAL SlotNumber AS LONG ) EXPORT
 
   IF SlotNumber < 1 OR SlotNumber > %LIMIT_MAX_FONTINDEX + 1 THEN
     TBGLError "Statement:" + $TAB + "TBGL_KillFont" + $CRLF + "Problem:" + $TAB + $TAB + "Font slot ID must be in range [1," + STR$( %LIMIT_MAX_FONTINDEX + 1 ) + "]" + $CRLF + $CRLF + "Passed:" + $TAB + FORMAT$( SlotNumber )
@@ -395,24 +357,13 @@ END SUB
 MACRO HausNumero    = 0.414214
 MACRO HausNumero2x  = 0.828428
 
-SUB Exec_TBGL_LoadBMPFont( )
+SUB tbgl_LoadBMPFont ALIAS "tbgl_LoadBMPFont" ( BYVAL TextureName AS STRING, BYVAL LinesSuggested AS SINGLE, BYVAL SlotNumber AS LONG ) EXPORT
   REGISTER e AS LONG, i AS LONG
 
-  LOCAL TextureName AS STRING
-  LOCAL LinesSuggested AS EXT
-  LOCAL SlotNumber AS EXT
   LOCAL filtersuggested AS EXT
   LOCAL ID AS LONG
 
   filtersuggested = %TBGL_TEX_MIPMAP
-  thinBasic_ParseString TextureName
-
-  ' -- Defaults
-  LinesSuggested = 26
-  SlotNumber = 1
-
-  IF thinBasic_CheckComma_Optional THEN thinBasic_ParseNumber LinesSuggested
-  IF thinBasic_CheckComma_Optional THEN thinBasic_ParseNumber SlotNumber
 
   IF SlotNumber < 1 OR SlotNumber > %LIMIT_MAX_FONTINDEX + 1 THEN
     TBGLError "Statement:" + $TAB + "TBGL_LoadBMPFont" + $CRLF + "Problem:" + $TAB + $TAB + "Font slot ID must be in range [1," + STR$( %LIMIT_MAX_FONTINDEX + 1 ) + "]" + $CRLF + $CRLF + "Passed:" + $TAB + FORMAT$( SlotNumber )
@@ -455,28 +406,13 @@ SUB Exec_TBGL_LoadBMPFont( )
 
 END SUB
 
-SUB Exec_TBGL_LoadBMPFont2D( )
+SUB tbgl_LoadBMPFont2D ALIAS "tbgl_LoadBMPFont2D" ( BYVAL TextureName AS STRING, BYVAL LinesSuggested AS SINGLE, BYVAL ColumnsSuggested AS SINGLE, BYVAL SlotNumber AS LONG ) EXPORT
   REGISTER e AS LONG, i AS LONG
 
-  LOCAL TextureName AS STRING
-  LOCAL LinesSuggested AS EXT
-  LOCAL ColumnsSuggested AS EXT
-  LOCAL SlotNumber AS EXT
   LOCAL filtersuggested AS EXT
   LOCAL ID AS LONG
 
   filtersuggested = %TBGL_TEX_MIPMAP
-  thinBasic_ParseString TextureName
-
-  ' -- Defaults
-  LinesSuggested  = 30
-  ColumnsSuggested= 40
-
-  SlotNumber = 1
-
-  IF thinBasic_CheckComma_Optional THEN thinBasic_ParseNumber LinesSuggested
-  IF thinBasic_CheckComma_Optional THEN thinBasic_ParseNumber ColumnsSuggested
-  IF thinBasic_CheckComma_Optional THEN thinBasic_ParseNumber SlotNumber
 
   IF SlotNumber < 1 OR SlotNumber > %LIMIT_MAX_FONTINDEX + 1 THEN
     TBGLError "Statement:" + $TAB + "TBGL_LoadBMPFont2D" + $CRLF + "Problem:" + $TAB + $TAB + "Font slot ID must be in range [1," + STR$( %LIMIT_MAX_FONTINDEX + 1 ) + "]" + $CRLF + $CRLF + "Passed:" + $TAB + FORMAT$( SlotNumber )
@@ -520,7 +456,7 @@ SUB Exec_TBGL_LoadBMPFont2D( )
 END SUB
 
 
-SUB Exec_TBGL_BeginPrintBMP
+SUB tbgl_BeginPrintBMP ALIAS "tbgl_BeginPrintBMP" ( ) EXPORT
   g_FontBeginEnd = 1
 
   glGetIntegerV(%GL_TEXTURE_2D, gUseTexture)
@@ -551,7 +487,7 @@ SUB Exec_TBGL_BeginPrintBMP
 
 END SUB
 
-SUB Exec_TBGL_EndPrintBMP
+SUB tbgl_EndPrintBMP ALIAS "tbgl_EndPrintBMP" ( ) EXPORT
 
   glMatrixMode( %GL_PROJECTION )
 
@@ -569,18 +505,14 @@ SUB Exec_TBGL_EndPrintBMP
 
 END SUB
 
-' -- Prints font
-SUB Exec_TBGL_PrintBMP( )
-  REGISTER e AS LONG, lenText AS LONG, position AS EXT
-  LOCAL TXT AS STRING, x AS EXT, y AS EXT, tAlign AS EXT
-
+' -- Prints font, tAlign is one of %TBGL_ALIGN_* constants, 0 means no alignment
+SUB tbgl_PrintBMP ALIAS "tbgl_PrintBMP" ( BYVAL TXT AS STRING, BYVAL x AS SINGLE, BYVAL y AS SINGLE, BYVAL tAlign AS LONG ) EXPORT
+  REGISTER e AS LONG, lenText AS LONG
+  LOCAL position AS SINGLE
 
   LOCAL FLine AS SINGLE, fcode AS LONG
-  LOCAL nParsed AS LONG
 
-  nParsed = thinBasic_Parse1StringXNumbers( 2, 3, TXT, x, y, tAlign )
-
-  IF nParsed = 3 THEN
+  IF tAlign THEN
 
     IF g_BMPFont( g_TBGL_SetActiveBMPFont ).fType = %TBGL_3D THEN
       ' -- RIGHT
@@ -662,10 +594,8 @@ SUB Exec_TBGL_PrintBMP( )
 END SUB
 
 ' -- Sets active bitmap font
-SUB Exec_TBGL_SetActiveBMPFont( )
-  LOCAL SlotNumber AS LONG
+SUB tbgl_SetActiveBMPFont ALIAS "tbgl_SetActiveBMPFont" ( BYVAL SlotNumber AS LONG ) EXPORT
 
-  SlotNumber = thinBASIC_Parse1Number( )
   IF SlotNumber < 1 OR SlotNumber > %LIMIT_MAX_FONTINDEX + 1 THEN
     TBGLError "Statement:" + $TAB + "TBGL_SetActiveBMPFont" + $CRLF + "Problem:" + $TAB + $TAB + "Font slot ID must be in range [1," + STR$( %LIMIT_MAX_FONTINDEX + 1 ) + "]" + $CRLF + $CRLF + "Passed:" + $TAB + FORMAT$( SlotNumber )
   ELSE
@@ -729,3 +659,162 @@ SUB internal_ManagedRasterPos(BYVAL x AS SINGLE, BYVAL y AS SINGLE, BYVAL z AS S
   glPopAttrib()
 
 END SUB
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+' -- Style defaults to 0
+FUNCTION Exec_TBGL_FontHandle( ) AS EXT
+  LOCAL sFntName AS STRING
+  LOCAL fFntSize, fStyle AS EXT
+
+  thinBasic_Parse1StringXNumbers( 1, 2, sFntName, fFntSize, fStyle )
+  FUNCTION = tbgl_FontHandle( sFntName, fFntSize, fStyle )
+
+END FUNCTION
+
+' -- Slot defaults to 1
+FUNCTION Exec_TBGL_BuildFont( ) AS EXT
+  LOCAL x, SlotNumber AS EXT
+
+  SlotNumber = 1
+  thinBasic_ParseXNumbers( 1, 2, x, SlotNumber )
+  FUNCTION = tbgl_BuildFont( x, SlotNumber )
+
+END FUNCTION
+
+SUB Exec_TBGL_SetActiveFont( )
+  tbgl_SetActiveFont( thinBASIC_Parse1Number( ))
+END SUB
+
+' -- 2 coordinates: 2D raster position, 3 coordinates: 3D raster position
+SUB Exec_TBGL_PrintFont( )
+  LOCAL stext AS STRING
+  LOCAL x, y, z AS EXT
+
+  IF thinBasic_Parse1StringXNumbers( 2, 3, stext, x, y, z ) = 2 THEN
+    tbgl_PrintFont( stext, x, y )
+  ELSE
+    tbgl_PrintFont3D( stext, x, y, z )
+  END IF
+
+END SUB
+
+SUB Exec_TBGL_PrintFont2D( )
+  LOCAL stext AS STRING
+  LOCAL x, y, screenAlignment, anchorAlignment, maximumWidth AS EXT
+
+  maximumWidth    = -1
+  screenAlignment = %TBGL_ALIGN_NONE
+  anchorAlignment = %TBGL_ALIGN_LEFT_DOWN
+
+  thinBasic_Parse1StringXNumbers( 2, 6, stext, x, y, screenAlignment, anchorAlignment, maximumWidth )
+  tbgl_PrintFont2D( stext, x, y, screenAlignment, anchorAlignment, maximumWidth )
+
+END SUB
+
+SUB Exec_TBGL_GetFontTextSize()
+  LOCAL outX, outY AS LONG
+  LOCAL sText AS STRING
+  LOCAL lVariablePtr1 AS LONG
+  LOCAL lVariableAbsPos1 AS LONG
+
+  LOCAL lVariablePtr2 AS LONG
+  LOCAL lVariableAbsPos2 AS LONG
+
+  IF thinBasic_CheckOpenParens_Mandatory THEN
+    thinBasic_ParseString sText
+    IF thinBasic_Checkcomma_Mandatory THEN
+    thinBasic_VariableParse( lVariablePtr1, lVariableAbsPos1 )
+      IF thinBasic_Checkcomma_Mandatory THEN
+        thinBasic_VariableParse( lVariablePtr2, lVariableAbsPos2 )
+        IF thinBasic_CheckCloseParens_Mandatory() THEN
+          tbgl_GetFontTextSize( sText, outX, outY )
+
+          thinBasic_ChangeVariableNumberDirect( lVariablePtr1, lVariableAbsPos1, outX )
+          thinBasic_ChangeVariableNumberDirect( lVariablePtr2, lVariableAbsPos2, outY )
+        END IF
+      END IF
+    END IF
+  END IF
+
+END SUB
+
+' -- Slot defaults to 1
+SUB Exec_TBGL_KillFont( )
+  LOCAL SlotNumber AS EXT
+
+  IF thinBasic_CheckOpenParens_Optional THEN
+    thinBASIC_ParseNumber( SlotNumber )
+    thinBasic_CheckCloseParens_Mandatory
+  ELSE
+    SlotNumber = 1
+  END IF
+
+  tbgl_KillFont( SlotNumber )
+
+END SUB
+
+' -- Lines default to 26, slot to 1
+SUB Exec_TBGL_LoadBMPFont( )
+  LOCAL TextureName AS STRING
+  LOCAL LinesSuggested AS EXT
+  LOCAL SlotNumber AS EXT
+
+  thinBasic_ParseString TextureName
+
+  LinesSuggested = 26
+  SlotNumber = 1
+
+  IF thinBasic_CheckComma_Optional THEN thinBasic_ParseNumber LinesSuggested
+  IF thinBasic_CheckComma_Optional THEN thinBasic_ParseNumber SlotNumber
+
+  tbgl_LoadBMPFont( TextureName, LinesSuggested, SlotNumber )
+
+END SUB
+
+' -- Lines default to 30, columns to 40, slot to 1
+SUB Exec_TBGL_LoadBMPFont2D( )
+  LOCAL TextureName AS STRING
+  LOCAL LinesSuggested AS EXT
+  LOCAL ColumnsSuggested AS EXT
+  LOCAL SlotNumber AS EXT
+
+  thinBasic_ParseString TextureName
+
+  LinesSuggested  = 30
+  ColumnsSuggested= 40
+  SlotNumber = 1
+
+  IF thinBasic_CheckComma_Optional THEN thinBasic_ParseNumber LinesSuggested
+  IF thinBasic_CheckComma_Optional THEN thinBasic_ParseNumber ColumnsSuggested
+  IF thinBasic_CheckComma_Optional THEN thinBasic_ParseNumber SlotNumber
+
+  tbgl_LoadBMPFont2D( TextureName, LinesSuggested, ColumnsSuggested, SlotNumber )
+
+END SUB
+
+SUB Exec_TBGL_BeginPrintBMP
+  tbgl_BeginPrintBMP( )
+END SUB
+
+SUB Exec_TBGL_EndPrintBMP
+  tbgl_EndPrintBMP( )
+END SUB
+
+' -- Alignment is optional, 0 or omitted means none
+SUB Exec_TBGL_PrintBMP( )
+  LOCAL TXT AS STRING, x AS EXT, y AS EXT, tAlign AS EXT
+
+  thinBasic_Parse1StringXNumbers( 2, 3, TXT, x, y, tAlign )
+  tbgl_PrintBMP( TXT, x, y, tAlign )
+
+END SUB
+
+SUB Exec_TBGL_SetActiveBMPFont( )
+  tbgl_SetActiveBMPFont( thinBASIC_Parse1Number( ))
+END SUB
+
+#ENDIF

@@ -23,10 +23,7 @@ sub resource_input_init()
 end sub
 
 ' -- Controls visibility of cursor
-SUB Exec_TBGL_ShowCursor ( )
-  LOCAL flag AS EXT
-
-  flag = thinBasic_Parse1Number( )
+SUB tbgl_ShowCursor ALIAS "tbgl_ShowCursor" ( BYVAL flag AS LONG ) EXPORT
 
   IF flag <> 0 THEN
     WHILE ShowCursor(%TRUE) < 0
@@ -75,21 +72,14 @@ function MouseIsInClient(optional byref mouseCoordinates as POINTAPI, byref area
 end function
 
 '
-function Exec_TBGL_MouseInClient( ) as long
+function tbgl_MouseInClient alias "tbgl_MouseInClient" ( ) export as long
 
   function = MouseIsInClient()
 
 end function
 
-function Exec_TBGL_MouseGetPosX( ) as single
-
-  dim coordinateMode as ext
-  coordinateMode = %TBGL_CLIENTAREA
-
-  if thinBasic_CheckOpenParens_Optional then
-    thinBasic_ParseNumber coordinateMode
-    thinBasic_CheckCloseParens_Mandatory
-  end if
+' -- coordinateMode is %TBGL_CLIENTAREA or %TBGL_2D
+function tbgl_MouseGetPosX alias "tbgl_MouseGetPosX" ( byval coordinateMode as long ) export as single
 
   dim mouse as PointApi
   dim area  as Rect
@@ -115,15 +105,8 @@ function Exec_TBGL_MouseGetPosX( ) as single
 end function
 
 
-function Exec_TBGL_MouseGetPosY( ) as single
-
-  dim coordinateMode as ext
-  coordinateMode = %TBGL_CLIENTAREA
-
-  if thinBasic_CheckOpenParens_Optional then
-    thinBasic_ParseNumber coordinateMode
-    thinBasic_CheckCloseParens_Mandatory
-  end if
+' -- coordinateMode is %TBGL_CLIENTAREA or %TBGL_2D
+function tbgl_MouseGetPosY alias "tbgl_MouseGetPosY" ( byval coordinateMode as long ) export as single
 
   dim mouse as PointApi
   dim area  as Rect
@@ -149,7 +132,7 @@ function Exec_TBGL_MouseGetPosY( ) as single
 end function
 
 
-FUNCTION Exec_TBGL_MouseGetLButton( ) AS LONG
+FUNCTION tbgl_MouseGetLButton ALIAS "tbgl_MouseGetLButton" ( ) EXPORT AS LONG
   LOCAL retVal AS LONG
   GetAsyncKeyState( %VK_LBUTTON )
   IF MouseIsInClient THEN retVal = IIF( GetAsyncKeyState( %VK_LBUTTON ), 1, 0 )
@@ -157,7 +140,7 @@ FUNCTION Exec_TBGL_MouseGetLButton( ) AS LONG
 END FUNCTION
 
 
-FUNCTION Exec_TBGL_MouseGetRButton( ) AS LONG
+FUNCTION tbgl_MouseGetRButton ALIAS "tbgl_MouseGetRButton" ( ) EXPORT AS LONG
   LOCAL retVal AS LONG
   GetAsyncKeyState( %VK_RBUTTON )
   IF MouseIsInClient THEN retVal = IIF( GetAsyncKeyState( %VK_RBUTTON ), 1, 0 )
@@ -165,7 +148,7 @@ FUNCTION Exec_TBGL_MouseGetRButton( ) AS LONG
 END FUNCTION
 
 
-FUNCTION Exec_TBGL_MouseGetMButton( ) AS LONG
+FUNCTION tbgl_MouseGetMButton ALIAS "tbgl_MouseGetMButton" ( ) EXPORT AS LONG
   LOCAL retVal AS LONG
   GetAsyncKeyState( %VK_MBUTTON )
   IF MouseIsInClient THEN retVal = IIF( GetAsyncKeyState( %VK_MBUTTON ), 1, 0 )
@@ -173,7 +156,7 @@ FUNCTION Exec_TBGL_MouseGetMButton( ) AS LONG
 END FUNCTION
 
 
-FUNCTION Exec_TBGL_MouseGetWheelDelta( ) AS LONG
+FUNCTION tbgl_MouseGetWheelDelta ALIAS "tbgl_MouseGetWheelDelta" ( ) EXPORT AS LONG
   LOCAL retVal AS LONG
   ' -- tbgl_MouseWheelDelta is filled with values in WndProc in tbgl_Window
   IF MouseIsInClient THEN retVal = tbgl_MouseWheelDelta
@@ -182,7 +165,7 @@ FUNCTION Exec_TBGL_MouseGetWheelDelta( ) AS LONG
 END FUNCTION
 
 ' -- Centers cursor in rendering area
-FUNCTION Exec_TBGL_CenterCursor ( ) AS LONG
+FUNCTION tbgl_CenterCursor ALIAS "tbgl_CenterCursor" ( ) EXPORT AS LONG
   LOCAL CenterPos AS POINTAPI
   LOCAL rClient AS RECT
 
@@ -215,18 +198,14 @@ sub internal_resetKeyState()
 end sub
 
 ' -- Resets key before use
-sub Exec_TBGL_ResetKeyState( )
+sub tbgl_ResetKeyState alias "tbgl_ResetKeyState" ( ) export
 
-  if thinBasic_CheckOpenParens_Optional then thinBasic_CheckCloseParens_Mandatory
   internal_resetKeyState()
 
 end sub
 
 
-function Exec_TBGL_GetAsyncKeyState( ) as long
-  local eKey as ext
-
-  eKey = thinBasic_Parse1Number
+function tbgl_GetAsyncKeyState alias "tbgl_GetAsyncKeyState" ( byval eKey as long ) export as long
 
   if eKey < 0 then exit function
 
@@ -236,10 +215,7 @@ function Exec_TBGL_GetAsyncKeyState( ) as long
 end function
 
 
-function Exec_TBGL_GetWindowKeyState( ) as long
-  local eKey, ehWnd as ext
-
-  thinBasic_Parse2Numbers(ehWnd, eKey)
+function tbgl_GetWindowKeyState alias "tbgl_GetWindowKeyState" ( byval ehWnd as dword, byval eKey as long ) export as long
 
   if eKey < 0 then exit function
 
@@ -249,12 +225,9 @@ function Exec_TBGL_GetWindowKeyState( ) as long
 end function
 
 ' -- Returns non-zero only when the key was not pushed last time
-function Exec_TBGL_GetWindowKeyOnce( ) as long
-  local eKey, ehWnd as ext
+function tbgl_GetWindowKeyOnce alias "tbgl_GetWindowKeyOnce" ( byval ehWnd as dword, byval eKey as long ) export as long
   local keyDown as long
   local windowActive as long
-
-  thinBasic_Parse2Numbers(ehWnd, eKey)
 
   if eKey < 0 then exit function
 
@@ -276,40 +249,16 @@ function Exec_TBGL_GetWindowKeyOnce( ) as long
 
 end function
 
-' -- Allows checking of multiple keys
-function internal_getMultiKeyState(handleAsFirstParam as long) as long
-  dim eKeys(1 to 10) as ext
-  local KeysFound, ParensPresent, Counter, AllKeysDown as long
-
-  if thinBasic_CheckOpenParens_Optional then ParensPresent = %TRUE
-
-  if handleAsFirstParam then
-    local ehWnd as ext
-    thinBasic_ParseNumber ehWnd
-    thinBasic_CheckComma_Mandatory
-  end if
-
-  KeysFound = 1
-  thinBasic_ParseNumber eKeys(KeysFound)
-  while thinBasic_CheckComma_Optional
-    incr KeysFound
-
-    if KeysFound > ubound(eKeys) then
-      tbglError "The function does not support more than " + format$(ubound(eKeys)) + " concurrent keys"
-      exit function
-    end if
-
-    thinBasic_ParseNumber eKeys(KeysFound)
-  wend
-
-  if ParensPresent then thinBasic_CheckCloseParens_Mandatory
+' -- Returns %TRUE when all count keys in keys array are down
+function tbgl_GetMultiAsyncKeyState alias "tbgl_GetMultiAsyncKeyState" ( byval keys as long ptr, byval keyCount as long ) export as long
+  local Counter, AllKeysDown as long
 
   AllKeysDown = %TRUE
 
-  for Counter = 1 to KeysFound
+  for Counter = 0 to keyCount - 1
 
-    GetAsyncKeyState(eKeys(Counter))
-    if GetAsyncKeyState(eKeys(Counter)) = 0 then
+    GetAsyncKeyState(@keys[Counter])
+    if GetAsyncKeyState(@keys[Counter]) = 0 then
       AllKeysDown = %FALSE
       exit for
     end if
@@ -321,48 +270,27 @@ function internal_getMultiKeyState(handleAsFirstParam as long) as long
 end function
 
 
-function Exec_TBGL_GetMultiAsyncKeyState( ) as long
-  function = internal_getMultiKeyState(%FALSE)
+' -- Same as tbgl_GetMultiAsyncKeyState, hWnd is currently not checked
+function tbgl_GetWindowMultiKeyState alias "tbgl_GetWindowMultiKeyState" ( byval ehWnd as dword, byval keys as long ptr, byval keyCount as long ) export as long
+  function = tbgl_GetMultiAsyncKeyState(keys, keyCount)
 end function
 
+' -- Returns non-zero value, if any of passed keys was pressed in given window
+' -- keyCount = 0 checks any key (except mouse buttons), regardless of window
+function tbgl_GetWindowAnyKeyState alias "tbgl_GetWindowAnyKeyState" ( byval ehWnd as dword, byval keys as long ptr, byval keyCount as long ) export as long
+  local Counter as long
 
-function Exec_TBGL_GetWindowMultiKeyState() as long
-  function = internal_getMultiKeyState(%TRUE)
-end function
-
-' -- Returns non-zero value, if any of passed keys was pressed
-function Exec_TBGL_GetWindowAnyKeyState() as long
-  dim eKeys(1 to 10) as ext
-  local ehWnd as ext
-  local KeysFound, ParensPresent, Counter as long
-
-  if thinBasic_CheckOpenParens_Optional = %TRUE then ParensPresent = %TRUE
-  thinBasic_ParseNumber ehWnd
-
-  if thinBasic_CheckComma_Optional then
-    KeysFound = 1
-    thinBasic_ParseNumber eKeys(KeysFound)
-    while thinBasic_CheckComma_Optional
-      incr KeysFound
-      if KeysFound > ubound(eKeys) then
-        redim preserve eKeys(1 to ubound(eKeys)*2)
-      end if
-
-      thinBasic_ParseNumber eKeys(KeysFound)
-    wend
-
-    IF ParensPresent = %TRUE THEN thinBasic_CheckCloseParens_Mandatory
-
+  if keyCount then
     if (GetForegroundWindow = ehWnd OR GetForegroundWindow = g_Win.controlParent) then
-      for Counter = 1 TO KeysFound
-        GetAsyncKeyState(eKeys(Counter))
-        if GetAsyncKeyState(eKeys(Counter)) THEN
+      for Counter = 0 TO keyCount - 1
+        GetAsyncKeyState(@keys[Counter])
+        if GetAsyncKeyState(@keys[Counter]) THEN
           function = %TRUE
           exit for
         end if
       next
     end if
-  elseif thinBasic_CheckCloseParens_Mandatory then
+  else
     for Counter = 0 to 256
       if counter = %VK_LBUTTON or counter = %VK_MBUTTON or counter = %VK_RBUTTON then iterate for
 
@@ -418,21 +346,10 @@ function implementation_TBGL_GetKeys(byval hWnd as dword, byref keys() as long) 
 
 end function
 
-function Exec_TBGL_GetKeysPressed() as long
+' -- Fills pressedKeys (LONG array of totalElements items) with keys pressed for the first time, returns their count
+function tbgl_GetKeysPressed alias "tbgl_GetKeysPressed" ( byval hWnd as dword, byval pressedKeysPtr as long ptr, byval totalElements as long ) export as long
 
-  thinBasic_CheckOpenParens_Mandatory
-
-  local hWnd as ext
-  thinBasic_ParseNumber hWnd
-
-  thinBasic_CheckComma_Mandatory
-
-  local arrayCellPtr, mainType, subType, elementsAreFixed, totalElements, elementSize, variablePtrOdd, arrayCellAbsPos as long
-  thinBasic_ParseVariableInfo(arrayCellPtr, mainType, subType, elementsAreFixed, totalElements, elementSize, variablePtrOdd, arrayCellAbsPos)
-
-  thinBasic_CheckCloseParens_Mandatory
-
-  dim pressedKeys(1 to totalElements) as long at variablePtrOdd
+  dim pressedKeys(1 to totalElements) as long at pressedKeysPtr
 
   dim keys(1 to 256) as long
   dim result as long
@@ -457,3 +374,201 @@ function Exec_TBGL_GetKeysPressed() as long
   function = keyNow
 
 end function
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+SUB Exec_TBGL_ShowCursor ( )
+  LOCAL flag AS EXT
+
+  flag = thinBasic_Parse1Number( )
+  tbgl_ShowCursor( ISTRUE flag )
+
+END SUB
+
+function Exec_TBGL_MouseInClient( ) as long
+  function = tbgl_MouseInClient( )
+end function
+
+' -- Parses optional "( coordinateMode )", %TBGL_CLIENTAREA when omitted
+function internal_ParseMouseCoordinateMode( ) as long
+  dim coordinateMode as ext
+  coordinateMode = %TBGL_CLIENTAREA
+
+  if thinBasic_CheckOpenParens_Optional then
+    thinBasic_ParseNumber coordinateMode
+    thinBasic_CheckCloseParens_Mandatory
+  end if
+
+  function = coordinateMode
+end function
+
+function Exec_TBGL_MouseGetPosX( ) as single
+  function = tbgl_MouseGetPosX( internal_ParseMouseCoordinateMode( ))
+end function
+
+function Exec_TBGL_MouseGetPosY( ) as single
+  function = tbgl_MouseGetPosY( internal_ParseMouseCoordinateMode( ))
+end function
+
+FUNCTION Exec_TBGL_MouseGetLButton( ) AS LONG
+  FUNCTION = tbgl_MouseGetLButton( )
+END FUNCTION
+
+FUNCTION Exec_TBGL_MouseGetRButton( ) AS LONG
+  FUNCTION = tbgl_MouseGetRButton( )
+END FUNCTION
+
+FUNCTION Exec_TBGL_MouseGetMButton( ) AS LONG
+  FUNCTION = tbgl_MouseGetMButton( )
+END FUNCTION
+
+FUNCTION Exec_TBGL_MouseGetWheelDelta( ) AS LONG
+  FUNCTION = tbgl_MouseGetWheelDelta( )
+END FUNCTION
+
+FUNCTION Exec_TBGL_CenterCursor ( ) AS LONG
+  FUNCTION = tbgl_CenterCursor( )
+END FUNCTION
+
+sub Exec_TBGL_ResetKeyState( )
+  if thinBasic_CheckOpenParens_Optional then thinBasic_CheckCloseParens_Mandatory
+  tbgl_ResetKeyState( )
+end sub
+
+function Exec_TBGL_GetAsyncKeyState( ) as long
+  local eKey as ext
+
+  eKey = thinBasic_Parse1Number
+  if eKey < 0 then exit function
+
+  function = tbgl_GetAsyncKeyState( eKey )
+end function
+
+function Exec_TBGL_GetWindowKeyState( ) as long
+  local eKey, ehWnd as ext
+
+  thinBasic_Parse2Numbers(ehWnd, eKey)
+  if eKey < 0 then exit function
+
+  function = tbgl_GetWindowKeyState( ehWnd, eKey )
+end function
+
+function Exec_TBGL_GetWindowKeyOnce( ) as long
+  local eKey, ehWnd as ext
+
+  thinBasic_Parse2Numbers(ehWnd, eKey)
+  if eKey < 0 then exit function
+
+  function = tbgl_GetWindowKeyOnce( ehWnd, eKey )
+end function
+
+' -- Parses "[(] [hWnd,] key1 [, key2 ...] [)]" into keys(), returns number of keys, 0 on error
+function internal_parseMultiKeys(byval handleAsFirstParam as long, ehWnd as ext, keys() as long) as long
+  dim eKeys(1 to 10) as ext
+  local KeysFound, ParensPresent, Counter as long
+
+  if thinBasic_CheckOpenParens_Optional then ParensPresent = %TRUE
+
+  if handleAsFirstParam then
+    thinBasic_ParseNumber ehWnd
+    thinBasic_CheckComma_Mandatory
+  end if
+
+  KeysFound = 1
+  thinBasic_ParseNumber eKeys(KeysFound)
+  while thinBasic_CheckComma_Optional
+    incr KeysFound
+
+    if KeysFound > ubound(eKeys) then
+      tbglError "The function does not support more than " + format$(ubound(eKeys)) + " concurrent keys"
+      exit function
+    end if
+
+    thinBasic_ParseNumber eKeys(KeysFound)
+  wend
+
+  if ParensPresent then thinBasic_CheckCloseParens_Mandatory
+
+  redim keys(0 to KeysFound - 1)
+  for Counter = 1 to KeysFound
+    keys(Counter - 1) = eKeys(Counter)
+  next
+
+  function = KeysFound
+
+end function
+
+function Exec_TBGL_GetMultiAsyncKeyState( ) as long
+  local ehWnd as ext
+  local keyCount as long
+  dim keys() as long
+
+  keyCount = internal_parseMultiKeys(%FALSE, ehWnd, keys())
+  if keyCount then function = tbgl_GetMultiAsyncKeyState( varptr(keys(0)), keyCount )
+end function
+
+function Exec_TBGL_GetWindowMultiKeyState() as long
+  local ehWnd as ext
+  local keyCount as long
+  dim keys() as long
+
+  keyCount = internal_parseMultiKeys(%TRUE, ehWnd, keys())
+  if keyCount then function = tbgl_GetWindowMultiKeyState( ehWnd, varptr(keys(0)), keyCount )
+end function
+
+function Exec_TBGL_GetWindowAnyKeyState() as long
+  dim eKeys(1 to 10) as ext
+  local ehWnd as ext
+  local KeysFound, ParensPresent, Counter as long
+
+  if thinBasic_CheckOpenParens_Optional = %TRUE then ParensPresent = %TRUE
+  thinBasic_ParseNumber ehWnd
+
+  if thinBasic_CheckComma_Optional then
+    KeysFound = 1
+    thinBasic_ParseNumber eKeys(KeysFound)
+    while thinBasic_CheckComma_Optional
+      incr KeysFound
+      if KeysFound > ubound(eKeys) then
+        redim preserve eKeys(1 to ubound(eKeys)*2)
+      end if
+
+      thinBasic_ParseNumber eKeys(KeysFound)
+    wend
+
+    IF ParensPresent = %TRUE THEN thinBasic_CheckCloseParens_Mandatory
+
+    dim keys(0 to KeysFound - 1) as long
+    for Counter = 1 to KeysFound
+      keys(Counter - 1) = eKeys(Counter)
+    next
+
+    function = tbgl_GetWindowAnyKeyState( ehWnd, varptr(keys(0)), KeysFound )
+  elseif thinBasic_CheckCloseParens_Mandatory then
+    function = tbgl_GetWindowAnyKeyState( ehWnd, 0, 0 )
+  end if
+end function
+
+' -- Script array is expected to be LONG (it is overlaid directly)
+function Exec_TBGL_GetKeysPressed() as long
+
+  thinBasic_CheckOpenParens_Mandatory
+
+  local hWnd as ext
+  thinBasic_ParseNumber hWnd
+
+  thinBasic_CheckComma_Mandatory
+
+  local arrayCellPtr, mainType, subType, elementsAreFixed, totalElements, elementSize, variablePtrOdd, arrayCellAbsPos as long
+  thinBasic_ParseVariableInfo(arrayCellPtr, mainType, subType, elementsAreFixed, totalElements, elementSize, variablePtrOdd, arrayCellAbsPos)
+
+  thinBasic_CheckCloseParens_Mandatory
+
+  function = tbgl_GetKeysPressed( hWnd, variablePtrOdd, totalElements )
+
+end function
+
+#ENDIF

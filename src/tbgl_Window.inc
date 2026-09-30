@@ -57,14 +57,19 @@ END MACRO
 
 ' -----------------------------------------------------------------------------
 
-' -- Function to create TBGL window
-FUNCTION Exec_TBGL_CreateWindowEx( ) AS EXT
+' -- Function to create TBGL window, flags combine %TBGL_WS_* values, xPos = 0 and yPos = 0 center the window
+FUNCTION tbgl_CreateWindowEx ALIAS "tbgl_CreateWindowEx" ( _
+    BYVAL CAPTION AS STRING _
+  , BYVAL xRes AS LONG _
+  , BYVAL yRes AS LONG _
+  , BYVAL Bpp AS BYTE _
+  , BYVAL flags AS LONG _
+  , BYVAL xPos AS LONG _
+  , BYVAL yPos AS LONG _
+  ) EXPORT AS DWORD
 
   LOCAL wce AS WndClassEx
-  LOCAL CAPTION AS STRING
-  LOCAL xRes, yRes, fsFlag, xPos, yPos, Bpp AS EXT
 
-  LOCAL flags AS LONG
   LOCAL flagsWindowed AS LONG
 
   ' -- Define and register OpenGL-Application class:
@@ -82,11 +87,6 @@ FUNCTION Exec_TBGL_CreateWindowEx( ) AS EXT
     TBGLERROR "TBGL_CreateWindowEx : Cannot register window class, Windows error" + STR$( GetLastError )
     EXIT FUNCTION
   END IF
-
-  ' -- Create a window using the registered class:
-  thinBASIC_Parse1StringXNumbers( 4, 6, CAPTION, xRes, yRes, Bpp, fsFlag, xPos, yPos )
-
-  flags = fsFlag
 
   ' -- Set parameters
   ' -- [!] information is stored on bit positions according to %TBGL_WS_* flags
@@ -238,12 +238,14 @@ FUNCTION WndProc( BYVAL hWnd AS DWORD, BYVAL wMsg AS DWORD, BYVAL wParam AS LONG
     CASE %WM_TIMER
       IF g_Win.periodicFuncPointer THEN
         CallingWindow = hWnd
-        thinBasic_FunctionSimpleCall_ByPtr(g_Win.periodicFuncPointer)
+        internal_InvokeCallback(g_Win.periodicFuncPointer)
         CallingWindow = 0
       END IF
+      #IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
       IF thinBasic_ErrorFlag THEN
         Internal_TBGL_Free()
       END IF
+      #ENDIF
 
     CASE %WM_CLOSE
       ' -- Release everything
@@ -268,7 +270,7 @@ FUNCTION WndProc( BYVAL hWnd AS DWORD, BYVAL wMsg AS DWORD, BYVAL wParam AS LONG
       DragFinish(wParam)
       CallingWindow = hWnd
 
-      thinBasic_FunctionSimpleCall_ByPtr(g_OnEventPointers.OnDropFiles)
+      internal_InvokeCallback(g_OnEventPointers.OnDropFiles)
       FUNCTION = 0
 
 
@@ -280,23 +282,29 @@ FUNCTION WndProc( BYVAL hWnd AS DWORD, BYVAL wMsg AS DWORD, BYVAL wParam AS LONG
 END FUNCTION
 
 ' -----------------------------------------------------------------------------
-FUNCTION Exec_TBGL_CallingWindow() AS EXT
+' -- Window whose event is being processed by a callback
+FUNCTION tbgl_CallingWindow ALIAS "tbgl_CallingWindow" ( ) EXPORT AS LONG
   FUNCTION = CallingWindow
 END FUNCTION
 
 ' -----------------------------------------------------------------------------
 
 ' -- Sets existing window to windowed mode
-SUB Exec_TBGL_SetWindowed( )
-  LOCAL wHandle, xRes, yRes, Bpp, winStyle, xPos, yPos AS EXT
+' -- winStyle = %TBGL_UNDEFINED keeps current window style, xPos = %TBGL_UNDEFINED keeps current position
+SUB tbgl_SetWindowed ALIAS "tbgl_SetWindowed" ( _
+    BYVAL wHandle AS DWORD _
+  , BYVAL xRes AS LONG _
+  , BYVAL yRes AS LONG _
+  , BYVAL Bpp AS BYTE _
+  , BYVAL winStyle AS LONG _
+  , BYVAL xPos AS LONG _
+  , BYVAL yPos AS LONG _
+  ) EXPORT
   LOCAL flagsWindowed, flags AS LONG
-  LOCAL parsed AS LONG
   LOCAL hMenu, wFlags AS DWORD
   LOCAL wr AS RECT, cr AS RECT, x AS LONG, y AS LONG, xx AS LONG, yy AS LONG
   LOCAL sx, sy AS LONG
 
-  Bpp = g_Win.BitDepth
-  parsed = thinBASIC_ParseXNumbers( 3, 7, wHandle, xRes, yRes, Bpp, winStyle, xPos, yPos )
   gOpenGLStarted = 0
   g_Win.xRes = xRes
   g_Win.yRes = yRes
@@ -306,7 +314,7 @@ SUB Exec_TBGL_SetWindowed( )
   flagsWindowed = g_Win.flagsWindowed
 
   ' -- [!] information is stored on bit positions according to %TBGL_WS_* flags
-  IF parsed >= 5 THEN
+  IF winStyle <> %TBGL_UNDEFINED THEN
     flags = winStyle
     IF BIT( flags, 1 ) OR BIT( flags, 2 ) OR BIT( flags, 3 ) THEN flagsWindowed = flagsWindowed OR %WS_SYSMENU
 
@@ -353,7 +361,7 @@ SUB Exec_TBGL_SetWindowed( )
 
 
     IF i = 0 THEN
-      IF parsed < 6 THEN
+      IF xPos = %TBGL_UNDEFINED THEN
         xPos = g_Win.xPos
         yPos = g_Win.yPos
       END IF
@@ -386,11 +394,8 @@ SUB Exec_TBGL_SetWindowed( )
 END SUB
 
 ' -- Sets existing window to fullscreen
-SUB Exec_TBGL_SetFullscreen( )
+SUB tbgl_SetFullscreen ALIAS "tbgl_SetFullscreen" ( BYVAL wHandle AS DWORD, BYVAL xRes AS LONG, BYVAL yRes AS LONG, BYVAL Bpp AS BYTE ) EXPORT
 
-  LOCAL wHandle, xRes, yRes, Bpp AS EXT
-  Bpp = g_Win.BitDepth
-  thinBASIC_ParseXNumbers( 3, 4, whandle, xRes, yRes, Bpp )
   g_Win.fullScreen = 1
 
   g_Win.xRes = xRes
@@ -422,7 +427,7 @@ END SUB
 
 
 ' -- Enumerates available fullscreen modes
-FUNCTION Exec_TBGL_GetFullscreenModes( ) AS STRING
+FUNCTION tbgl_GetFullscreenModes ALIAS "tbgl_GetFullscreenModes" ( ) EXPORT AS STRING
 
   LOCAL i, r AS LONG
   LOCAL ScrnModeID, ValidScrnModeID AS LONG
@@ -458,7 +463,7 @@ FUNCTION Exec_TBGL_GetFullscreenModes( ) AS STRING
 END FUNCTION
 
 ' -- Shows the created window
-SUB Exec_TBGL_ShowWindow( )
+SUB tbgl_ShowWindow ALIAS "tbgl_ShowWindow" ( ) EXPORT
   LOCAL d AS RECT, sx, sy AS LONG
   LOCAL iar AS LONG
 
@@ -488,52 +493,13 @@ SUB Exec_TBGL_ShowWindow( )
 
 END SUB
 
-SUB Exec_TBGL_GetWindowClient( )
-  LOCAL winHandle AS EXT
+' -- Retrieves client area size of given window
+SUB tbgl_GetWindowClient ALIAS "tbgl_GetWindowClient" ( BYVAL winHandle AS DWORD, BYREF clientWidth AS LONG, BYREF clientHeight AS LONG ) EXPORT
   LOCAL cSize AS RECT
 
-
-  '---Declare needed variables. To change a variable we need
-  '---a reference pointer and an aboslute position (in case of arrays)
-  LOCAL lVariablePtr1 AS LONG
-  LOCAL lVariableAbsPos1 AS LONG
-
-  LOCAL lVariablePtr2 AS LONG
-  LOCAL lVariableAbsPos2 AS LONG
-
-  LOCAL eResult1 AS EXT
-  LOCAL eResult2 AS EXT
-
-  LOCAL ParensPresent AS LONG
-
-
-  IF thinBasic_CheckOpenParens_Optional = %TRUE THEN ParensPresent = %TRUE
-  thinBasic_ParseNumber winHandle
-  IF thinBasic_CheckComma( ) THEN
-    '---Check if any error
-    IF thinBasic_ErrorFree THEN
-      '---Get reference of first variable
-      thinBasic_VariableParse( lVariablePtr1, lVariableAbsPos1 )
-      IF thinBasic_CheckComma( ) AND thinBasic_ErrorFree THEN
-        thinBasic_VariableParse( lVariablePtr2, lVariableAbsPos2 )
-
-        IF thinBasic_ErrorFree THEN
-
-          '---Here do what you need to do
-          GetClientRect( winHandle, cSize )
-          eResult1 = cSize.nRight
-          eResult2 = cSize.nBottom
-
-          '---Now assign values to referenced variables
-          thinBasic_ChangeVariableNumberDirect( lVariablePtr1, lVariableAbsPos1, eResult1 )
-          thinBasic_ChangeVariableNumberDirect( lVariablePtr2, lVariableAbsPos2, eResult2 )
-
-        END IF
-      END IF
-    END IF
-  END IF
-
-  IF ParensPresent = %TRUE THEN thinBasic_CheckCloseParens_Mandatory
+  GetClientRect( winHandle, cSize )
+  clientWidth  = cSize.nRight
+  clientHeight = cSize.nBottom
 
 END SUB
 
@@ -592,10 +558,7 @@ FUNCTION DisplayWindowFinderProc(BYVAL hMonitor AS DWORD, BYVAL hDc AS DWORD, BY
 
 END FUNCTION
 
-FUNCTION Exec_TBGL_DisplayGetCount() AS LONG
-
-  LOCAL ParensPresent AS LONG
-  IF thinBasic_CheckOpenParens_Optional = %TRUE THEN thinBasic_CheckCloseParens_Mandatory
+FUNCTION tbgl_DisplayGetCount ALIAS "tbgl_DisplayGetCount" ( ) EXPORT AS LONG
 
   g_DisplayCount = 0
   g_DisplayIndex = 0
@@ -607,123 +570,52 @@ FUNCTION Exec_TBGL_DisplayGetCount() AS LONG
   END IF
 END FUNCTION
 
-FUNCTION Exec_TBGL_DisplayGetInfo() AS LONG
-  '---Declare needed variables. To change a variable we need
-  '---a reference pointer and an aboslute position (in case of arrays)
-  LOCAL eDisplayNumber AS EXT
-
-  LOCAL lVariablePtr1 AS LONG
-  LOCAL lVariableAbsPos1 AS LONG
-
-  LOCAL lVariablePtr2 AS LONG
-  LOCAL lVariableAbsPos2 AS LONG
-
-  LOCAL lVariablePtr3 AS LONG
-  LOCAL lVariableAbsPos3 AS LONG
-
-  LOCAL eResult1 AS EXT
-  LOCAL eResult2 AS EXT
-  LOCAL eResult3 AS EXT
-
-  LOCAL ParensPresent AS LONG
-
+' -- Retrieves resolution of given display and desktop color depth
+SUB tbgl_DisplayGetInfo ALIAS "tbgl_DisplayGetInfo" ( BYVAL displayNumber AS LONG, BYREF displayWidth AS LONG, BYREF displayHeight AS LONG, BYREF displayBitDepth AS LONG ) EXPORT
   LOCAL dHdc AS DWORD
 
-  IF thinBasic_CheckOpenParens_Mandatory THEN
-    '---Check if any error
-    IF thinBasic_ErrorFree THEN
+  g_DisplayCount = 0
+  g_DisplayIndex = displayNumber
 
-      thinBasic_ParseNumber eDisplayNumber
-      IF thinBasic_CheckComma( ) AND thinBasic_ErrorFree THEN
+  EnumDisplayMonitors(0, BYVAL 0, CODEPTR(DisplayEnumProc), 0)
 
-        '---Get reference of first variable
-        thinBasic_VariableParse( lVariablePtr1, lVariableAbsPos1 )
+  displayWidth  = g_DisplayWidth
+  displayHeight = g_DisplayHeight
+  dHdc = GetDC( %HWND_DESKTOP )
+  displayBitDepth = GetDeviceCaps( dHDc, %BITSPIXEL )
+  ReleaseDC( %HWND_DESKTOP, dHdc )
 
-        IF thinBasic_CheckComma( ) AND thinBasic_ErrorFree THEN
-          thinBasic_VariableParse( lVariablePtr2, lVariableAbsPos2 )
+END SUB
 
-          IF thinBasic_CheckComma_Optional( ) AND thinBasic_ErrorFree THEN
-            thinBasic_VariableParse( lVariablePtr3, lVariableAbsPos3 )
-          END IF
+' -- Moves window to given display, newX/newY are relative to the display, %TBGL_UNDEFINED keeps current offset
+FUNCTION tbgl_SendWindowToDisplay ALIAS "tbgl_SendWindowToDisplay" ( BYVAL wHandle AS DWORD, BYVAL eDisplay AS LONG, BYVAL newX AS LONG, BYVAL newY AS LONG ) EXPORT AS LONG
 
-          IF thinBasic_ErrorFree THEN
-
-            g_DisplayCount = 0
-            g_DisplayIndex = eDisplayNumber
-
-            EnumDisplayMonitors(0, BYVAL 0, CODEPTR(DisplayEnumProc), 0)
-
-            eResult1 = g_DisplayWidth
-            eResult2 = g_DisplayHeight
-            dHdc = GetDC( %HWND_DESKTOP )
-            eResult3 = GetDeviceCaps( dHDc, %BITSPIXEL )
-            ReleaseDC( %HWND_DESKTOP, dHdc )
-
-            '---Here do what you need to do
-            '---Now assign values to referenced variables
-            thinBasic_ChangeVariableNumberDirect( lVariablePtr1, lVariableAbsPos1, eResult1 )
-            thinBasic_ChangeVariableNumberDirect( lVariablePtr2, lVariableAbsPos2, eResult2 )
-            IF lVariablePtr3 THEN
-              thinBasic_ChangeVariableNumberDirect( lVariablePtr3, lVariableAbsPos3, eResult3 )
-            END IF
-          END IF
-        END IF
-      END IF
-    END IF
-  END IF
-
-  thinBasic_CheckCloseParens_Mandatory
-
-END FUNCTION
-
-FUNCTION Exec_TBGL_SendWindowToDisplay() AS LONG
-
-  LOCAL wHandle AS EXT
-  LOCAL currentDisplay, eDisplay AS EXT
-  LOCAL newX, newY AS EXT
+  LOCAL currentDisplay AS LONG
   LOCAL r AS RECT
 
-  IF thinBasic_CheckOpenParens_Mandatory THEN
-    thinBasic_ParseNumber(wHandle)
-    IF thinBasic_CheckComma_Mandatory THEN
-      thinBasic_ParseNumber(eDisplay)
+  currentDisplay = internal_GetWindowDisplay(wHandle)
+  GetWindowRect(wHandle, r)
 
-      currentDisplay = internal_GetWindowDisplay(wHandle)
-      GetWindowRect(wHandle, r)
+  IF newX = %TBGL_UNDEFINED THEN newX = r.nLeft-g_DisplayLeft
+  IF newY = %TBGL_UNDEFINED THEN newY = r.nTop-g_DisplayTop
 
-      newX = r.nLeft-g_DisplayLeft
-      newY = r.nTop-g_DisplayTop
+  g_DisplayCount = 0
+  g_DisplayIndex = eDisplay
 
-      IF thinBasic_CheckComma_Optional THEN
-        thinBasic_ParseNumber(NewX)
-      END IF
-      IF thinBasic_CheckComma_Optional THEN
-        thinBasic_ParseNumber(NewY)
-      END IF
-      IF thinBasic_CheckCloseParens_Mandatory THEN
+  EnumDisplayMonitors(0, BYVAL 0, CODEPTR(DisplayEnumProc), 0)
 
-
-        g_DisplayCount = 0
-        g_DisplayIndex = eDisplay
-
-        EnumDisplayMonitors(0, BYVAL 0, CODEPTR(DisplayEnumProc), 0)
-
-        newX += g_DisplayLeft
-        newY += g_DisplayTop
-        IF newX > g_DisplayRight THEN
-          newX = g_DisplayLeft
-        END IF
-
-        IF newY > g_DisplayBottom THEN
-          newY = g_DisplayTop
-        END IF
-
-        GetWindowRect(wHandle, r)
-        MoveWindow(wHandle, newX, newY, r.nRight-r.nLeft, r.nBottom-r.nTop, %TRUE)
-
-      END IF
-    END IF
+  newX += g_DisplayLeft
+  newY += g_DisplayTop
+  IF newX > g_DisplayRight THEN
+    newX = g_DisplayLeft
   END IF
+
+  IF newY > g_DisplayBottom THEN
+    newY = g_DisplayTop
+  END IF
+
+  GetWindowRect(wHandle, r)
+  MoveWindow(wHandle, newX, newY, r.nRight-r.nLeft, r.nBottom-r.nTop, %TRUE)
 
 END FUNCTION
 
@@ -746,22 +638,430 @@ FUNCTION internal_GetWindowDisplay(BYVAL wHandle AS DWORD) AS LONG
 END FUNCTION
 
 
-FUNCTION Exec_TBGL_GetWindowDisplay() AS LONG
-  LOCAL eDisplay AS LONG
+FUNCTION tbgl_GetWindowDisplay ALIAS "tbgl_GetWindowDisplay" ( BYVAL wHandle AS DWORD ) EXPORT AS LONG
+  FUNCTION = internal_GetWindowDisplay(wHandle)
+END FUNCTION
+
+
+' -- Retrieves desktop resolution and color depth
+SUB tbgl_GetDesktopInfo ALIAS "tbgl_GetDesktopInfo" ( BYREF desktopWidth AS LONG, BYREF desktopHeight AS LONG, BYREF desktopBitDepth AS LONG ) EXPORT
+  LOCAL dHdc AS DWORD
+
+  desktopWidth  = GetSystemMetrics( %SM_CXSCREEN )
+  desktopHeight = GetSystemMetrics( %SM_CYSCREEN )
+  dHdc = GetDC( %HWND_DESKTOP )
+  desktopBitDepth = GetDeviceCaps( dHDc, %BITSPIXEL )
+  ReleaseDC( %HWND_DESKTOP, dHdc )
+
+END SUB
+
+SUB tbgl_SetWindowTitle ALIAS "tbgl_SetWindowTitle" ( BYVAL whandle AS DWORD, BYVAL wtext AS STRING ) EXPORT
+
+  SetWindowText( whandle, BYCOPY wtext )
+
+END SUB
+
+FUNCTION tbgl_IsFullscreen ALIAS "tbgl_IsFullscreen" ( BYVAL whandle AS DWORD ) EXPORT AS LONG
+
+  FUNCTION = IIF( g_Win.FullScreen <> 0 AND g_Win.handle = whandle, %TRUE, %FALSE )
+
+END FUNCTION
+
+' -- Determines whether window still exists
+FUNCTION tbgl_IsWindow ALIAS "tbgl_IsWindow" ( BYVAL whandle AS DWORD ) EXPORT AS LONG
+
+  FUNCTION = IsWindow( whandle )
+
+END FUNCTION
+
+' -- Sets icon from disk to TBGL window
+SUB tbgl_SetWindowIcon ALIAS "tbgl_SetWindowIcon" ( BYVAL whandle AS DWORD, BYVAL wtext AS STRING ) EXPORT
+  LOCAL hIcon AS DWORD
+
+  hIcon = LoadImage( %NULL, BYCOPY wtext, %IMAGE_ICON, 32, 32, %LR_LOADFROMFILE )
+  SENDMESSAGE( whandle, %WM_SETICON, %ICON_BIG, hIcon )
+  SENDMESSAGE( whandle, %WM_SETICON, %ICON_SMALL, hIcon )
+  DeleteObject( hIcon )
+
+END SUB
+
+' -- Kills window and releases resources
+SUB tbgl_DestroyWindow ALIAS "tbgl_DestroyWindow" ( ) EXPORT
+
+  Internal_TBGL_Free
+
+END SUB
+
+' --
+
+' -- Calls funcPointer (see internal_InvokeCallback) every funcInterval milliseconds
+SUB tbgl_BindPeriodicFunction ALIAS "tbgl_BindPeriodicFunction" ( BYVAL winHandle AS DWORD, BYVAL funcPointer AS LONG, BYVAL funcInterval AS LONG ) EXPORT
+
+  g_Win.periodicFuncPointer  = funcPointer
+  g_Win.periodicFuncInterval = funcInterval
+
+  KillTimer winHandle, %PeriodicFuncTimer
+  SetTimer winHandle, %PeriodicFuncTimer, g_Win.periodicFuncInterval, %NULL
+
+END SUB
+
+SUB tbgl_UnBindPeriodicFunction ALIAS "tbgl_UnBindPeriodicFunction" ( BYVAL winHandle AS DWORD ) EXPORT
+
+  g_Win.periodicFuncPointer  = 0
+  g_Win.periodicFuncInterval = 0
+  KillTimer winHandle, %PeriodicFuncTimer
+
+END SUB
+
+' -- Runs message loop until periodic function is unbound
+SUB tbgl_ProcessPeriodicFunction ALIAS "tbgl_ProcessPeriodicFunction" ( BYVAL winHandle AS DWORD ) EXPORT
+  LOCAL wMsg AS TAGMSG
+
+  WHILE GetMessage(wMsg, winHandle, 0, 0)
+    CALL TranslateMessage(wMsg)
+    CALL DispatchMessage(wMsg)
+    IF g_Win.periodicFuncPointer = 0 THEN EXIT LOOP
+  LOOP
+
+END SUB
+
+SUB tbgl_PeriodicChangeFunction ALIAS "tbgl_PeriodicChangeFunction" ( BYVAL winHandle AS DWORD, BYVAL funcPointer AS LONG ) EXPORT
+
+  g_Win.periodicFuncPointer = funcPointer
+
+  KillTimer winHandle, %PeriodicFuncTimer
+  SetTimer winHandle, %PeriodicFuncTimer, g_Win.periodicFuncInterval, %NULL
+
+END SUB
+
+SUB tbgl_PeriodicChangeInterval ALIAS "tbgl_PeriodicChangeInterval" ( BYVAL winHandle AS DWORD, BYVAL funcInterval AS LONG ) EXPORT
+
+  g_Win.periodicFuncInterval = funcInterval
+
+  KillTimer winHandle, %PeriodicFuncTimer
+  SetTimer winHandle, %PeriodicFuncTimer, g_Win.periodicFuncInterval, %NULL
+
+END SUB
+
+' ---------------------------------------------------------------------------------------------
+' -- eventCode is %TBGL.OnDropFiles, eventProcPointer is callback (see internal_InvokeCallback)
+FUNCTION tbgl_BindWindowEvent ALIAS "tbgl_BindWindowEvent" ( BYVAL hWindow AS DWORD, BYVAL eventCode AS LONG, BYVAL eventProcPointer AS LONG ) EXPORT AS LONG
+  FUNCTION = 1
+
+  IF eventProcPointer = %NULL THEN
+    TBGLERROR "TBGL_BindWindowEvent: The specified event handler routine does not exist"
+    FUNCTION = 0
+    EXIT FUNCTION
+  END IF
+
+  SELECT CASE eventCode
+    CASE %TBGL.OnDropFiles
+'      OleInitialize(%NULL)
+'      ' Create a new instance of our implemented IDropTarget interface
+'      g_pDropTarget = CLASS "CDropTarget"
+'      IF ISOBJECT(g_pDropTarget) THEN
+'         ' Sets the handle of the label
+'         g_pDropTarget.SetHwnd hWindow
+'         ' Locks the object to ensure that it stays in memory
+'         CoLockObjectExternal(g_pDropTarget, %TRUE, %FALSE)
+'         ' Registers the specified window as one that can be the target
+'         ' of an OLE drag-and-drop operation and specifies the IDropTarget
+'         ' instance to use for drop operations.
+'         RegisterDragDrop(hWindow, g_pDropTarget)
+
+          DragAcceptFiles(hWindow, %true)
+
+         g_OnEventPointers.OnDropFiles = eventProcPointer
+'      else
+'        function = 0
+'      END IF
+
+    CASE ELSE
+      TBGLERROR "TBGL_BindWindowEvent: Unknown event type"
+      FUNCTION = 0
+
+  END SELECT
+
+END FUNCTION
+
+FUNCTION tbgl_UnBindWindowEvent ALIAS "tbgl_UnBindWindowEvent" ( BYVAL hWindow AS DWORD, BYVAL eventCode AS LONG ) EXPORT AS LONG
+
+  FUNCTION = 1
+
+  SELECT CASE eventCode
+    CASE %TBGL.OnDropFiles
+      IF g_OnEventPointers.OnDropFiles THEN
+'        ' // Revokes the registration of the specified application window as a
+'        ' // potential target for OLE drag-and-drop operations.
+'        IF g_Win.handle THEN RevokeDragDrop(g_Win.handle)
+'
+'        IF ISOBJECT(g_pDropTarget) THEN
+'          ' // Unlocks our IDropTarget interface
+'          CoLockObjectExternal(g_pDropTarget, %FALSE, %FALSE)
+'          ' // Frees the memory used by our IDropTarget interface
+'          g_pDropTarget = NOTHING
+'        END IF
+'
+'        OleUninitialize()
+
+          DragAcceptFiles(hWindow, %false)
+          g_OnEventPointers.OnDropFiles = %NULL
+      END IF
+
+    CASE ELSE
+      TBGLERROR "TBGL_UnBindWindowEvent: Unknown event type"
+      FUNCTION = 0
+
+  END SELECT
+
+END FUNCTION
+
+' -- File name of dropped file (1-based index), valid inside OnDropFiles callback
+FUNCTION tbgl_OnDropFiles_GetFileName ALIAS "tbgl_OnDropFiles_GetFileName" ( BYVAL fileNo AS LONG ) EXPORT AS STRING
+  FUNCTION = PARSE$(g_OnDropFiles_Files, "|", fileNo)
+END FUNCTION
+
+FUNCTION tbgl_OnDropFiles_GetFileCount ALIAS "tbgl_OnDropFiles_GetFileCount" ( ) EXPORT AS LONG
+  FUNCTION = PARSECOUNT(g_OnDropFiles_Files, "|")
+END FUNCTION
+
+' -- 1.9.11.0
+
+' -- Retrieves window position, returns GetWindowRect result
+FUNCTION tbgl_GetWindowPos ALIAS "tbgl_GetWindowPos" ( BYVAL hWnd AS DWORD, BYREF outX AS LONG, BYREF outY AS LONG ) EXPORT AS LONG
+  DIM r AS RECT
+
+  FUNCTION = GetWindowRect(hWnd, r)
+
+  outX = r.nLeft
+  outY = r.nTop
+
+END FUNCTION
+
+FUNCTION tbgl_SetWindowMinClient ALIAS "tbgl_SetWindowMinClient" ( BYVAL hWnd AS DWORD, BYVAL minWidth AS LONG, BYVAL minHeight AS LONG ) EXPORT AS LONG
+
+  IF hWnd <> g_Win.handle THEN
+    FUNCTION = 0
+    EXIT FUNCTION
+  ELSE
+
+    IF minWidth < 1 OR minHeight < 1 THEN
+      tbglerror "Invalid parameter for TBGL_SetWindowMinClient"+$CRLF+$CRLF+"Minimum client width AND height must be positive integers, function received minWidth="+FORMAT$(minWidth)+", minHeight="+FORMAT$(minHeight)
+      FUNCTION = 0
+      EXIT FUNCTION
+    END IF
+
+    ' -- If aspect ratio maintaining is enabled
+    IF g_Win.ignrAspect = 0 THEN
+      IF minWidth <> ROUND(minHeight * g_Win.aspectRat,0) THEN
+        tbglerror "Invalid parameter for TBGL_SetWindowMinClient"+$CRLF+$CRLF+"When TBGL window is in mode maintaining aspect ratio, you need to specify minimum client size with the same ratio"+$CRLF+ _
+                  "Hint for this case: minWidth="+FORMAT$(ROUND(minHeight * g_Win.aspectRat, 0))+", minHeight="+FORMAT$(minHeight)
+        FUNCTION = 0
+        EXIT FUNCTION
+      END IF
+    END IF
+
+    g_Win.minWidth  = minWidth
+    g_Win.minHeight = minHeight
+    FUNCTION = 1
+  END IF
+
+END FUNCTION
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+' -- ( caption, xRes, yRes, bitDepth [, flags [, xPos, yPos ]] )
+FUNCTION Exec_TBGL_CreateWindowEx( ) AS EXT
+  LOCAL CAPTION AS STRING
+  LOCAL xRes, yRes, fsFlag, xPos, yPos, Bpp AS EXT
+
+  thinBASIC_Parse1StringXNumbers( 4, 6, CAPTION, xRes, yRes, Bpp, fsFlag, xPos, yPos )
+  FUNCTION = tbgl_CreateWindowEx( CAPTION, xRes, yRes, Bpp, fsFlag, xPos, yPos )
+
+END FUNCTION
+
+FUNCTION Exec_TBGL_CallingWindow() AS EXT
+  FUNCTION = tbgl_CallingWindow( )
+END FUNCTION
+
+' -- ( hWnd, xRes, yRes [, bitDepth [, style [, xPos, yPos ]]] ), omitted style / position keep current ones
+SUB Exec_TBGL_SetWindowed( )
+  LOCAL wHandle, xRes, yRes, Bpp, winStyle, xPos, yPos AS EXT
+  LOCAL parsed AS LONG
+
+  Bpp = g_Win.BitDepth
+  parsed = thinBASIC_ParseXNumbers( 3, 7, wHandle, xRes, yRes, Bpp, winStyle, xPos, yPos )
+
+  IF parsed < 5 THEN winStyle = %TBGL_UNDEFINED
+  IF parsed < 6 THEN xPos = %TBGL_UNDEFINED
+
+  tbgl_SetWindowed( wHandle, xRes, yRes, Bpp, winStyle, xPos, yPos )
+
+END SUB
+
+' -- Bit depth defaults to current one
+SUB Exec_TBGL_SetFullscreen( )
+  LOCAL wHandle, xRes, yRes, Bpp AS EXT
+
+  Bpp = g_Win.BitDepth
+  thinBASIC_ParseXNumbers( 3, 4, whandle, xRes, yRes, Bpp )
+  tbgl_SetFullscreen( wHandle, xRes, yRes, Bpp )
+
+END SUB
+
+FUNCTION Exec_TBGL_GetFullscreenModes( ) AS STRING
+  FUNCTION = tbgl_GetFullscreenModes( )
+END FUNCTION
+
+SUB Exec_TBGL_ShowWindow( )
+  tbgl_ShowWindow( )
+END SUB
+
+SUB Exec_TBGL_GetWindowClient( )
+  LOCAL winHandle AS EXT
+  LOCAL clientWidth, clientHeight AS LONG
+
+  '---Declare needed variables. To change a variable we need
+  '---a reference pointer and an aboslute position (in case of arrays)
+  LOCAL lVariablePtr1 AS LONG
+  LOCAL lVariableAbsPos1 AS LONG
+
+  LOCAL lVariablePtr2 AS LONG
+  LOCAL lVariableAbsPos2 AS LONG
+
+  LOCAL ParensPresent AS LONG
+
+
+  IF thinBasic_CheckOpenParens_Optional = %TRUE THEN ParensPresent = %TRUE
+  thinBasic_ParseNumber winHandle
+  IF thinBasic_CheckComma( ) THEN
+    '---Check if any error
+    IF thinBasic_ErrorFree THEN
+      '---Get reference of first variable
+      thinBasic_VariableParse( lVariablePtr1, lVariableAbsPos1 )
+      IF thinBasic_CheckComma( ) AND thinBasic_ErrorFree THEN
+        thinBasic_VariableParse( lVariablePtr2, lVariableAbsPos2 )
+
+        IF thinBasic_ErrorFree THEN
+
+          tbgl_GetWindowClient( winHandle, clientWidth, clientHeight )
+
+          '---Now assign values to referenced variables
+          thinBasic_ChangeVariableNumberDirect( lVariablePtr1, lVariableAbsPos1, clientWidth )
+          thinBasic_ChangeVariableNumberDirect( lVariablePtr2, lVariableAbsPos2, clientHeight )
+
+        END IF
+      END IF
+    END IF
+  END IF
+
+  IF ParensPresent = %TRUE THEN thinBasic_CheckCloseParens_Mandatory
+
+END SUB
+
+FUNCTION Exec_TBGL_DisplayGetCount() AS LONG
+  IF thinBasic_CheckOpenParens_Optional = %TRUE THEN thinBasic_CheckCloseParens_Mandatory
+  FUNCTION = tbgl_DisplayGetCount( )
+END FUNCTION
+
+' -- ( displayNumber, widthVariable, heightVariable [, bitDepthVariable ] )
+FUNCTION Exec_TBGL_DisplayGetInfo() AS LONG
+  '---Declare needed variables. To change a variable we need
+  '---a reference pointer and an aboslute position (in case of arrays)
+  LOCAL eDisplayNumber AS EXT
+  LOCAL displayWidth, displayHeight, displayBitDepth AS LONG
+
+  LOCAL lVariablePtr1 AS LONG
+  LOCAL lVariableAbsPos1 AS LONG
+
+  LOCAL lVariablePtr2 AS LONG
+  LOCAL lVariableAbsPos2 AS LONG
+
+  LOCAL lVariablePtr3 AS LONG
+  LOCAL lVariableAbsPos3 AS LONG
+
+  IF thinBasic_CheckOpenParens_Mandatory THEN
+    '---Check if any error
+    IF thinBasic_ErrorFree THEN
+
+      thinBasic_ParseNumber eDisplayNumber
+      IF thinBasic_CheckComma( ) AND thinBasic_ErrorFree THEN
+
+        '---Get reference of first variable
+        thinBasic_VariableParse( lVariablePtr1, lVariableAbsPos1 )
+
+        IF thinBasic_CheckComma( ) AND thinBasic_ErrorFree THEN
+          thinBasic_VariableParse( lVariablePtr2, lVariableAbsPos2 )
+
+          IF thinBasic_CheckComma_Optional( ) AND thinBasic_ErrorFree THEN
+            thinBasic_VariableParse( lVariablePtr3, lVariableAbsPos3 )
+          END IF
+
+          IF thinBasic_ErrorFree THEN
+
+            tbgl_DisplayGetInfo( eDisplayNumber, displayWidth, displayHeight, displayBitDepth )
+
+            '---Now assign values to referenced variables
+            thinBasic_ChangeVariableNumberDirect( lVariablePtr1, lVariableAbsPos1, displayWidth )
+            thinBasic_ChangeVariableNumberDirect( lVariablePtr2, lVariableAbsPos2, displayHeight )
+            IF lVariablePtr3 THEN
+              thinBasic_ChangeVariableNumberDirect( lVariablePtr3, lVariableAbsPos3, displayBitDepth )
+            END IF
+          END IF
+        END IF
+      END IF
+    END IF
+  END IF
+
+  thinBasic_CheckCloseParens_Mandatory
+
+END FUNCTION
+
+' -- ( hWnd, display [, x [, y ]] ), omitted coordinates keep current offset within display
+FUNCTION Exec_TBGL_SendWindowToDisplay() AS LONG
+
   LOCAL wHandle AS EXT
-  LOCAL r AS RECT
+  LOCAL eDisplay AS EXT
+  LOCAL newX, newY AS EXT
+
+  newX = %TBGL_UNDEFINED
+  newY = %TBGL_UNDEFINED
 
   IF thinBasic_CheckOpenParens_Mandatory THEN
     thinBasic_ParseNumber(wHandle)
-    IF thinBasic_CheckCloseParens_Mandatory THEN
+    IF thinBasic_CheckComma_Mandatory THEN
+      thinBasic_ParseNumber(eDisplay)
 
-      FUNCTION = internal_GetWindowDisplay(wHandle)
-
+      IF thinBasic_CheckComma_Optional THEN
+        thinBasic_ParseNumber(NewX)
+      END IF
+      IF thinBasic_CheckComma_Optional THEN
+        thinBasic_ParseNumber(NewY)
+      END IF
+      IF thinBasic_CheckCloseParens_Mandatory THEN
+        FUNCTION = tbgl_SendWindowToDisplay( wHandle, eDisplay, newX, newY )
+      END IF
     END IF
   END IF
 
 END FUNCTION
 
+FUNCTION Exec_TBGL_GetWindowDisplay() AS LONG
+  LOCAL wHandle AS EXT
+
+  IF thinBasic_CheckOpenParens_Mandatory THEN
+    thinBasic_ParseNumber(wHandle)
+    IF thinBasic_CheckCloseParens_Mandatory THEN
+
+      FUNCTION = tbgl_GetWindowDisplay(wHandle)
+
+    END IF
+  END IF
+
+END FUNCTION
 
 SUB Exec_TBGL_GetDesktopInfo( )
 
@@ -776,11 +1076,7 @@ SUB Exec_TBGL_GetDesktopInfo( )
   LOCAL lVariablePtr3 AS LONG
   LOCAL lVariableAbsPos3 AS LONG
 
-
-  LOCAL eResult1 AS EXT
-  LOCAL eResult2 AS EXT
-  LOCAL eResult3 AS EXT
-
+  LOCAL desktopWidth, desktopHeight, desktopBitDepth AS LONG
 
   LOCAL ParensPresent AS LONG
 
@@ -800,19 +1096,12 @@ SUB Exec_TBGL_GetDesktopInfo( )
 
         IF thinBasic_ErrorFree THEN
 
-          eResult1 = GetSystemMetrics( %SM_CXSCREEN )
-          eResult2 = GetSystemMetrics( %SM_CYSCREEN )
-          LOCAL dHdc AS DWORD
-          dHdc = GetDC( %HWND_DESKTOP )
-          eResult3 = GetDeviceCaps( dHDc, %BITSPIXEL )
-          ReleaseDC( %HWND_DESKTOP, dHdc )
+          tbgl_GetDesktopInfo( desktopWidth, desktopHeight, desktopBitDepth )
 
-
-          '---Here do what you need to do
           '---Now assign values to referenced variables
-          thinBasic_ChangeVariableNumberDirect( lVariablePtr1, lVariableAbsPos1, eResult1 )
-          thinBasic_ChangeVariableNumberDirect( lVariablePtr2, lVariableAbsPos2, eResult2 )
-          thinBasic_ChangeVariableNumberDirect( lVariablePtr3, lVariableAbsPos3, eResult3 )
+          thinBasic_ChangeVariableNumberDirect( lVariablePtr1, lVariableAbsPos1, desktopWidth )
+          thinBasic_ChangeVariableNumberDirect( lVariablePtr2, lVariableAbsPos2, desktopHeight )
+          thinBasic_ChangeVariableNumberDirect( lVariablePtr3, lVariableAbsPos3, desktopBitDepth )
 
         END IF
       END IF
@@ -831,8 +1120,7 @@ SUB Exec_TBGL_SetWindowTitle( )
     IF thinBasic_CheckComma_Mandatory THEN
       thinBasic_ParseString wtext
       IF thinBasic_CheckCloseParens THEN
-
-        SetWindowText( whandle, BYCOPY wtext )
+        tbgl_SetWindowTitle( whandle, wtext )
       END IF
     END IF
   END IF
@@ -840,69 +1128,48 @@ SUB Exec_TBGL_SetWindowTitle( )
 END SUB
 
 FUNCTION Exec_TBGL_IsFullscreen( ) AS EXT
-  LOCAL whandle AS EXT
-
-  whandle = thinBASIC_Parse1Number
-
-  FUNCTION = IIF( g_Win.FullScreen <> 0 AND g_Win.handle = whandle, %TRUE, %FALSE )
-
+  FUNCTION = tbgl_IsFullscreen( thinBASIC_Parse1Number )
 END FUNCTION
 
-' -- Determines whether window still exists
 FUNCTION Exec_TBGL_IsWindow( ) AS EXT
-
-  FUNCTION = IsWindow( thinBasic_Parse1Number )
-
+  FUNCTION = tbgl_IsWindow( thinBasic_Parse1Number )
 END FUNCTION
 
-' -- Sets icon from disk to TBGL window
 SUB Exec_TBGL_SetWindowIcon( )
   LOCAL whandle AS EXT
   LOCAL wtext AS STRING
-  LOCAL hIcon AS DWORD
 
   IF thinBasic_CheckOpenParens THEN
     thinBasic_ParseNumber whandle
     IF thinBasic_CheckComma_Mandatory THEN
       thinBasic_ParseString wtext
       IF thinBasic_CheckCloseParens THEN
-
-        hIcon = LoadImage( %NULL, BYCOPY wtext, %IMAGE_ICON, 32, 32, %LR_LOADFROMFILE )
-        SENDMESSAGE( whandle, %WM_SETICON, %ICON_BIG, hIcon )
-        SENDMESSAGE( whandle, %WM_SETICON, %ICON_SMALL, hIcon )
-        DeleteObject( hIcon )
-
+        tbgl_SetWindowIcon( whandle, wtext )
       END IF
     END IF
   END IF
 
 END SUB
 
-' -- Kills window and releases resources
 SUB Exec_TBGL_DestroyWindow()
-
-  Internal_TBGL_Free
-
+  tbgl_DestroyWindow( )
 END SUB
 
-' --
-
+' -- [(] hWnd, function, interval [)]
 FUNCTION Exec_TBGL_BindPeriodicFunction() AS EXT
   LOCAL winHandle AS EXT, FuncInterval AS EXT
+  LOCAL funcPointer AS LONG
   LOCAL p AS LONG
 
   p = thinBasic_CheckOpenParens_Optional
 
     thinBasic_ParseNumber winHandle
     IF thinBasic_CheckComma_Mandatory THEN
-      g_Win.periodicFuncPointer = thinBasic_FunctionParseAndGetPtr(%FALSE)
+      funcPointer = thinBasic_FunctionParseAndGetPtr(%FALSE)
+      g_Win.periodicFuncPointer = funcPointer
       IF thinBasic_CheckComma_Mandatory THEN
         thinBasic_ParseNumber FuncInterval
-
-          g_Win.periodicFuncInterval = FuncInterval
-
-          KillTimer winHandle, %PeriodicFuncTimer
-          SetTimer winHandle, %PeriodicFuncTimer, g_Win.periodicFuncInterval, %NULL
+        tbgl_BindPeriodicFunction( winHandle, funcPointer, FuncInterval )
       END IF
     END IF
 
@@ -911,40 +1178,21 @@ FUNCTION Exec_TBGL_BindPeriodicFunction() AS EXT
 END FUNCTION
 
 FUNCTION Exec_TBGL_UnBindPeriodicFunction() AS EXT
-  LOCAL winHandle AS EXT
-
-  winHandle = thinBasic_Parse1Number()
-  g_Win.periodicFuncPointer  = 0
-  g_Win.periodicFuncInterval = 0
-  KillTimer winHandle, %PeriodicFuncTimer
+  tbgl_UnBindPeriodicFunction( thinBasic_Parse1Number( ))
 END FUNCTION
 
 FUNCTION Exec_TBGL_ProcessPeriodicFunction() AS EXT
-  LOCAL winHandle AS EXT
-  LOCAL wMsg AS TAGMSG
-
-  winHandle = thinBasic_Parse1Number()
-
-  WHILE GetMessage(wMsg, winHandle, 0, 0)
-    CALL TranslateMessage(wMsg)
-    CALL DispatchMessage(wMsg)
-    IF g_Win.periodicFuncPointer = 0 THEN EXIT LOOP
-  LOOP
-
+  tbgl_ProcessPeriodicFunction( thinBasic_Parse1Number( ))
 END FUNCTION
 
 FUNCTION Exec_TBGL_PeriodicChangeFunction() AS EXT
- LOCAL winHandle AS EXT
+  LOCAL winHandle AS EXT
   LOCAL p AS LONG
 
   p = thinBasic_CheckOpenParens_Optional
     thinBasic_ParseNumber winHandle
     IF thinBasic_CheckComma_Mandatory THEN
-      g_Win.periodicFuncPointer = thinBasic_FunctionParseAndGetPtr(%FALSE)
-
-        KillTimer winHandle, %PeriodicFuncTimer
-        SetTimer winHandle, %PeriodicFuncTimer, g_Win.periodicFuncInterval, %NULL
-
+      tbgl_PeriodicChangeFunction( winHandle, thinBasic_FunctionParseAndGetPtr(%FALSE) )
     END IF
 
   IF p THEN thinBasic_CheckCloseParens_Mandatory
@@ -960,12 +1208,7 @@ FUNCTION Exec_TBGL_PeriodicChangeInterval() AS EXT
     thinBasic_ParseNumber winHandle
     IF thinBasic_CheckComma_Mandatory THEN
       thinBasic_ParseNumber FuncInterval
-
-        g_Win.periodicFuncInterval = FuncInterval
-
-        KillTimer winHandle, %PeriodicFuncTimer
-        SetTimer winHandle, %PeriodicFuncTimer, g_Win.periodicFuncInterval, %NULL
-
+      tbgl_PeriodicChangeInterval( winHandle, FuncInterval )
     END IF
 
   IF p THEN thinBasic_CheckCloseParens_Mandatory
@@ -976,6 +1219,7 @@ END FUNCTION
 ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ' [O] Function to create window, really obsolete, do not touch, will be removed
+' -- Kept as thinBasic keyword only, it has no counterpart in general purpose DLL
 FUNCTION Exec_TBGL_CreateWindow( ) AS EXT
 
   LOCAL CAPTION AS STRING
@@ -1061,78 +1305,6 @@ FUNCTION Exec_TBGL_CreateWindow( ) AS EXT
 
 END FUNCTION
 
-' ---------------------------------------------------------------------------------------------
-FUNCTION TBGL_BindWindowEvent( BYVAL hWindow AS DWORD, BYVAL eventCode AS LONG, BYVAL eventProcPointer AS LONG ) AS LONG
-  FUNCTION = 1
-
-  IF eventProcPointer = %NULL THEN
-    TBGLERROR "TBGL_BindWindowEvent: The specified event handler routine does not exist"
-    FUNCTION = 0
-    EXIT FUNCTION
-  END IF
-
-  SELECT CASE eventCode
-    CASE %TBGL.OnDropFiles
-'      OleInitialize(%NULL)
-'      ' Create a new instance of our implemented IDropTarget interface
-'      g_pDropTarget = CLASS "CDropTarget"
-'      IF ISOBJECT(g_pDropTarget) THEN
-'         ' Sets the handle of the label
-'         g_pDropTarget.SetHwnd hWindow
-'         ' Locks the object to ensure that it stays in memory
-'         CoLockObjectExternal(g_pDropTarget, %TRUE, %FALSE)
-'         ' Registers the specified window as one that can be the target
-'         ' of an OLE drag-and-drop operation and specifies the IDropTarget
-'         ' instance to use for drop operations.
-'         RegisterDragDrop(hWindow, g_pDropTarget)
-
-          DragAcceptFiles(hWindow, %true)
-
-         g_OnEventPointers.OnDropFiles = eventProcPointer
-'      else
-'        function = 0
-'      END IF
-
-    CASE ELSE
-      TBGLERROR "TBGL_BindWindowEvent: Unknown event type"
-      FUNCTION = 0
-
-  END SELECT
-
-END FUNCTION
-
-FUNCTION TBGL_UnBindWindowEvent( BYVAL hWindow AS DWORD, BYVAL eventCode AS LONG ) AS LONG
-
-  FUNCTION = 1
-
-  SELECT CASE eventCode
-    CASE %TBGL.OnDropFiles
-      IF g_OnEventPointers.OnDropFiles THEN
-'        ' // Revokes the registration of the specified application window as a
-'        ' // potential target for OLE drag-and-drop operations.
-'        IF g_Win.handle THEN RevokeDragDrop(g_Win.handle)
-'
-'        IF ISOBJECT(g_pDropTarget) THEN
-'          ' // Unlocks our IDropTarget interface
-'          CoLockObjectExternal(g_pDropTarget, %FALSE, %FALSE)
-'          ' // Frees the memory used by our IDropTarget interface
-'          g_pDropTarget = NOTHING
-'        END IF
-'
-'        OleUninitialize()
-
-          DragAcceptFiles(hWindow, %false)
-          g_OnEventPointers.OnDropFiles = %NULL
-      END IF
-
-    CASE ELSE
-      TBGLERROR "TBGL_UnBindWindowEvent: Unknown event type"
-      FUNCTION = 0
-
-  END SELECT
-
-END FUNCTION
-
 FUNCTION Exec_TBGL_BindWindowEvent() AS LONG
   LOCAL hWindow, eventCode AS EXT
   LOCAL funcPointer AS LONG
@@ -1149,7 +1321,7 @@ FUNCTION Exec_TBGL_BindWindowEvent() AS LONG
         funcPointer = thinBasic_FunctionParseAndGetPtr(%FALSE)
 
         IF thinBasic_CheckCloseParens_Mandatory() THEN
-          FUNCTION = TBGL_BindWindowEvent(hWindow, eventCode, funcPointer)
+          FUNCTION = tbgl_BindWindowEvent(hWindow, eventCode, funcPointer)
         END IF
       END IF
     END IF
@@ -1165,32 +1337,27 @@ FUNCTION Exec_TBGL_UnBindWindowEvent() AS LONG
   thinBasic_Parse2Numbers(hWindow, eventCode)
 
   IF thinBasic_ErrorFree() THEN
-    FUNCTION = TBGL_UnBindWindowEvent(hWindow, eventCode)
+    FUNCTION = tbgl_UnBindWindowEvent(hWindow, eventCode)
   END IF
 
 END FUNCTION
 
 FUNCTION Exec_TBGL_OnDropFiles_GetFileName() AS STRING
-  LOCAL fileNo AS EXT
-
-  fileNo = thinBasic_Parse1Number()
-  FUNCTION = PARSE$(g_OnDropFiles_Files, "|", fileNo)
+  FUNCTION = tbgl_OnDropFiles_GetFileName( thinBasic_Parse1Number() )
 END FUNCTION
 
 FUNCTION Exec_TBGL_OnDropFiles_GetFileCount() AS LONG
 
   IF thinBasic_CheckOpenParens_Mandatory() THEN
     IF thinBasic_CheckCloseParens_Mandatory() THEN
-      FUNCTION = PARSECOUNT(g_OnDropFiles_Files, "|")
+      FUNCTION = tbgl_OnDropFiles_GetFileCount( )
     END IF
   END IF
 
 END FUNCTION
 
-' -- 1.9.11.0
-
 FUNCTION Exec_TBGL_GetWindowPos() AS EXT
-  LOCAL outX, outY AS EXT
+  LOCAL outX, outY AS LONG
   LOCAL hWnd AS EXT
   LOCAL lVariablePtr1 AS LONG
   LOCAL lVariableAbsPos1 AS LONG
@@ -1206,12 +1373,7 @@ FUNCTION Exec_TBGL_GetWindowPos() AS EXT
         thinBasic_VariableParse( lVariablePtr2, lVariableAbsPos2 )
         IF thinBasic_CheckCloseParens_Mandatory() THEN
 
-          DIM r AS RECT
-
-          FUNCTION = GetWindowRect(hWnd, r)
-
-          outX = r.nLeft
-          outY = r.nTop
+          FUNCTION = tbgl_GetWindowPos( hWnd, outX, outY )
 
           thinBasic_ChangeVariableNumberDirect( lVariablePtr1, lVariableAbsPos1, outX )
           thinBasic_ChangeVariableNumberDirect( lVariablePtr2, lVariableAbsPos2, outY )
@@ -1226,34 +1388,11 @@ FUNCTION Exec_TBGL_SetWindowMinClient() AS EXT
   LOCAL hWnd, minWidth, minHeight AS EXT
 
   thinBasic_Parse3Numbers(hWnd, minWidth, minHeight)
-
-  IF hWnd <> g_Win.handle THEN
-    FUNCTION = 0
-    EXIT FUNCTION
-  ELSE
-
-    IF minWidth < 1 OR minHeight < 1 THEN
-      tbglerror "Invalid parameter for TBGL_SetWindowMinClient"+$CRLF+$CRLF+"Minimum client width AND height must be positive integers, function received minWidth="+FORMAT$(minWidth)+", minHeight="+FORMAT$(minHeight)
-      FUNCTION = 0
-      EXIT FUNCTION
-    END IF
-
-    ' -- If aspect ratio maintaining is enabled
-    IF g_Win.ignrAspect = 0 THEN
-      IF minWidth <> ROUND(minHeight * g_Win.aspectRat,0) THEN
-        tbglerror "Invalid parameter for TBGL_SetWindowMinClient"+$CRLF+$CRLF+"When TBGL window is in mode maintaining aspect ratio, you need to specify minimum client size with the same ratio"+$CRLF+ _
-                  "Hint for this case: minWidth="+FORMAT$(ROUND(minHeight * g_Win.aspectRat, 0))+", minHeight="+FORMAT$(minHeight)
-        FUNCTION = 0
-        EXIT FUNCTION
-      END IF
-    END IF
-
-    g_Win.minWidth  = minWidth
-    g_Win.minHeight = minHeight
-    FUNCTION = 1
-  END IF
+  FUNCTION = tbgl_SetWindowMinClient( hWnd, minWidth, minHeight )
 
 END FUNCTION
+
+#ENDIF
 
 ' -----------------------------------------------------------------------------
 #INCLUDE "tbgl_Window.Internal.inc"

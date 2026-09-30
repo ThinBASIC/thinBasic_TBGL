@@ -91,7 +91,7 @@ END SUB
 
 ' ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 
-FUNCTION Exec_TBGL_NewMaterial() AS EXT
+FUNCTION tbgl_NewMaterial ALIAS "tbgl_NewMaterial" ( ) EXPORT AS LONG
   LOCAL mHandle AS TBGL_HANDLE
 
   mHandle = Mem_Alloc(SIZEOF(g_DefaultMaterial))
@@ -131,10 +131,7 @@ FUNCTION Exec_TBGL_NewMaterial() AS EXT
 
 END FUNCTION
 
-SUB Exec_TBGL_DeleteMaterial()
-  LOCAL mHandle AS TBGL_HANDLE
-
-  mHandle = thinbasic_Parse1Number()
+SUB tbgl_DeleteMaterial ALIAS "tbgl_DeleteMaterial" ( BYVAL mHandle AS LONG ) EXPORT
 
   resource_Materials_Release(mHandle)
 
@@ -142,10 +139,8 @@ END SUB
 
 ' ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 
-SUB Exec_TBGL_PushMaterial()
-  LOCAL mHandle AS TBGL_HANDLE
+SUB tbgl_PushMaterial ALIAS "tbgl_PushMaterial" ( BYVAL mHandle AS LONG ) EXPORT
   glDisable(%GL_COLOR_MATERIAL)
-  mHandle = thinbasic_Parse1Number()
 
   DIM material(0) AS TBGL_tMaterial AT mHandle
 
@@ -166,10 +161,8 @@ SUB Exec_TBGL_PushMaterial()
 END SUB
 
 
-SUB Exec_TBGL_PopMaterial()
-  LOCAL mHandle AS TBGL_HANDLE
-
-  mHandle = thinbasic_Parse1Number()
+' -- mHandle is not used, default material is restored
+SUB tbgl_PopMaterial ALIAS "tbgl_PopMaterial" ( BYVAL mHandle AS LONG ) EXPORT
 
   DIM material(0) AS TBGL_tMaterial AT VARPTR(g_DefaultMaterial)
 
@@ -189,60 +182,52 @@ END SUB
 
 ' ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 
-SUB Exec_TBGL_SetMaterialDiffuse()
-  LOCAL eHandle, r, g, b, a AS EXT
-  LOCAL mHandle AS TBGL_HANDLE
+' -- Which color of the material internal_SetMaterialColorF sets
+%TBGL_MATCOLOR_DIFFUSE  = 0
+%TBGL_MATCOLOR_AMBIENT  = 1
+%TBGL_MATCOLOR_SPECULAR = 2
+%TBGL_MATCOLOR_EMISSION = 3
 
-  thinBasic_ParseXNumbers(4, 5, eHandle, r, g, b, a)
-  mHandle = eHandle
-
-  DIM material(0) AS TBGL_tMaterial AT mHandle
-
-  material(0).diffuse(0) = r/255
-  material(0).diffuse(1) = g/255
-  material(0).diffuse(2) = b/255
-  material(0).diffuse(3) = a/255
-
-END SUB
-
-SUB Exec_TBGL_SetMaterialAmbient()
-  LOCAL eHandle, r, g, b, a AS EXT
-  LOCAL mHandle AS TBGL_HANDLE
-
-  thinBasic_ParseXNumbers(4, 5, eHandle, r, g, b, a)
-  mHandle = eHandle
+' -- Components in 0..1, not clamped (thinBasic keywords pass script values / 255 unrounded)
+SUB internal_SetMaterialColorF( BYVAL mHandle AS LONG, BYVAL component AS LONG, BYVAL r AS SINGLE, BYVAL g AS SINGLE, BYVAL b AS SINGLE, BYVAL a AS SINGLE )
+  LOCAL pColor AS SINGLE PTR
 
   DIM material(0) AS TBGL_tMaterial AT mHandle
 
-  material(0).ambient(0) = r/255
-  material(0).ambient(1) = g/255
-  material(0).ambient(2) = b/255
-  material(0).ambient(3) = a/255
+  SELECT CASE AS LONG component
+    CASE %TBGL_MATCOLOR_DIFFUSE  : pColor = VARPTR(material(0).diffuse(0))
+    CASE %TBGL_MATCOLOR_AMBIENT  : pColor = VARPTR(material(0).ambient(0))
+    CASE %TBGL_MATCOLOR_SPECULAR : pColor = VARPTR(material(0).specular(0))
+    CASE %TBGL_MATCOLOR_EMISSION : pColor = VARPTR(material(0).emission(0))
+    CASE ELSE : EXIT SUB
+  END SELECT
+
+  @pColor[0] = r
+  @pColor[1] = g
+  @pColor[2] = b
+  @pColor[3] = a
 
 END SUB
 
-SUB Exec_TBGL_SetMaterialSpecular()
-  LOCAL eHandle, r, g, b, a AS EXT
-  LOCAL mHandle AS TBGL_HANDLE
+SUB tbgl_SetMaterialDiffuse ALIAS "tbgl_SetMaterialDiffuse" ( BYVAL mHandle AS LONG, BYVAL r AS BYTE, BYVAL g AS BYTE, BYVAL b AS BYTE, BYVAL a AS BYTE ) EXPORT
 
-  thinBasic_ParseXNumbers(4, 5, eHandle, r, g, b, a)
-  mHandle = eHandle
-
-  DIM material(0) AS TBGL_tMaterial AT mHandle
-
-  material(0).specular(0) = r/255
-  material(0).specular(1) = g/255
-  material(0).specular(2) = b/255
-  material(0).specular(3) = a/255
+  internal_SetMaterialColorF( mHandle, %TBGL_MATCOLOR_DIFFUSE, r / 255, g / 255, b / 255, a / 255 )
 
 END SUB
 
-SUB Exec_TBGL_SetMaterialSpecularExponent()
-  LOCAL eHandle, e AS EXT
-  LOCAL mHandle AS TBGL_HANDLE
-  thinBasic_Parse2Numbers(eHandle, e)
+SUB tbgl_SetMaterialAmbient ALIAS "tbgl_SetMaterialAmbient" ( BYVAL mHandle AS LONG, BYVAL r AS BYTE, BYVAL g AS BYTE, BYVAL b AS BYTE, BYVAL a AS BYTE ) EXPORT
 
-  mHandle = eHandle
+  internal_SetMaterialColorF( mHandle, %TBGL_MATCOLOR_AMBIENT, r / 255, g / 255, b / 255, a / 255 )
+
+END SUB
+
+SUB tbgl_SetMaterialSpecular ALIAS "tbgl_SetMaterialSpecular" ( BYVAL mHandle AS LONG, BYVAL r AS BYTE, BYVAL g AS BYTE, BYVAL b AS BYTE, BYVAL a AS BYTE ) EXPORT
+
+  internal_SetMaterialColorF( mHandle, %TBGL_MATCOLOR_SPECULAR, r / 255, g / 255, b / 255, a / 255 )
+
+END SUB
+
+SUB tbgl_SetMaterialSpecularExponent ALIAS "tbgl_SetMaterialSpecularExponent" ( BYVAL mHandle AS LONG, BYVAL e AS SINGLE ) EXPORT
 
   DIM material(0) AS TBGL_tMaterial AT mHandle
 
@@ -250,31 +235,88 @@ SUB Exec_TBGL_SetMaterialSpecularExponent()
 
 END SUB
 
-SUB Exec_TBGL_SetMaterialEmission()
+SUB tbgl_SetMaterialEmission ALIAS "tbgl_SetMaterialEmission" ( BYVAL mHandle AS LONG, BYVAL r AS BYTE, BYVAL g AS BYTE, BYVAL b AS BYTE, BYVAL a AS BYTE ) EXPORT
+
+  internal_SetMaterialColorF( mHandle, %TBGL_MATCOLOR_EMISSION, r / 255, g / 255, b / 255, a / 255 )
+
+END SUB
+
+SUB tbgl_SetMaterialTexture ALIAS "tbgl_SetMaterialTexture" ( BYVAL mHandle AS LONG, BYVAL textureID AS LONG ) EXPORT  ' -- ToDo second parameter for multitexturing
+
+  DIM material(0) AS TBGL_tMaterial AT mHandle
+
+  material(0).textureID(1) = textureID
+
+END SUB
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+FUNCTION Exec_TBGL_NewMaterial() AS EXT
+  FUNCTION = tbgl_NewMaterial( )
+END FUNCTION
+
+SUB Exec_TBGL_DeleteMaterial()
+  tbgl_DeleteMaterial( thinbasic_Parse1Number( ))
+END SUB
+
+SUB Exec_TBGL_PushMaterial()
+  tbgl_PushMaterial( thinbasic_Parse1Number( ))
+END SUB
+
+SUB Exec_TBGL_PopMaterial()
+  tbgl_PopMaterial( thinbasic_Parse1Number( ))
+END SUB
+
+' -- Alpha defaults to 0 when omitted
+SUB Exec_TBGL_SetMaterialDiffuse()
   LOCAL eHandle, r, g, b, a AS EXT
-  LOCAL mHandle AS TBGL_HANDLE
 
   thinBasic_ParseXNumbers(4, 5, eHandle, r, g, b, a)
-  mHandle = eHandle
-
-  DIM material(0) AS TBGL_tMaterial AT mHandle
-
-  material(0).emission(0) = r/255
-  material(0).emission(1) = g/255
-  material(0).emission(2) = b/255
-  material(0).emission(3) = a/255
+  internal_SetMaterialColorF( eHandle, %TBGL_MATCOLOR_DIFFUSE, r / 255, g / 255, b / 255, a / 255 )
 
 END SUB
 
-SUB Exec_TBGL_SetMaterialTexture()  ' -- ToDo second parameter for multitexturing
+SUB Exec_TBGL_SetMaterialAmbient()
+  LOCAL eHandle, r, g, b, a AS EXT
+
+  thinBasic_ParseXNumbers(4, 5, eHandle, r, g, b, a)
+  internal_SetMaterialColorF( eHandle, %TBGL_MATCOLOR_AMBIENT, r / 255, g / 255, b / 255, a / 255 )
+
+END SUB
+
+SUB Exec_TBGL_SetMaterialSpecular()
+  LOCAL eHandle, r, g, b, a AS EXT
+
+  thinBasic_ParseXNumbers(4, 5, eHandle, r, g, b, a)
+  internal_SetMaterialColorF( eHandle, %TBGL_MATCOLOR_SPECULAR, r / 255, g / 255, b / 255, a / 255 )
+
+END SUB
+
+SUB Exec_TBGL_SetMaterialSpecularExponent()
   LOCAL eHandle, e AS EXT
-  LOCAL mHandle AS TBGL_HANDLE
+
   thinBasic_Parse2Numbers(eHandle, e)
-
-  mHandle = eHandle
-
-  DIM material(0) AS TBGL_tMaterial AT mHandle
-
-  material(0).textureID(1) = e
+  tbgl_SetMaterialSpecularExponent( eHandle, e )
 
 END SUB
+
+SUB Exec_TBGL_SetMaterialEmission()
+  LOCAL eHandle, r, g, b, a AS EXT
+
+  thinBasic_ParseXNumbers(4, 5, eHandle, r, g, b, a)
+  internal_SetMaterialColorF( eHandle, %TBGL_MATCOLOR_EMISSION, r / 255, g / 255, b / 255, a / 255 )
+
+END SUB
+
+SUB Exec_TBGL_SetMaterialTexture()
+  LOCAL eHandle, e AS EXT
+
+  thinBasic_Parse2Numbers(eHandle, e)
+  tbgl_SetMaterialTexture( eHandle, e )
+
+END SUB
+
+#ENDIF

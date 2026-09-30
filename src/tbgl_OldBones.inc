@@ -89,155 +89,129 @@ GLOBAL vtx_z() AS SINGLE
 ' -----------------------------------------------------------------------------
 
 ' -- Using box
-SUB Exec_TBGL_m15DefBoneBox()
+SUB tbgl_m15DefBoneBox ALIAS "tbgl_m15DefBoneBox" ( BYVAL Model AS LONG, BYVAL ID AS LONG, BYVAL minx AS SINGLE, BYVAL maxx AS SINGLE, BYVAL miny AS SINGLE, BYVAL maxy AS SINGLE, BYVAL minz AS SINGLE, BYVAL maxz AS SINGLE, _
+                                                    BYVAL anchorX AS SINGLE, BYVAL anchorY AS SINGLE, BYVAL anchorZ AS SINGLE ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
   REGISTER i AS LONG, j AS LONG
-  LOCAL Model AS EXT, ID AS EXT, minx AS EXT, maxx AS EXT, miny AS EXT, maxy AS EXT, minz AS EXT, maxz AS EXT, anchorX AS EXT, anchorY AS EXT, anchorZ AS EXT
 
-  thinBasic_ParseNumber Model
   LOCAL vertexcount AS LONG
   vertexcount = m15ModelData(model).vertexCount
 
   REDIM m15ModelBuffer_Overlay(1 TO vertexcount) AT STRPTR(m15ModelBuffer(Model))
 
+  BoneBox(Model, ID).anchorX = anchorX
+  BoneBox(Model, ID).anchorY = anchorY
+  BoneBox(Model, ID).anchorZ = anchorZ
 
-  IF thinBasic_CheckComma_Mandatory THEN
-    thinBasic_ParseNumber ID
-      IF thinBasic_CheckComma_Mandatory THEN
-        thinBasic_ParseNumber minx
-        IF thinBasic_CheckComma_Mandatory THEN
-          thinBasic_ParseNumber maxx
-          IF thinBasic_CheckComma_Mandatory THEN
-            thinBasic_ParseNumber miny
-            IF thinBasic_CheckComma_Mandatory THEN
-              thinBasic_ParseNumber maxy
-              IF thinBasic_CheckComma_Mandatory THEN
-                thinBasic_ParseNumber minz
-                IF thinBasic_CheckComma_Mandatory THEN
-                  thinBasic_ParseNumber maxz
-                  IF thinBasic_CheckComma_Mandatory THEN
-                    thinBasic_ParseNumber anchorX
-                    IF thinBasic_CheckComma_Mandatory THEN
-                      thinBasic_ParseNumber anchorY
-                      IF thinBasic_CheckComma_Mandatory THEN
-                        thinBasic_ParseNumber anchorZ
+  FOR i = 1 TO vertexcount
 
-                        BoneBox(Model, ID).anchorX = anchorX
-                        BoneBox(Model, ID).anchorY = anchorY
-                        BoneBox(Model, ID).anchorZ = anchorZ
+    ' -- Simple test whether vertex is or not in bone
+    IF m15ModelBuffer_Overlay(i).vtx(0) >= minx AND m15ModelBuffer_Overlay(i).vtx(0) <= maxx AND _
+       m15ModelBuffer_Overlay(i).vtx(1) >= miny AND m15ModelBuffer_Overlay(i).vtx(1) <= maxy AND _
+       m15ModelBuffer_Overlay(i).vtx(2) >= minz AND m15ModelBuffer_Overlay(i).vtx(2) <= maxz THEN
 
-                        FOR i = 1 TO vertexcount
+       IF j = MAXBONESOURCE THEN
+         TBGLERROR ( "Module limit reached: TBGL_m15DefBoneBox"+STR$(Model)+","+STR$(ID)+" tries to allocate more than"+STR$(MAXBONESOURCE)+" vertices")
+         EXIT FOR
+       END IF
 
-                          ' -- Simple test whether vertex is or not in bone
-                          IF m15ModelBuffer_Overlay(i).vtx(0) >= minx AND m15ModelBuffer_Overlay(i).vtx(0) <= maxx AND _
-                             m15ModelBuffer_Overlay(i).vtx(1) >= miny AND m15ModelBuffer_Overlay(i).vtx(1) <= maxy AND _
-                             m15ModelBuffer_Overlay(i).vtx(2) >= minz AND m15ModelBuffer_Overlay(i).vtx(2) <= maxz THEN
-
-                             IF j = MAXBONESOURCE THEN
-                               TBGLERROR ( "Module limit reached: TBGL_m15DefBoneBox"+STR$(Model)+","+STR$(ID)+" tries to allocate more than"+STR$(MAXBONESOURCE)+" vertices")
-                               EXIT FOR
-                             END IF
-
-                             INCR j
-                             BoneBox(Model, ID).SOURCE(j).v = i
-                             BoneBox(Model, ID).SOURCE(j).vtx(0) = m15ModelBuffer_Overlay(i).vtx(0)
-                             BoneBox(Model, ID).SOURCE(j).vtx(1) = m15ModelBuffer_Overlay(i).vtx(1)
-                             BoneBox(Model, ID).SOURCE(j).vtx(2) = m15ModelBuffer_Overlay(i).vtx(2)
-                          END IF
-
-                        NEXT
-                          BoneBox(Model, ID).sourceCount = j
-
-                      END IF
-                    END IF
-                  END IF
-                END IF
-
-              END IF
-            END IF
-          END IF
-
-      END IF
+       INCR j
+       BoneBox(Model, ID).SOURCE(j).v = i
+       BoneBox(Model, ID).SOURCE(j).vtx(0) = m15ModelBuffer_Overlay(i).vtx(0)
+       BoneBox(Model, ID).SOURCE(j).vtx(1) = m15ModelBuffer_Overlay(i).vtx(1)
+       BoneBox(Model, ID).SOURCE(j).vtx(2) = m15ModelBuffer_Overlay(i).vtx(2)
     END IF
-  END IF
+
+  NEXT
+    BoneBox(Model, ID).sourceCount = j
+
 END SUB
 
 ' -- Defines bone according to layer name
-SUB Exec_TBGL_m15DefBoneLayer()
+SUB tbgl_m15DefBoneLayer ALIAS "tbgl_m15DefBoneLayer" ( _
+    BYVAL Model AS LONG _
+  , BYVAL ID AS LONG _
+  , BYVAL layer AS STRING _
+  , BYVAL anchorX AS SINGLE _
+  , BYVAL anchorY AS SINGLE _
+  , BYVAL anchorZ AS SINGLE _
+  ) EXPORT
 
   REGISTER i AS LONG, j AS LONG
   LOCAL wantedLayer AS LONG
 
-  LOCAL model, ID, anchorX, anchorY, anchorZ AS EXT
-  LOCAL layer AS STRING
-
-  thinBasic_ParseNumber Model
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-    IF thinBasic_CheckComma() THEN
-      thinBasic_ParseNumber ID
-      IF thinBasic_CheckComma() THEN
-        thinBasic_ParseString layer
-        IF thinBasic_CheckComma() THEN
-          thinBasic_ParseNumber anchorX
-          IF thinBasic_CheckComma() THEN
-            thinBasic_ParseNumber anchorY
-            IF thinBasic_CheckComma() THEN
-              thinBasic_ParseNumber anchorZ
 
-              layer = UCASE$(layer)
+  layer = UCASE$(layer)
 
-              wantedLayer = -10
-              FOR i = 1 TO PARSECOUNT( m15ModelLayers(Model), "," )
-                IF PARSE$(m15ModelLayers(Model), ",", i) = layer THEN
-                  wantedLayer = i - 1
-                  EXIT FOR
-                END IF
-              NEXT
-
-              IF wantedLayer = -10 THEN EXIT SUB
-
-              LayerFound:
-
-              BoneBox(Model, ID).anchorX = anchorX
-              BoneBox(Model, ID).anchorY = anchorY
-              BoneBox(Model, ID).anchorZ = anchorZ
-
-              LOCAL vertexcount AS LONG
-              vertexcount = m15ModelData(model).vertexCount
-
-              FOR i = 1 TO vertexcount
-
-                IF m15ModelBuffer_Overlay(i).Layer = wantedLayer THEN
-                   IF j = MAXBONESOURCE THEN
-                     TBGLERROR ( "Module limit reached: TBGL_m15DefBoneLayer"+STR$(Model)+","+STR$(ID)+" tries to allocate more than"+STR$(MAXBONESOURCE)+" vertices")
-                     EXIT FOR
-                   END IF
-
-                   INCR j
-                   BoneBox(Model, ID).SOURCE(j).v = i
-                   BoneBox(Model, ID).SOURCE(j).vtx(0) = m15ModelBuffer_Overlay(i).vtx(0)
-                   BoneBox(Model, ID).SOURCE(j).vtx(1) = m15ModelBuffer_Overlay(i).vtx(1)
-                   BoneBox(Model, ID).SOURCE(j).vtx(2) = m15ModelBuffer_Overlay(i).vtx(2)
-                END IF
-
-              NEXT
-              BoneBox(Model, ID).sourceCount = j
-
-            END IF
-          END IF
-        END IF
-      END IF
+  wantedLayer = -10
+  FOR i = 1 TO PARSECOUNT( m15ModelLayers(Model), "," )
+    IF PARSE$(m15ModelLayers(Model), ",", i) = layer THEN
+      wantedLayer = i - 1
+      EXIT FOR
     END IF
+  NEXT
+
+  IF wantedLayer = -10 THEN EXIT SUB
+
+  BoneBox(Model, ID).anchorX = anchorX
+  BoneBox(Model, ID).anchorY = anchorY
+  BoneBox(Model, ID).anchorZ = anchorZ
+
+  LOCAL vertexcount AS LONG
+  vertexcount = m15ModelData(model).vertexCount
+
+  FOR i = 1 TO vertexcount
+
+    IF m15ModelBuffer_Overlay(i).Layer = wantedLayer THEN
+       IF j = MAXBONESOURCE THEN
+         TBGLERROR ( "Module limit reached: TBGL_m15DefBoneLayer"+STR$(Model)+","+STR$(ID)+" tries to allocate more than"+STR$(MAXBONESOURCE)+" vertices")
+         EXIT FOR
+       END IF
+
+       INCR j
+       BoneBox(Model, ID).SOURCE(j).v = i
+       BoneBox(Model, ID).SOURCE(j).vtx(0) = m15ModelBuffer_Overlay(i).vtx(0)
+       BoneBox(Model, ID).SOURCE(j).vtx(1) = m15ModelBuffer_Overlay(i).vtx(1)
+       BoneBox(Model, ID).SOURCE(j).vtx(2) = m15ModelBuffer_Overlay(i).vtx(2)
+    END IF
+
+  NEXT
+  BoneBox(Model, ID).sourceCount = j
 
 END SUB
 
 ' -- Defines bone according to color used
-SUB Exec_TBGL_m15DefBoneColor()
+SUB tbgl_m15DefBoneColor ALIAS "tbgl_m15DefBoneColor" ( _
+    BYVAL Model AS LONG _
+  , BYVAL ID AS LONG _
+  , BYVAL r AS BYTE _
+  , BYVAL g AS BYTE _
+  , BYVAL b AS BYTE _
+  , BYVAL anchorX AS SINGLE _
+  , BYVAL anchorY AS SINGLE _
+  , BYVAL anchorZ AS SINGLE _
+  ) EXPORT
+
+  internal_m15DefBoneColor( Model, ID, r, g, b, anchorX, anchorY, anchorZ )
+
+END SUB
+
+' -- Color as DOUBLE: a script value that is no exact byte (fraction, out of range) matches no vertex, as it always did
+SUB internal_m15DefBoneColor( _
+    BYVAL Model AS LONG _
+  , BYVAL ID AS LONG _
+  , BYVAL r AS DOUBLE _
+  , BYVAL g AS DOUBLE _
+  , BYVAL b AS DOUBLE _
+  , BYVAL anchorX AS SINGLE _
+  , BYVAL anchorY AS SINGLE _
+  , BYVAL anchorZ AS SINGLE _
+  )
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
   REGISTER i AS LONG, j AS LONG
-  LOCAL Model AS EXT, ID AS EXT, anchorX AS EXT, anchorY AS EXT, anchorZ AS EXT, r AS EXT, g AS EXT, b AS EXT
   LOCAL vertexcount AS LONG
-  thinBASIC_ParseXNumbers(8,8,Model, ID, r, g, b, anchorX, anchorY, anchorZ )
+
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
   vertexcount = m15ModelData(model).vertexCount
 
@@ -267,12 +241,10 @@ SUB Exec_TBGL_m15DefBoneColor()
 END SUB
 
 ' -- Defines bone by adding vertex by vertex
-SUB Exec_TBGL_m15DefBoneAddVertex()
+SUB tbgl_m15DefBoneAddVertex ALIAS "tbgl_m15DefBoneAddVertex" ( BYVAL Model AS LONG, BYVAL ID AS LONG, BYVAL vertexID AS LONG ) EXPORT
 
     REGISTER  j AS LONG
-    LOCAL model, ID, vertexID  AS EXT
 
-    thinBasic_Parse3Numbers(Model, ID, vertexID)
     REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
     INCR BoneBox(Model, ID).sourceCount
     j = BoneBox(Model, ID).sourceCount
@@ -291,12 +263,7 @@ SUB Exec_TBGL_m15DefBoneAddVertex()
 END SUB
 
 ' -- Defines bone anchor point separately
-SUB Exec_TBGL_m15DefBoneAnchor()
-
-  REGISTER  j AS LONG
-  LOCAL model, ID, anchorX, anchorY, anchorZ AS EXT
-
-  thinBasic_Parse5Numbers( Model, ID, anchorX, anchorY, anchorZ)
+SUB tbgl_m15DefBoneAnchor ALIAS "tbgl_m15DefBoneAnchor" ( BYVAL Model AS LONG, BYVAL ID AS LONG, BYVAL anchorX AS SINGLE, BYVAL anchorY AS SINGLE, BYVAL anchorZ AS SINGLE ) EXPORT
 
   BoneBox(Model, ID).anchorX = anchorX
   BoneBox(Model, ID).anchorY = anchorY
@@ -305,22 +272,17 @@ SUB Exec_TBGL_m15DefBoneAnchor()
 END SUB
 
 ' -- Resets definition of bone
-  SUB Exec_TBGL_m15DefBoneReset()
+SUB tbgl_m15DefBoneReset ALIAS "tbgl_m15DefBoneReset" ( BYVAL Model AS LONG, BYVAL Bone AS LONG ) EXPORT
 
-    LOCAL model, Bone AS EXT
+  RESET BoneBox(Model, Bone)
 
-    thinBasic_Parse2Numbers( Model, Bone )
-    RESET BoneBox(Model, Bone)
-
-  END SUB
+END SUB
 
 ' -- Makes bone reusable
-SUB Exec_TBGL_m15DefBoneEmpty()
+SUB tbgl_m15DefBoneEmpty ALIAS "tbgl_m15DefBoneEmpty" ( BYVAL Model AS LONG, BYVAL Bone AS LONG ) EXPORT
 
   REGISTER i AS LONG
-  LOCAL model, Bone AS EXT
 
-  thinBasic_Parse2Numbers( Model, Bone )
   RESET BoneBox(Model, Bone)
 
   BoneTree(Model, Bone).bonesCount = 0
@@ -337,12 +299,9 @@ END SUB
 ' -----------------------------------------------------------------------------
 
 ' -- Erases links to child bones
-SUB Exec_TBGL_m15EraseChildbones()
+SUB tbgl_m15EraseChildbones ALIAS "tbgl_m15EraseChildbones" ( BYVAL Model AS LONG, BYVAL Bone AS LONG ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
   REGISTER i AS LONG
-  LOCAL Model, Bone AS EXT
-
-  thinBasic_Parse2Numbers( Model, Bone )
 
   BoneTree(Model, Bone).bonesCount = 0
 
@@ -353,11 +312,8 @@ SUB Exec_TBGL_m15EraseChildbones()
 END SUB
 
 ' -- Sets child bone
-SUB Exec_TBGL_m15SetBoneChild()
+SUB tbgl_m15SetBoneChild ALIAS "tbgl_m15SetBoneChild" ( BYVAL Model AS LONG, BYVAL Bone AS LONG, BYVAL ChildBone AS BYTE ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
-  LOCAL Model, Bone, ChildBone AS EXT
-
-  thinBasic_Parse3Numbers( Model, Bone, ChildBone )
 
   IF BoneTree(Model, Bone).bonesCount = %MAXBONES THEN tbglError "Number of child bones for bone"+STR$(Bone)+" exceeds"+STR$(%MAXBONES) : EXIT SUB
 
@@ -368,11 +324,8 @@ SUB Exec_TBGL_m15SetBoneChild()
 END SUB
 
 ' -- Gets child bone
-FUNCTION Exec_TBGL_m15GetBoneChild() AS EXT
+FUNCTION tbgl_m15GetBoneChild ALIAS "tbgl_m15GetBoneChild" ( BYVAL Model AS LONG, BYVAL Bone AS LONG, BYVAL ChildNumber AS LONG ) EXPORT AS BYTE
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT FUNCTION
-  LOCAL Model, Bone, ChildNumber AS EXT
-
-  thinBasic_Parse3Numbers( Model, Bone, ChildNumber )
 
   IF ChildNumber > %MAXBONES OR ChildNumber < 0 THEN tbglError "Bone can have maximum of "+STR$(%MAXBONES)+" of child bones" : EXIT FUNCTION
 
@@ -381,11 +334,8 @@ FUNCTION Exec_TBGL_m15GetBoneChild() AS EXT
 END FUNCTION
 
 ' -- Gets how much child bones
-FUNCTION Exec_TBGL_m15GetBoneChildCount() AS EXT
+FUNCTION tbgl_m15GetBoneChildCount ALIAS "tbgl_m15GetBoneChildCount" ( BYVAL Model AS LONG, BYVAL Bone AS LONG ) EXPORT AS BYTE
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT FUNCTION
-  LOCAL Model, Bone AS EXT
-
-  thinBasic_Parse2Numbers( Model, Bone )
 
   FUNCTION = BoneTree(Model, Bone).bonesCount
 
@@ -396,12 +346,9 @@ END FUNCTION
 ' -----------------------------------------------------------------------------
 
 ' -- Resets bones
-SUB Exec_TBGL_m15ResetBones()
+SUB tbgl_m15ResetBones ALIAS "tbgl_m15ResetBones" ( BYVAL Model AS LONG ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
   REGISTER i AS LONG
-  LOCAL Model AS EXT
-
-  Model = thinBASIC_Parse1Number
 
   FOR i = 1 TO %MAXBONES
     BoneBox(Model,i).transformsCount = 0
@@ -418,48 +365,36 @@ END SUB
 ' -- Rotation of bone on defined axes
 ' -- [!] Note these functions just put transformations on stack, they do not perform
 ' --     the transformation itself!
-SUB Exec_TBGL_m15RotBone()
+SUB tbgl_m15RotBone ALIAS "tbgl_m15RotBone" ( BYVAL Model AS LONG, BYVAL Bone AS LONG, BYVAL nanglex AS SINGLE, BYVAL nangley AS SINGLE, BYVAL nanglez AS SINGLE ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
-
-  LOCAL Model, Bone, nanglex, nangley, nanglez AS EXT
-  thinBasic_Parse5Numbers( Model, Bone, nanglex, nangley, nanglez )
 
   internal_m15RotBone(Model,Bone,nanglex+180,nangley+180,nanglez+180,Bone)
 
 END SUB
 
-SUB Exec_TBGL_m15RotBoneX()
+SUB tbgl_m15RotBoneX ALIAS "tbgl_m15RotBoneX" ( BYVAL Model AS LONG, BYVAL Bone AS LONG, BYVAL nangle AS SINGLE ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
-
-  LOCAL Model, Bone, nangle AS EXT
-  thinBasic_Parse3Numbers( Model, Bone, nangle )
 
   internal_m15RotBone(Model,Bone,nangle+180,180,180,Bone)
 
 END SUB
 
-SUB Exec_TBGL_m15RotBoneY()
+SUB tbgl_m15RotBoneY ALIAS "tbgl_m15RotBoneY" ( BYVAL Model AS LONG, BYVAL Bone AS LONG, BYVAL nangle AS SINGLE ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
-
-  LOCAL Model, Bone, nangle AS EXT
-  thinBasic_Parse3Numbers( Model, Bone, nangle )
 
   internal_m15RotBone(Model,Bone,180,nangle+180,180,Bone)
 
 END SUB
 
-SUB Exec_TBGL_m15RotBoneZ()
+SUB tbgl_m15RotBoneZ ALIAS "tbgl_m15RotBoneZ" ( BYVAL Model AS LONG, BYVAL Bone AS LONG, BYVAL nangle AS SINGLE ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
-
-  LOCAL Model, Bone, nangle AS EXT
-  thinBasic_Parse3Numbers( Model, Bone, nangle )
 
   internal_m15RotBone(Model,Bone,180,180,nangle+180,Bone)
 
 END SUB
 
 ' -- The most important function, takes transforms from the stack and applies it
-SUB Exec_TBGL_m15ApplyBones()
+SUB tbgl_m15ApplyBones ALIAS "tbgl_m15ApplyBones" ( BYVAL Model AS LONG ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
 
   REGISTER i AS LONG, t AS LONG
@@ -471,11 +406,9 @@ SUB Exec_TBGL_m15ApplyBones()
   LOCAL ty AS SINGLE
   LOCAL tz AS SINGLE
   LOCAL anchBone AS LONG, anchorindex AS LONG, dstVtx AS LONG
-  LOCAL model AS EXT
 
   LOCAL cAngle, sAngle AS SINGLE
   LOCAL auxX, auxY, auxZ AS SINGLE
-  Model = thinBasic_Parse1Number
 
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
 
@@ -722,11 +655,9 @@ END SUB
 
 ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   ' -- [O]
-  SUB Exec_TBGL_m15AddBoneTreeItem()
+  SUB tbgl_m15AddBoneTreeItem ALIAS "tbgl_m15AddBoneTreeItem" ( BYVAL Model AS LONG, BYVAL Bone AS BYTE, BYVAL Level AS BYTE, BYVAL ChildLevel AS BYTE ) EXPORT
     IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
-    LOCAL Model, Bone, Level, ChildLevel AS EXT
 
-    thinBasic_Parse4Numbers( Model, Bone, Level, ChildLevel )
     BoneTree(Model, Bone).awaitingLevel = ChildLevel
 
     LOCAL i AS LONG
@@ -740,3 +671,197 @@ END SUB
     NEXT
 
   END SUB
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+SUB Exec_TBGL_m15DefBoneBox()
+  LOCAL Model AS EXT, ID AS EXT, minx AS EXT, maxx AS EXT, miny AS EXT, maxy AS EXT, minz AS EXT, maxz AS EXT, anchorX AS EXT, anchorY AS EXT, anchorZ AS EXT
+
+  thinBasic_ParseNumber Model
+  IF thinBasic_CheckComma_Mandatory THEN
+    thinBasic_ParseNumber ID
+      IF thinBasic_CheckComma_Mandatory THEN
+        thinBasic_ParseNumber minx
+        IF thinBasic_CheckComma_Mandatory THEN
+          thinBasic_ParseNumber maxx
+          IF thinBasic_CheckComma_Mandatory THEN
+            thinBasic_ParseNumber miny
+            IF thinBasic_CheckComma_Mandatory THEN
+              thinBasic_ParseNumber maxy
+              IF thinBasic_CheckComma_Mandatory THEN
+                thinBasic_ParseNumber minz
+                IF thinBasic_CheckComma_Mandatory THEN
+                  thinBasic_ParseNumber maxz
+                  IF thinBasic_CheckComma_Mandatory THEN
+                    thinBasic_ParseNumber anchorX
+                    IF thinBasic_CheckComma_Mandatory THEN
+                      thinBasic_ParseNumber anchorY
+                      IF thinBasic_CheckComma_Mandatory THEN
+                        thinBasic_ParseNumber anchorZ
+
+                        tbgl_m15DefBoneBox( Model, ID, minx, maxx, miny, maxy, minz, maxz, anchorX, anchorY, anchorZ )
+
+                      END IF
+                    END IF
+                  END IF
+                END IF
+
+              END IF
+            END IF
+          END IF
+
+      END IF
+    END IF
+  END IF
+END SUB
+
+SUB Exec_TBGL_m15DefBoneLayer()
+  LOCAL model, ID, anchorX, anchorY, anchorZ AS EXT
+  LOCAL layer AS STRING
+
+  thinBasic_ParseNumber Model
+    IF thinBasic_CheckComma() THEN
+      thinBasic_ParseNumber ID
+      IF thinBasic_CheckComma() THEN
+        thinBasic_ParseString layer
+        IF thinBasic_CheckComma() THEN
+          thinBasic_ParseNumber anchorX
+          IF thinBasic_CheckComma() THEN
+            thinBasic_ParseNumber anchorY
+            IF thinBasic_CheckComma() THEN
+              thinBasic_ParseNumber anchorZ
+
+              tbgl_m15DefBoneLayer( Model, ID, layer, anchorX, anchorY, anchorZ )
+
+            END IF
+          END IF
+        END IF
+      END IF
+    END IF
+
+END SUB
+
+SUB Exec_TBGL_m15DefBoneColor()
+  LOCAL Model AS EXT, ID AS EXT, anchorX AS EXT, anchorY AS EXT, anchorZ AS EXT, r AS EXT, g AS EXT, b AS EXT
+
+  thinBASIC_ParseXNumbers(8,8,Model, ID, r, g, b, anchorX, anchorY, anchorZ )
+  internal_m15DefBoneColor( Model, ID, r, g, b, anchorX, anchorY, anchorZ )
+
+END SUB
+
+SUB Exec_TBGL_m15DefBoneAddVertex()
+  LOCAL model, ID, vertexID  AS EXT
+
+  thinBasic_Parse3Numbers(Model, ID, vertexID)
+  tbgl_m15DefBoneAddVertex( Model, ID, vertexID )
+
+END SUB
+
+SUB Exec_TBGL_m15DefBoneAnchor()
+  LOCAL model, ID, anchorX, anchorY, anchorZ AS EXT
+
+  thinBasic_Parse5Numbers( Model, ID, anchorX, anchorY, anchorZ)
+  tbgl_m15DefBoneAnchor( Model, ID, anchorX, anchorY, anchorZ )
+
+END SUB
+
+SUB Exec_TBGL_m15DefBoneReset()
+  LOCAL model, Bone AS EXT
+
+  thinBasic_Parse2Numbers( Model, Bone )
+  tbgl_m15DefBoneReset( Model, Bone )
+
+END SUB
+
+SUB Exec_TBGL_m15DefBoneEmpty()
+  LOCAL model, Bone AS EXT
+
+  thinBasic_Parse2Numbers( Model, Bone )
+  tbgl_m15DefBoneEmpty( Model, Bone )
+
+END SUB
+
+SUB Exec_TBGL_m15EraseChildbones()
+  LOCAL Model, Bone AS EXT
+
+  thinBasic_Parse2Numbers( Model, Bone )
+  tbgl_m15EraseChildbones( Model, Bone )
+
+END SUB
+
+SUB Exec_TBGL_m15SetBoneChild()
+  LOCAL Model, Bone, ChildBone AS EXT
+
+  thinBasic_Parse3Numbers( Model, Bone, ChildBone )
+  tbgl_m15SetBoneChild( Model, Bone, ChildBone )
+
+END SUB
+
+FUNCTION Exec_TBGL_m15GetBoneChild() AS EXT
+  LOCAL Model, Bone, ChildNumber AS EXT
+
+  thinBasic_Parse3Numbers( Model, Bone, ChildNumber )
+  FUNCTION = tbgl_m15GetBoneChild( Model, Bone, ChildNumber )
+
+END FUNCTION
+
+FUNCTION Exec_TBGL_m15GetBoneChildCount() AS EXT
+  LOCAL Model, Bone AS EXT
+
+  thinBasic_Parse2Numbers( Model, Bone )
+  FUNCTION = tbgl_m15GetBoneChildCount( Model, Bone )
+
+END FUNCTION
+
+SUB Exec_TBGL_m15ResetBones()
+  tbgl_m15ResetBones( thinBASIC_Parse1Number )
+END SUB
+
+SUB Exec_TBGL_m15RotBone()
+  LOCAL Model, Bone, nanglex, nangley, nanglez AS EXT
+
+  thinBasic_Parse5Numbers( Model, Bone, nanglex, nangley, nanglez )
+  tbgl_m15RotBone( Model, Bone, nanglex, nangley, nanglez )
+
+END SUB
+
+SUB Exec_TBGL_m15RotBoneX()
+  LOCAL Model, Bone, nangle AS EXT
+
+  thinBasic_Parse3Numbers( Model, Bone, nangle )
+  tbgl_m15RotBoneX( Model, Bone, nangle )
+
+END SUB
+
+SUB Exec_TBGL_m15RotBoneY()
+  LOCAL Model, Bone, nangle AS EXT
+
+  thinBasic_Parse3Numbers( Model, Bone, nangle )
+  tbgl_m15RotBoneY( Model, Bone, nangle )
+
+END SUB
+
+SUB Exec_TBGL_m15RotBoneZ()
+  LOCAL Model, Bone, nangle AS EXT
+
+  thinBasic_Parse3Numbers( Model, Bone, nangle )
+  tbgl_m15RotBoneZ( Model, Bone, nangle )
+
+END SUB
+
+SUB Exec_TBGL_m15ApplyBones()
+  tbgl_m15ApplyBones( thinBasic_Parse1Number )
+END SUB
+
+SUB Exec_TBGL_m15AddBoneTreeItem()
+  LOCAL Model, Bone, Level, ChildLevel AS EXT
+
+  thinBasic_Parse4Numbers( Model, Bone, Level, ChildLevel )
+  tbgl_m15AddBoneTreeItem( Model, Bone, Level, ChildLevel )
+
+END SUB
+
+#ENDIF

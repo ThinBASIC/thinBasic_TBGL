@@ -89,11 +89,8 @@ MACRO ParsedVal(src, position) = VAL( PARSE$( src, ",", position ))
 ' -----------------------------------------------------------------------------
 
 ' -- Initializes structures for models and bones
-FUNCTION Exec_TBGL_m15InitModelBuffers() AS EXT
+FUNCTION tbgl_m15InitModelBuffers ALIAS "tbgl_m15InitModelBuffers" ( BYVAL n AS LONG, BYVAL n2 AS LONG ) EXPORT AS LONG
   REGISTER i AS LONG
-  LOCAL n AS EXT, n2 AS EXT
-
-  thinBASIC_Parse2Numbers( n, n2 )
 
   IF n > 0 AND n2 > 3 THEN
     m15ModelNum = n
@@ -124,20 +121,22 @@ FUNCTION Exec_TBGL_m15InitModelBuffers() AS EXT
 
 END FUNCTION
 
-' -- Default filter used when loading textures for models
-SUB Exec_TBGL_m15SetDefaultTextureFilter()
+' -- Default filter used when loading textures for models, negative anisoLevel keeps the current one
+SUB tbgl_m15SetDefaultTextureFilter ALIAS "tbgl_m15SetDefaultTextureFilter" ( BYVAL eFilter AS LONG, BYVAL eAniso AS SINGLE ) EXPORT
 
-  LOCAL eFilter, eAniso AS EXT
-  LOCAL n AS LONG
-
-  n = thinBASIC_ParseXNumbers(1, 2, eFilter, eAniso )
   texture_DefaultModelFilter = eFilter
-  IF n > 1 THEN texture_DefaultModelFilterMultiplier = IIF(eAniso > texture_AnisotropyMax, texture_AnisotropyMax, eAniso )
+  IF eAniso >= 0 THEN texture_DefaultModelFilterMultiplier = IIF(eAniso > texture_AnisotropyMax, texture_AnisotropyMax, eAniso )
 
 END SUB
 
 ' -- Loads M15 model from file
-FUNCTION Exec_TBGL_m15LoadModel() AS LONG
+FUNCTION tbgl_m15LoadModel ALIAS "tbgl_m15LoadModel" ( _
+    BYVAL FileName AS STRING _
+  , BYVAL TextureDirectory AS STRING _
+  , BYVAL Model AS LONG _
+  , BYVAL MakeList AS LONG _
+  , BYVAL NormalMethod AS LONG _
+  ) EXPORT AS LONG
 
   REGISTER i AS LONG, e AS LONG
 
@@ -153,237 +152,201 @@ FUNCTION Exec_TBGL_m15LoadModel() AS LONG
 
   LOCAL VertexCountNow, MaxVertexCount AS LONG
 
-  LOCAL FileName AS STRING, TextureDirectory AS STRING,Model AS EXT, MakeList AS EXT, NormalMethod AS EXT
-
   ' -- Features of new versions
   LOCAL supportNormals AS LONG
 
-  thinBasic_ParseString FileName
+  IF Model < 1 THEN tbglError filename+":"+$CRLF+"Model index must be positive number (used "+FORMAT$(model)+")" : EXIT FUNCTION
 
-  IF thinBasic_CheckComma_Mandatory THEN
-    thinBasic_ParseString TextureDirectory
+  ' -------------------------------------------------------------------------
+  IF UBOUND(m15ModelBuffer) < Model THEN
+    REDIM PRESERVE m15ModelBuffer (1 TO Model)
+    REDIM PRESERVE m15ModelData   (1 TO Model)
+    REDIM PRESERVE m15ModelLayers (1 TO Model)
+    m15ModelNum = Model
 
-    IF thinBasic_CheckComma_Mandatory THEN
-      thinBasic_ParseNumber Model
+  END IF
+  ' -------------------------------------------------------------------------
+  DIM Token(15) AS STRING
+  ' -------------------------------------------------------------------------
 
-      IF Model < 1 THEN tbglError filename+":"+$CRLF+"Model index must be positive number (used "+FORMAT$(model)+")" : EXIT FUNCTION
+  SrcPath = internal_GetBasePath( )
 
-      IF thinBasic_CheckComma_Mandatory THEN
-        thinBasic_ParseNumber Makelist
+  ' -- Texture path setup
+  LOCAL TextureCounterMini AS LONG
+  IF LEN(TextureDirectory) = 0          THEN TextureDirectory = "Textures\"
+  IF RIGHT$(TextureDirectory,1) <> "\"  THEN TextureDirectory = TextureDirectory + "\"
+  IF INSTR(TextureDirectory, ":") = 0   THEN TextureDirectory = SrcPath+TextureDirectory
 
-        IF thinBasic_CheckComma_Mandatory THEN
-          thinBasic_ParseNumber NormalMethod
+  ' -- Layer setup
+  m15ModelLayers(Model) = "<GENERALLAYER>"
 
-          ' -------------------------------------------------------------------------
-          IF UBOUND(m15ModelBuffer) < Model THEN
-            REDIM PRESERVE m15ModelBuffer (1 TO Model)
-            REDIM PRESERVE m15ModelData   (1 TO Model)
-            REDIM PRESERVE m15ModelLayers (1 TO Model)
-            m15ModelNum = Model
+  ' -- Filename preprocessing
+  ff = FREEFILE
+  REPLACE ".\" WITH "" IN FileName
+  IF File_Exists(FileName) = 0 THEN FileName = SrcPath+FileName
+  IF File_Exists(FileName) = 0 THEN TBGLERROR "Cannot locate model file:"+$CRLF+FileName : EXIT FUNCTION
 
+  ' -- Open the file
+  OPEN FileName FOR BINARY AS #ff
+    GET$ #ff, LOF(#ff), FileContent
+  CLOSE #ff
+
+  ' -- Get the lines out of it
+  totalCount = PARSECOUNT(FileContent, $CRLF)
+  DIM fSRCLine(1 TO totalCount) AS LOCAL STRING
+  PARSE FileContent, fSRCLine(), $CRLF
+
+  ' -- Detect version
+  DIM version(3) AS LONG
+  version(0) = VAL(PARSE$(fSRCLine(1), ANY "{.", 2))
+  version(1) = VAL(PARSE$(fSRCLine(1),      ".", 2))
+  version(2) = VAL(PARSE$(fSRCLine(1),      ".", 3))
+  version(3) = VAL(PARSE$(fSRCLine(1), ANY ".}", 4))
+
+  IF version(0) >= 1 AND version(1) >= 0 AND version(2) >= 0 AND version(3) >= 7 THEN supportNormals = %TRUE
+  IF normalMethod = %TBGL_NORMAL_FROMFILE AND supportNormals = %FALSE THEN TBGLERROR "File does not contain any normal vector information" : EXIT FUNCTION
+  ' -- [!] VERTEXNUM must be defined in file !!!
+
+  ' -- Let CPU take a breath
+  SLEEP 1
+
+  FOR i = 1 TO totalCount
+
+    PARSE fSRCLine(i), Token(), ","
+    fKeyword    = Token(0)
+
+    SELECT CASE fKeyword
+      CASE "POLY"
+          IF VertexCountNow < MaxVertexCount THEN
+            INCR VertexCountNow
+          ELSE
+            INCR VertexCountNow
+            m15ModelBuffer(Model) = m15ModelBuffer(Model) + STRING$( SIZEOF(Tm15ImmediateData), 0 )
+            REDIM m15ModelBuffer_Overlay(1 TO MaxVertexCount) AT STRPTR(m15ModelBuffer(Model))
           END IF
-          ' -------------------------------------------------------------------------
-          DIM Token(15) AS STRING
-          ' -------------------------------------------------------------------------
 
-          SrcPath = thinBasic_GetRunTimeInfo("SCRIPT_PATH")
+          m15ModelBuffer_Overlay(VertexCountNow).vtx(0)   = VAL(Token(1))
+          m15ModelBuffer_Overlay(VertexCountNow).vtx(1)   = VAL(Token(2))
+          m15ModelBuffer_Overlay(VertexCountNow).vtx(2)   = VAL(Token(3))
+          m15ModelBuffer_Overlay(VertexCountNow).PStop    = VAL(Token(4))
+          m15ModelBuffer_Overlay(VertexCountNow).TexN     = TextureMoved(VAL(Token(5)))
+          m15ModelBuffer_Overlay(VertexCountNow).TexXY(0) = VAL(Token(6))
+          m15ModelBuffer_Overlay(VertexCountNow).TexXY(1) = VAL(Token(7))
+          m15ModelBuffer_Overlay(VertexCountNow).clr(0)   = VAL(Token(8))
+          m15ModelBuffer_Overlay(VertexCountNow).clr(1)   = VAL(Token(9))
+          m15ModelBuffer_Overlay(VertexCountNow).clr(2)   = VAL(Token(10))
+          m15ModelBuffer_Overlay(VertexCountNow).Layer    = VAL(Token(11))
 
-          ' -- Texture path setup
-          LOCAL TextureCounterMini AS LONG
-          IF LEN(TextureDirectory) = 0          THEN TextureDirectory = "Textures\"
-          IF RIGHT$(TextureDirectory,1) <> "\"  THEN TextureDirectory = TextureDirectory + "\"
-          IF INSTR(TextureDirectory, ":") = 0   THEN TextureDirectory = SrcPath+TextureDirectory
+          IF supportNormals = %TRUE AND NormalMethod = %TBGL_NORMAL_FROMFILE THEN
+            m15ModelBuffer_Overlay(VertexCountNow).n(0)   = VAL(Token(12))
+            m15ModelBuffer_Overlay(VertexCountNow).n(1)   = VAL(Token(13))
+            m15ModelBuffer_Overlay(VertexCountNow).n(2)   = VAL(Token(14))
+          END IF
 
-          ' -- Layer setup
-          m15ModelLayers(Model) = "<GENERALLAYER>"
+      CASE "VERTEXNUM"
+        IF MaxVertexCount = 0 THEN
+          MaxVertexCount = VAL(Token(1))
+          ' -- Pre allocate space
+          m15ModelBuffer(Model) = STRING$( MaxVertexCount * SIZEOF(Tm15ImmediateData), 0 )
+          REDIM m15ModelBuffer_Overlay(1 TO MaxVertexCount) AT STRPTR(m15ModelBuffer(Model))
+        END IF
 
-          ' -- Filename preprocessing
-          ff = FREEFILE
-          REPLACE ".\" WITH "" IN FileName
-          IF File_Exists(FileName) = 0 THEN FileName = SrcPath+FileName
-          IF File_Exists(FileName) = 0 THEN TBGLERROR "Cannot locate model file:"+$CRLF+FileName : EXIT FUNCTION
+      CASE "LAYERS"
+        LOCAL layerstring AS STRING
+        layerstring = UCASE$(MID$(fSRCLine(i), INSTR(fSRCLine(i), ",")+1, LEN(fSRCLine(i))))
 
-          ' -- Open the file
-          OPEN FileName FOR BINARY AS #ff
-            GET$ #ff, LOF(#ff), FileContent
-          CLOSE #ff
+        FOR j = 1 TO PARSECOUNT(layerstring, ",")
+          m15ModelLayers(Model) = m15ModelLayers(Model) + "," + TRIM$(PARSE$(layerstring, ",", j))
+        NEXT
 
-          ' -- Get the lines out of it
-          totalCount = PARSECOUNT(FileContent, $CRLF)
-          DIM fSRCLine(1 TO totalCount) AS LOCAL STRING
-          PARSE FileContent, fSRCLine(), $CRLF
+      CASE "TEXLIST"
+          ' -- Loading textures
+          texList = MID$(fSRCLine(i), INSTR(fSRCLine(i), ",")+1, LEN(fSRCLine(i)))
 
-          ' -- Detect version
-          DIM version(3) AS LONG
-          version(0) = VAL(PARSE$(fSRCLine(1), ANY "{.", 2))
-          version(1) = VAL(PARSE$(fSRCLine(1),      ".", 2))
-          version(2) = VAL(PARSE$(fSRCLine(1),      ".", 3))
-          version(3) = VAL(PARSE$(fSRCLine(1), ANY ".}", 4))
+          m15ModelData(Model).isTextured = %TRUE
 
-          IF version(0) >= 1 AND version(1) >= 0 AND version(2) >= 0 AND version(3) >= 7 THEN supportNormals = %TRUE
-          IF normalMethod = %TBGL_NORMAL_FROMFILE AND supportNormals = %FALSE THEN TBGLERROR "File does not contain any normal vector information" : EXIT FUNCTION
-          ' -- [!] VERTEXNUM must be defined in file !!!
+          FOR j = 1 TO PARSECOUNT(texList, ",")
+            TextureToLoad = PARSE$(texList, ",", j)
 
-          ' -- Let CPU take a breath
-          SLEEP 1
+            IF LEN(TextureToLoad) THEN
+              IF INSTR(TextureToLoad, ":") = 0 THEN TextureToLoad = TextureDirectory+TextureToLoad
+              TextureToLoad = UCASE$(TextureToLoad)
 
-          FOR i = 1 TO totalCount
+              temp = meIsTextureLoaded(TextureToLoad)
 
-            PARSE fSRCLine(i), Token(), ","
-            fKeyword    = Token(0)
+              IF temp = 0 THEN
 
-            SELECT CASE fKeyword
-              CASE "POLY"
-                  IF VertexCountNow < MaxVertexCount THEN
-                    INCR VertexCountNow
-                  ELSE
-                    INCR VertexCountNow
-                    m15ModelBuffer(Model) = m15ModelBuffer(Model) + STRING$( SIZEOF(Tm15ImmediateData), 0 )
-                    REDIM m15ModelBuffer_Overlay(1 TO MaxVertexCount) AT STRPTR(m15ModelBuffer(Model))
+                  INCR TextureCounterMini
+                  StartTexSearch = TextureCounterMini
+                  WHILE LEN(TextureList(TextureCounterMini))
+                    INCR TextureCounterMini
+                    IF TextureCounterMini + 1 = StartTexSearch THEN EXIT LOOP ' Silly situation, nothing to place
+                    IF TextureCounterMini > %LIMIT_MAX_TEXTUREINDEX THEN TextureCounterMini = 1
+                  WEND
+
+                  IF UCASE$(TRIM$(PARSE$( TextureToLoad, ".", -1))) = "BMP" THEN
+                    TextureLoadBMP(0, TextureToLoad, TextureCounterMini, texture_DefaultModelFilter, texture_DefaultModelFilterMultiplier, -1 )
+                  ELSEIF UCASE$(TRIM$(PARSE$( TextureToLoad, ".", -1))) = "TGA" THEN
+                    TextureLoadTGA(0, TextureToLoad, TextureCounterMini, texture_DefaultModelFilter, texture_DefaultModelFilterMultiplier)
                   END IF
 
-                  m15ModelBuffer_Overlay(VertexCountNow).vtx(0)   = VAL(Token(1))
-                  m15ModelBuffer_Overlay(VertexCountNow).vtx(1)   = VAL(Token(2))
-                  m15ModelBuffer_Overlay(VertexCountNow).vtx(2)   = VAL(Token(3))
-                  m15ModelBuffer_Overlay(VertexCountNow).PStop    = VAL(Token(4))
-                  m15ModelBuffer_Overlay(VertexCountNow).TexN     = TextureMoved(VAL(Token(5)))
-                  m15ModelBuffer_Overlay(VertexCountNow).TexXY(0) = VAL(Token(6))
-                  m15ModelBuffer_Overlay(VertexCountNow).TexXY(1) = VAL(Token(7))
-                  m15ModelBuffer_Overlay(VertexCountNow).clr(0)   = VAL(Token(8))
-                  m15ModelBuffer_Overlay(VertexCountNow).clr(1)   = VAL(Token(9))
-                  m15ModelBuffer_Overlay(VertexCountNow).clr(2)   = VAL(Token(10))
-                  m15ModelBuffer_Overlay(VertexCountNow).Layer    = VAL(Token(11))
-
-                  IF supportNormals = %TRUE AND NormalMethod = %TBGL_NORMAL_FROMFILE THEN
-                    m15ModelBuffer_Overlay(VertexCountNow).n(0)   = VAL(Token(12))
-                    m15ModelBuffer_Overlay(VertexCountNow).n(1)   = VAL(Token(13))
-                    m15ModelBuffer_Overlay(VertexCountNow).n(2)   = VAL(Token(14))
-                  END IF
-
-              CASE "VERTEXNUM"
-                IF MaxVertexCount = 0 THEN
-                  MaxVertexCount = VAL(Token(1))
-                  ' -- Pre allocate space
-                  m15ModelBuffer(Model) = STRING$( MaxVertexCount * SIZEOF(Tm15ImmediateData), 0 )
-                  REDIM m15ModelBuffer_Overlay(1 TO MaxVertexCount) AT STRPTR(m15ModelBuffer(Model))
-                END IF
-
-              CASE "LAYERS"
-                LOCAL layerstring AS STRING
-                layerstring = UCASE$(MID$(fSRCLine(i), INSTR(fSRCLine(i), ",")+1, LEN(fSRCLine(i))))
-
-                FOR j = 1 TO PARSECOUNT(layerstring, ",")
-                  m15ModelLayers(Model) = m15ModelLayers(Model) + "," + TRIM$(PARSE$(layerstring, ",", j))
-                NEXT
-
-              CASE "TEXLIST"
-                  ' -- Loading textures
-                  texList = MID$(fSRCLine(i), INSTR(fSRCLine(i), ",")+1, LEN(fSRCLine(i)))
-
-                  m15ModelData(Model).isTextured = %TRUE
-
-                  FOR j = 1 TO PARSECOUNT(texList, ",")
-                    TextureToLoad = PARSE$(texList, ",", j)
-
-                    IF LEN(TextureToLoad) THEN
-                      IF INSTR(TextureToLoad, ":") = 0 THEN TextureToLoad = TextureDirectory+TextureToLoad
-                      TextureToLoad = UCASE$(TextureToLoad)
-
-                      temp = meIsTextureLoaded(TextureToLoad)
-
-                      IF temp = 0 THEN
-
-                          INCR TextureCounterMini
-                          StartTexSearch = TextureCounterMini
-                          WHILE LEN(TextureList(TextureCounterMini))
-                            INCR TextureCounterMini
-                            IF TextureCounterMini + 1 = StartTexSearch THEN EXIT LOOP ' Silly situation, nothing to place
-                            IF TextureCounterMini > %LIMIT_MAX_TEXTUREINDEX THEN TextureCounterMini = 1
-                          WEND
-
-                          IF UCASE$(TRIM$(PARSE$( TextureToLoad, ".", -1))) = "BMP" THEN
-                            TextureLoadBMP(0, TextureToLoad, TextureCounterMini, texture_DefaultModelFilter, texture_DefaultModelFilterMultiplier, -1 )
-                          ELSEIF UCASE$(TRIM$(PARSE$( TextureToLoad, ".", -1))) = "TGA" THEN
-                            TextureLoadTGA(0, TextureToLoad, TextureCounterMini, texture_DefaultModelFilter, texture_DefaultModelFilterMultiplier)
-                          END IF
-
-                        TextureMoved(j+1) = TextureCounterMini
-                      ELSE
-                        TextureMoved(j+1) = temp  ' Texture with original index j is moved to meIsTextureLoaded returned value
-                      END IF
-                    ELSE
-                      EXIT FOR
-                    END IF
-                  NEXT
-
-            END SELECT
-
+                TextureMoved(j+1) = TextureCounterMini
+              ELSE
+                TextureMoved(j+1) = temp  ' Texture with original index j is moved to meIsTextureLoaded returned value
+              END IF
+            ELSE
+              EXIT FOR
+            END IF
           NEXT
 
-          m15ModelData(Model).vertexCount = VertexCountNow
+    END SELECT
 
-          FUNCTION = 0
+  NEXT
 
-          ' -- When calculation of normals is requested
-          IF NormalMethod > %TBGL_NORMAL_NONE AND NormalMethod < %TBGL_NORMAL_FROMFILE THEN internal_RecalcNormals(Model, NormalMethod)
+  m15ModelData(Model).vertexCount = VertexCountNow
 
-          IF MakeList > 0 THEN
-            IF resource_DisplayLists_IsGenerated(MakeList) = 0 THEN TBGLError "Statement:"+$TAB+"tbgl_m15LoadModel"+$CRLF+"Problem:"+$TAB+$TAB+$ERR_DISPLISTINDEX+$CRLF+$CRLF+"Passed:"+$TAB+FORMAT$(MakeList)
-            glNewList MakeList, %GL_COMPILE
-              ' -- Drawing model, with no forced settings
-              internal_DrawModel (Model, -1, -1, -1, -1)
-            glEndList
-          END IF
-          ' -------------------------------------------------------------------------
-        END IF
-      END IF
-    END IF
+  FUNCTION = 0
+
+  ' -- When calculation of normals is requested
+  IF NormalMethod > %TBGL_NORMAL_NONE AND NormalMethod < %TBGL_NORMAL_FROMFILE THEN internal_RecalcNormals(Model, NormalMethod)
+
+  IF MakeList > 0 THEN
+    IF resource_DisplayLists_IsGenerated(MakeList) = 0 THEN TBGLError "Statement:"+$TAB+"tbgl_m15LoadModel"+$CRLF+"Problem:"+$TAB+$TAB+$ERR_DISPLISTINDEX+$CRLF+$CRLF+"Passed:"+$TAB+FORMAT$(MakeList)
+    glNewList MakeList, %GL_COMPILE
+      ' -- Drawing model, with no forced settings
+      internal_DrawModel (Model, -1, -1, -1, -1)
+    glEndList
   END IF
 
 END FUNCTION
 
 ' -- Renders model
-SUB Exec_TBGL_m15DrawModel(  )
+SUB tbgl_m15DrawModel ALIAS "tbgl_m15DrawModel" ( BYVAL ModelID AS LONG ) EXPORT
 
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
-  LOCAL ModelID AS EXT
 
-  ModelID = thinBasic_Parse1Number
   internal_DrawModel(ModelID, -1, -1, -1, -1)
 
 END SUB
 
-' -- Recalculates normals
-SUB Exec_TBGL_m15RecalcNormals()
+' -- Recalculates normals (%TBGL_NORMAL_PRECISE, %TBGL_NORMAL_SMOOTH), empty Layer means all layers
+SUB tbgl_m15RecalcNormals ALIAS "tbgl_m15RecalcNormals" ( BYVAL Model AS LONG, BYVAL nType AS LONG, BYVAL Layer AS STRING ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
-  LOCAL Model AS EXT
-  LOCAL nType AS EXT
-  LOCAL Layer AS STRING
 
-
-  thinBasic_ParseNumber Model
-  IF thinBasic_CheckComma_Mandatory THEN
-    thinBasic_ParseNumber nType
-    IF thinBasic_CheckComma_Optional THEN thinBasic_ParseString Layer
-
-    IF nType > 0 THEN
-      IF LEN(Layer) = 0 THEN
-        internal_RecalcNormals(Model, nType)
-      ELSE
-        internal_RecalcNormalsLayer(Model, nType, Layer)
-      END IF
+  IF nType > 0 THEN
+    IF LEN(Layer) = 0 THEN
+      internal_RecalcNormals(Model, nType)
+    ELSE
+      internal_RecalcNormalsLayer(Model, nType, Layer)
     END IF
-
   END IF
+
 END SUB
 
 ' -- Prepares model slot for reuse
-SUB Exec_TBGL_m15ClearModel()
+SUB tbgl_m15ClearModel ALIAS "tbgl_m15ClearModel" ( BYVAL Model AS LONG ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
   REGISTER i AS LONG
-  LOCAL Model AS EXT
-
-  Model = thinBasic_Parse1Number
 
   LOCAL vertexcount AS LONG
   vertexcount = m15ModelData(model).vertexCount
@@ -410,44 +373,32 @@ SUB Exec_TBGL_m15ClearModel()
 END SUB
 
 ' -----------------------------------------------------------------------------
-' -- PARAMETERS
-' -----------------------------------------------------------------------------
-
-' -----------------------------------------------------------------------------
 ' -- STATISTICS
 ' -----------------------------------------------------------------------------
 
 ' -- Returns model vertex count
-FUNCTION Exec_TBGL_m15GetModelVertexcount() AS LONG
+FUNCTION tbgl_m15GetModelVertexcount ALIAS "tbgl_m15GetModelVertexcount" ( BYVAL Model AS LONG ) EXPORT AS LONG
   IF m15ModelNum = 0 THEN tbglError "Invalid function call to M15 related function"+$CRLF+"You must specify model buffer using TBGL_m15InitModelBuffer" : EXIT FUNCTION
-  LOCAL Model AS EXT
 
-  model = thinBasic_Parse1Number()
   FUNCTION = m15ModelData(model).vertexCount
 
 END FUNCTION
 
 ' -- Sets model vertex count, useful when dealing with custom on-the-fly models
-SUB Exec_TBGL_m15SetModelVertexcount()
+SUB tbgl_m15SetModelVertexcount ALIAS "tbgl_m15SetModelVertexcount" ( BYVAL Model AS LONG, BYVAL vertexCount AS LONG ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
-  LOCAL Model AS EXT
-  LOCAL i AS EXT
 
-  thinBasic_Parse2Numbers( Model, i)
-
-  m15ModelData(model).vertexCount = i
+  m15ModelData(model).vertexCount = vertexCount
 
 END SUB
 
 ' -- Gets number of polygons in models
-FUNCTION Exec_TBGL_m15GetModelPolycount() AS EXT
+FUNCTION tbgl_m15GetModelPolycount ALIAS "tbgl_m15GetModelPolycount" ( BYVAL Model AS LONG ) EXPORT AS LONG
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT FUNCTION
 
   REGISTER i AS LONG, vtxs AS LONG
   LOCAL polys AS LONG
-  LOCAL Model AS EXT
 
-  Model = thinBasic_Parse1Number
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
   vtxs = m15ModelData(model).vertexCount
   FOR i = 1 TO vtxs
@@ -459,20 +410,10 @@ FUNCTION Exec_TBGL_m15GetModelPolycount() AS EXT
 END FUNCTION
 
 ' -- Gets width, height, length of model
-SUB EXEC_TBGL_m15GetModelDimensions()
+SUB tbgl_m15GetModelDimensions ALIAS "tbgl_m15GetModelDimensions" ( BYVAL Model AS LONG, BYREF sizeX AS SINGLE, BYREF sizeY AS SINGLE, BYREF sizeZ AS SINGLE ) EXPORT
   REGISTER i AS LONG
-  LOCAL Model AS EXT
 
-  LOCAL lVariablePtr1     AS LONG
-  LOCAL lVariableAbsPos1  AS LONG
-
-  LOCAL lVariablePtr2     AS LONG
-  LOCAL lVariableAbsPos2  AS LONG
-
-  LOCAL lVariablePtr3     AS LONG
-  LOCAL lVariableAbsPos3  AS LONG
-
-  LOCAL x,y,z AS EXT
+  LOCAL x,y,z AS SINGLE
 
   LOCAL minx, miny, minz, maxx, maxy, maxz AS DOUBLE
   minx =  1000000
@@ -482,46 +423,26 @@ SUB EXEC_TBGL_m15GetModelDimensions()
   maxy = -1000000
   maxz = -1000000
 
-  IF thinBasic_CheckOpenParens THEN
-    thinBasic_ParseNumber Model
-    REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-    IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-      thinBasic_VariableParse(lVariablePtr1, lVariableAbsPos1)
-      IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-        thinBasic_VariableParse(lVariablePtr2, lVariableAbsPos2)
-        IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-          thinBasic_VariableParse(lVariablePtr3, lVariableAbsPos3)
-          IF thinBasic_CheckCloseParens THEN
+  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
 
-            FOR i = 1 TO m15ModelData(Model).vertexCount
+  FOR i = 1 TO m15ModelData(Model).vertexCount
 
-              x = m15ModelBuffer_Overlay(i).vtx(0)
-              y = m15ModelBuffer_Overlay(i).vtx(1)
-              z = m15ModelBuffer_Overlay(i).vtx(2)
+    x = m15ModelBuffer_Overlay(i).vtx(0)
+    y = m15ModelBuffer_Overlay(i).vtx(1)
+    z = m15ModelBuffer_Overlay(i).vtx(2)
 
-              IF x < minx THEN minx = x
-              IF y < miny THEN miny = y
-              IF z < minz THEN minz = z
+    IF x < minx THEN minx = x
+    IF y < miny THEN miny = y
+    IF z < minz THEN minz = z
 
-              IF x > maxx THEN maxx = x
-              IF y > maxy THEN maxy = y
-              IF z > maxz THEN maxz = z
+    IF x > maxx THEN maxx = x
+    IF y > maxy THEN maxy = y
+    IF z > maxz THEN maxz = z
 
-            NEXT
-            x = maxx - minx
-            y = maxy - miny
-            z = maxz - minz
-
-            '---Now assign values to referenced variables
-            thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, x)
-            thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, y)
-            thinBasic_ChangeVariableNumberDirect (lVariablePtr3, lVariableAbsPos3, z)
-
-          END IF
-        END IF
-      END IF
-    END IF
-  END IF
+  NEXT
+  sizeX = maxx - minx
+  sizeY = maxy - miny
+  sizeZ = maxz - minz
 
 END SUB
 
@@ -529,19 +450,12 @@ END SUB
 ' -- POSTION
 ' -----------------------------------------------------------------------------
 
-' -- Multifunctional ... function to set all parameters
+' -- Multifunctional ... function to set all parameters, param is one of %TBGL_M15* values
 ' -- I wanted to save some bytes in final DLL by not doing separate function for each
 ' -- param, but this command is not very pleasant to use ... lesson learned
-SUB Exec_TBGL_m15SetVertexParam()
+SUB tbgl_m15SetVertexParam ALIAS "tbgl_m15SetVertexParam" ( BYVAL Model AS LONG, BYVAL i AS LONG, BYVAL lngParam AS LONG, BYVAL value AS SINGLE ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
-  LOCAL Model AS EXT
-  LOCAL i AS EXT
-  LOCAL param AS EXT
-  LOCAL lngParam AS LONG
-  LOCAL value AS EXT
 
-  thinBasic_Parse4Numbers( Model, i, Param, value )
-  lngParam = Param
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
 
   ' -- According to type, we assign parameter
@@ -573,18 +487,12 @@ SUB Exec_TBGL_m15SetVertexParam()
 
 END SUB
 
-' -- Multifunctional ... function to get all parameters
+' -- Multifunctional ... function to get all parameters, param is one of %TBGL_M15* values
 ' -- I wanted to save some bytes in final DLL by not doing separate function for each
 ' -- param, but this command is not very pleasant to use ... lesson learned
-FUNCTION Exec_TBGL_m15GetVertexParam() AS SINGLE
+FUNCTION tbgl_m15GetVertexParam ALIAS "tbgl_m15GetVertexParam" ( BYVAL Model AS LONG, BYVAL i AS LONG, BYVAL lngParam AS LONG ) EXPORT AS SINGLE
   IF m15ModelNum = 0 THEN tbglError "Invalid function call to M15 related function"+$CRLF+"You must specify model buffer using TBGL_m15InitModelBuffer" : EXIT FUNCTION
-  LOCAL Model AS EXT
-  LOCAL i AS EXT
-  LOCAL param AS EXT
-  LOCAL lngParam AS LONG
 
-  thinBasic_Parse3Numbers( Model, i, Param)
-  lngParam = param
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
 
   SELECT CASE AS LONG lngParam
@@ -614,341 +522,406 @@ FUNCTION Exec_TBGL_m15GetVertexParam() AS SINGLE
 
 END FUNCTION
 
-' -- Setting X coordinate
-SUB Exec_TBGL_m15SetVertexX()
+' -----------------------------------------------------------------------------
+' -- VERTEX PROPERTIES
+' -- Setters work on vertex range fromIndex..toIndex, use fromIndex = toIndex for single vertex
+' -----------------------------------------------------------------------------
+
+SUB tbgl_m15SetVertexX ALIAS "tbgl_m15SetVertexX" ( BYVAL Model AS LONG, BYVAL fromIndex AS LONG, BYVAL toIndex AS LONG, BYVAL value AS SINGLE ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
 
   REGISTER i AS LONG
-  LOCAL Model, index, Num1, Num2, nFound AS EXT
 
-  nFound = thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-  IF nFound = 3 THEN
-    m15ModelBuffer_Overlay(index).vtx(0) = Num1
-
-  ELSEIF nFound = 4 THEN
-    FOR i = index TO Num1
-      m15ModelBuffer_Overlay(i).vtx(0) = Num2
-    NEXT
-
-  END IF
+  FOR i = fromIndex TO toIndex
+    m15ModelBuffer_Overlay(i).vtx(0) = value
+  NEXT
 
 END SUB
 
-' -- Gets X position
-FUNCTION Exec_TBGL_m15GetVertexX() AS EXT
+FUNCTION tbgl_m15GetVertexX ALIAS "tbgl_m15GetVertexX" ( BYVAL Model AS LONG, BYVAL index AS LONG ) EXPORT AS SINGLE
 
-  LOCAL Model, index AS EXT
-
-  thinBasic_Parse2Numbers(Model, index)
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
   FUNCTION = m15ModelBuffer_Overlay(index).vtx(0)
 
 END FUNCTION
 
-' -- Setting Y coordinate
-SUB Exec_TBGL_m15SetVertexY()
+SUB tbgl_m15SetVertexY ALIAS "tbgl_m15SetVertexY" ( BYVAL Model AS LONG, BYVAL fromIndex AS LONG, BYVAL toIndex AS LONG, BYVAL value AS SINGLE ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
 
   REGISTER i AS LONG
-  LOCAL Model, index, Num1, Num2, nFound AS EXT
 
-  nFound = thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-  IF nFound = 3 THEN
-    m15ModelBuffer_Overlay(index).vtx(1) = Num1
-
-  ELSEIF nFound = 4 THEN
-    FOR i = index TO Num1
-      m15ModelBuffer_Overlay(i).vtx(1) = Num2
-    NEXT
-
-  END IF
+  FOR i = fromIndex TO toIndex
+    m15ModelBuffer_Overlay(i).vtx(1) = value
+  NEXT
 
 END SUB
 
-' -- Gets Y position
-FUNCTION Exec_TBGL_m15GetVertexY() AS EXT
+FUNCTION tbgl_m15GetVertexY ALIAS "tbgl_m15GetVertexY" ( BYVAL Model AS LONG, BYVAL index AS LONG ) EXPORT AS SINGLE
 
-  LOCAL Model, index AS EXT
-
-  thinBasic_Parse2Numbers(Model, index)
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
   FUNCTION = m15ModelBuffer_Overlay(index).vtx(1)
 
 END FUNCTION
 
-
-' -- Setting Z coordinate
-SUB Exec_TBGL_m15SetVertexZ()
+SUB tbgl_m15SetVertexZ ALIAS "tbgl_m15SetVertexZ" ( BYVAL Model AS LONG, BYVAL fromIndex AS LONG, BYVAL toIndex AS LONG, BYVAL value AS SINGLE ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
 
   REGISTER i AS LONG
-  LOCAL Model, index, Num1, Num2, nFound AS EXT
 
-  nFound = thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-
-  IF nFound = 3 THEN
-    m15ModelBuffer_Overlay(index).vtx(2) = Num1
-
-  ELSEIF nFound = 4 THEN
-    FOR i = index TO Num1
-      m15ModelBuffer_Overlay(i).vtx(2) = Num2
-    NEXT
-
-  END IF
+  FOR i = fromIndex TO toIndex
+    m15ModelBuffer_Overlay(i).vtx(2) = value
+  NEXT
 
 END SUB
 
-' -- Gets Z position
-FUNCTION Exec_TBGL_m15GetVertexZ() AS EXT
+FUNCTION tbgl_m15GetVertexZ ALIAS "tbgl_m15GetVertexZ" ( BYVAL Model AS LONG, BYVAL index AS LONG ) EXPORT AS SINGLE
 
-  LOCAL Model, index AS EXT
-
-  thinBasic_Parse2Numbers(Model, index)
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
   FUNCTION = m15ModelBuffer_Overlay(index).vtx(2)
 
 END FUNCTION
 
-
-' -- Setting all coordinates
-SUB Exec_TBGL_m15SetVertexXYZ()
-
+SUB tbgl_m15SetVertexPStop ALIAS "tbgl_m15SetVertexPStop" ( BYVAL Model AS LONG, BYVAL fromIndex AS LONG, BYVAL toIndex AS LONG, BYVAL value AS BYTE ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
 
   REGISTER i AS LONG
-  LOCAL Model, index, Num1, Num2, Num3, Num4, nFound AS EXT
 
-  nFound = thinBasic_ParseXNumbers(5, 6, Model, index, Num1, Num2, Num3, Num4)
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-  IF nFound = 5 THEN
-    m15ModelBuffer_Overlay(index).vtx(0) = Num1
-    m15ModelBuffer_Overlay(index).vtx(1) = Num2
-    m15ModelBuffer_Overlay(index).vtx(2) = Num3
-
-  ELSEIF nFound = 6 THEN
-    FOR i = index TO Num1
-      m15ModelBuffer_Overlay(i).vtx(0) = Num2
-      m15ModelBuffer_Overlay(i).vtx(1) = Num3
-      m15ModelBuffer_Overlay(i).vtx(2) = Num4
-    NEXT
-
-  END IF
+  FOR i = fromIndex TO toIndex
+    m15ModelBuffer_Overlay(i).PStop = value
+  NEXT
 
 END SUB
 
-' -- Gets complete XYZ
-SUB Exec_TBGL_m15GetVertexXYZ()
+FUNCTION tbgl_m15GetVertexPStop ALIAS "tbgl_m15GetVertexPStop" ( BYVAL Model AS LONG, BYVAL index AS LONG ) EXPORT AS BYTE
 
-  LOCAL Model AS EXT
-  LOCAL i AS EXT
-
-  LOCAL lVariablePtr1     AS LONG
-  LOCAL lVariableAbsPos1  AS LONG
-
-  LOCAL lVariablePtr2     AS LONG
-  LOCAL lVariableAbsPos2  AS LONG
-
-  LOCAL lVariablePtr3     AS LONG
-  LOCAL lVariableAbsPos3  AS LONG
-
-  LOCAL x,y,z AS EXT
-
-  IF thinBasic_CheckOpenParens THEN
-    thinBasic_ParseNumber Model
-    REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-    IF thinBasic_CheckComma_Mandatory THEN
-      thinBasic_ParseNumber i
-      IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-        thinBasic_VariableParse(lVariablePtr1, lVariableAbsPos1)
-        IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-          thinBasic_VariableParse(lVariablePtr2, lVariableAbsPos2)
-          IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-            thinBasic_VariableParse(lVariablePtr3, lVariableAbsPos3)
-            IF thinBasic_CheckCloseParens THEN
-
-              x = m15ModelBuffer_Overlay(i).vtx(0)
-              y = m15ModelBuffer_Overlay(i).vtx(1)
-              z = m15ModelBuffer_Overlay(i).vtx(2)
-
-              '---Now assign values to referenced variables
-              thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, x)
-              thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, y)
-              thinBasic_ChangeVariableNumberDirect (lVariablePtr3, lVariableAbsPos3, z)
-
-            END IF
-          END IF
-        END IF
-      END IF
-    END IF
-  END IF
-
-END SUB
-
-' -- Polygon stop flag
-SUB Exec_TBGL_m15SetVertexPStop()
-  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
-
-  REGISTER i AS LONG
-  LOCAL Model, index, Num1, Num2, nFound AS EXT
-
-  nFound = thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
-  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-  IF nFound = 3 THEN
-    m15ModelBuffer_Overlay(index).PStop = Num1
-
-  ELSEIF nFound = 4 THEN
-    FOR i = index TO Num1
-      m15ModelBuffer_Overlay(i).PStop = Num2
-    NEXT
-
-  END IF
-
-END SUB
-
-' -- Retrieves Polygon stop flag
-FUNCTION Exec_TBGL_m15GetVertexPStop() AS EXT
-
-  LOCAL Model, index AS EXT
-
-  thinBasic_Parse2Numbers(Model, index)
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
   FUNCTION = m15ModelBuffer_Overlay(index).PStop
 
 END FUNCTION
 
-' -----------------------------------------------------------------------------
-' -- COLORS
-' -----------------------------------------------------------------------------
-
-' -- Vertex Red color channel
-SUB Exec_TBGL_m15SetVertexR()
+SUB tbgl_m15SetVertexR ALIAS "tbgl_m15SetVertexR" ( BYVAL Model AS LONG, BYVAL fromIndex AS LONG, BYVAL toIndex AS LONG, BYVAL value AS BYTE ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
 
   REGISTER i AS LONG
-  LOCAL Model, index, Num1, Num2, nFound AS EXT
 
-  nFound = thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-  IF nFound = 3 THEN
-    m15ModelBuffer_Overlay(index).clr(0) = Num1
+  FOR i = fromIndex TO toIndex
+    m15ModelBuffer_Overlay(i).clr(0) = value
+  NEXT
 
-  ELSEIF nFound = 4 THEN
-    FOR i = index TO Num1
-      m15ModelBuffer_Overlay(i).clr(0) = Num2
-    NEXT
-
-  END IF
 END SUB
 
-FUNCTION Exec_TBGL_m15GetVertexR() AS EXT
+FUNCTION tbgl_m15GetVertexR ALIAS "tbgl_m15GetVertexR" ( BYVAL Model AS LONG, BYVAL index AS LONG ) EXPORT AS BYTE
 
-  LOCAL Model, index AS EXT
-
-  thinBasic_Parse2Numbers(Model, index)
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
   FUNCTION = m15ModelBuffer_Overlay(index).clr(0)
 
 END FUNCTION
 
-' -- Vertex Green color channel
-SUB Exec_TBGL_m15SetVertexG()
+SUB tbgl_m15SetVertexG ALIAS "tbgl_m15SetVertexG" ( BYVAL Model AS LONG, BYVAL fromIndex AS LONG, BYVAL toIndex AS LONG, BYVAL value AS BYTE ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
 
   REGISTER i AS LONG
-  LOCAL Model, index, Num1, Num2, nFound AS EXT
 
-  nFound = thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-  IF nFound = 3 THEN
-    m15ModelBuffer_Overlay(index).clr(1) = Num1
+  FOR i = fromIndex TO toIndex
+    m15ModelBuffer_Overlay(i).clr(1) = value
+  NEXT
 
-  ELSEIF nFound = 4 THEN
-    FOR i = index TO Num1
-      m15ModelBuffer_Overlay(i).clr(1) = Num2
-    NEXT
-
-  END IF
 END SUB
 
-FUNCTION Exec_TBGL_m15GetVertexG() AS EXT
+FUNCTION tbgl_m15GetVertexG ALIAS "tbgl_m15GetVertexG" ( BYVAL Model AS LONG, BYVAL index AS LONG ) EXPORT AS BYTE
 
-  LOCAL Model, index AS EXT
-
-  thinBasic_Parse2Numbers(Model, index)
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
   FUNCTION = m15ModelBuffer_Overlay(index).clr(1)
 
 END FUNCTION
 
-' -- Vertex Blue color channel
-SUB Exec_TBGL_m15SetVertexB()
+SUB tbgl_m15SetVertexB ALIAS "tbgl_m15SetVertexB" ( BYVAL Model AS LONG, BYVAL fromIndex AS LONG, BYVAL toIndex AS LONG, BYVAL value AS BYTE ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
 
   REGISTER i AS LONG
-  LOCAL Model, index, Num1, Num2, nFound AS EXT
 
-  nFound = thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-  IF nFound = 3 THEN
-    m15ModelBuffer_Overlay(index).clr(2) = Num1
+  FOR i = fromIndex TO toIndex
+    m15ModelBuffer_Overlay(i).clr(2) = value
+  NEXT
 
-  ELSEIF nFound = 4 THEN
-    FOR i = index TO Num1
-      m15ModelBuffer_Overlay(i).clr(2) = Num2
-    NEXT
-
-  END IF
 END SUB
 
-FUNCTION Exec_TBGL_m15GetVertexB() AS EXT
+FUNCTION tbgl_m15GetVertexB ALIAS "tbgl_m15GetVertexB" ( BYVAL Model AS LONG, BYVAL index AS LONG ) EXPORT AS BYTE
 
-  LOCAL Model, index AS EXT
-
-  thinBasic_Parse2Numbers(Model, index)
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
   FUNCTION = m15ModelBuffer_Overlay(index).clr(2)
 
 END FUNCTION
 
-' -- All color channels at once
-SUB Exec_TBGL_m15SetVertexRGB()
-
+SUB tbgl_m15SetVertexTexN ALIAS "tbgl_m15SetVertexTexN" ( BYVAL Model AS LONG, BYVAL fromIndex AS LONG, BYVAL toIndex AS LONG, BYVAL value AS LONG ) EXPORT
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
 
   REGISTER i AS LONG
-  LOCAL Model, index, Num1, Num2, Num3, Num4, nFound AS EXT
 
-  nFound = thinBasic_ParseXNumbers(5, 6, Model, index, Num1, Num2, Num3, Num4)
   REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-
-
-
-  IF nFound = 5 THEN
-    m15ModelBuffer_Overlay(index).clr(0) = Num1
-    m15ModelBuffer_Overlay(index).clr(1) = Num2
-    m15ModelBuffer_Overlay(index).clr(2) = Num3
-
-  ELSEIF nFound = 6 THEN
-
-    FOR i = index TO Num1
-      m15ModelBuffer_Overlay(i).clr(0) = Num2
-      m15ModelBuffer_Overlay(i).clr(1) = Num3
-      m15ModelBuffer_Overlay(i).clr(2) = Num4
-    NEXT
-
-  END IF
+  FOR i = fromIndex TO toIndex
+    m15ModelBuffer_Overlay(i).TexN = value
+  NEXT
+  m15ModelData(Model).isTextured = m15ModelBuffer_Overlay(fromIndex).TexN > 0
 
 END SUB
 
-' -- Retrieving RGB color
-SUB Exec_TBGL_m15GetVertexRGB()
+FUNCTION tbgl_m15GetVertexTexN ALIAS "tbgl_m15GetVertexTexN" ( BYVAL Model AS LONG, BYVAL index AS LONG ) EXPORT AS LONG
 
+  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
+  FUNCTION = m15ModelBuffer_Overlay(index).TexN
+
+END FUNCTION
+
+SUB tbgl_m15SetVertexTexX ALIAS "tbgl_m15SetVertexTexX" ( BYVAL Model AS LONG, BYVAL fromIndex AS LONG, BYVAL toIndex AS LONG, BYVAL value AS SINGLE ) EXPORT
+  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
+
+  REGISTER i AS LONG
+
+  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
+  FOR i = fromIndex TO toIndex
+    m15ModelBuffer_Overlay(i).TexXY(0) = value
+  NEXT
+
+END SUB
+
+FUNCTION tbgl_m15GetVertexTexX ALIAS "tbgl_m15GetVertexTexX" ( BYVAL Model AS LONG, BYVAL index AS LONG ) EXPORT AS SINGLE
+
+  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
+  FUNCTION = m15ModelBuffer_Overlay(index).TexXY(0)
+
+END FUNCTION
+
+SUB tbgl_m15SetVertexTexY ALIAS "tbgl_m15SetVertexTexY" ( BYVAL Model AS LONG, BYVAL fromIndex AS LONG, BYVAL toIndex AS LONG, BYVAL value AS SINGLE ) EXPORT
+  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
+
+  REGISTER i AS LONG
+
+  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
+  FOR i = fromIndex TO toIndex
+    m15ModelBuffer_Overlay(i).TexXY(1) = value
+  NEXT
+
+END SUB
+
+FUNCTION tbgl_m15GetVertexTexY ALIAS "tbgl_m15GetVertexTexY" ( BYVAL Model AS LONG, BYVAL index AS LONG ) EXPORT AS SINGLE
+
+  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
+  FUNCTION = m15ModelBuffer_Overlay(index).TexXY(1)
+
+END FUNCTION
+
+SUB tbgl_m15SetVertexLayer ALIAS "tbgl_m15SetVertexLayer" ( BYVAL Model AS LONG, BYVAL fromIndex AS LONG, BYVAL toIndex AS LONG, BYVAL value AS LONG ) EXPORT
+  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
+
+  REGISTER i AS LONG
+
+  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
+  FOR i = fromIndex TO toIndex
+    m15ModelBuffer_Overlay(i).Layer = value
+  NEXT
+
+END SUB
+
+FUNCTION tbgl_m15GetVertexLayer ALIAS "tbgl_m15GetVertexLayer" ( BYVAL Model AS LONG, BYVAL index AS LONG ) EXPORT AS LONG
+
+  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
+  FUNCTION = m15ModelBuffer_Overlay(index).Layer
+
+END FUNCTION
+
+SUB tbgl_m15SetVertexXYZ ALIAS "tbgl_m15SetVertexXYZ" ( _
+    BYVAL Model AS LONG _
+  , BYVAL fromIndex AS LONG _
+  , BYVAL toIndex AS LONG _
+  , BYVAL x AS SINGLE _
+  , BYVAL y AS SINGLE _
+  , BYVAL z AS SINGLE _
+  ) EXPORT
+  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
+
+  REGISTER i AS LONG
+
+  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
+  FOR i = fromIndex TO toIndex
+    m15ModelBuffer_Overlay(i).vtx(0) = x
+    m15ModelBuffer_Overlay(i).vtx(1) = y
+    m15ModelBuffer_Overlay(i).vtx(2) = z
+  NEXT
+
+END SUB
+
+SUB tbgl_m15GetVertexXYZ ALIAS "tbgl_m15GetVertexXYZ" ( BYVAL Model AS LONG, BYVAL index AS LONG, BYREF x AS SINGLE, BYREF y AS SINGLE, BYREF z AS SINGLE ) EXPORT
+
+  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
+  x = m15ModelBuffer_Overlay(index).vtx(0)
+  y = m15ModelBuffer_Overlay(index).vtx(1)
+  z = m15ModelBuffer_Overlay(index).vtx(2)
+
+END SUB
+
+SUB tbgl_m15SetVertexRGB ALIAS "tbgl_m15SetVertexRGB" ( _
+    BYVAL Model AS LONG _
+  , BYVAL fromIndex AS LONG _
+  , BYVAL toIndex AS LONG _
+  , BYVAL r AS BYTE _
+  , BYVAL g AS BYTE _
+  , BYVAL b AS BYTE _
+  ) EXPORT
+  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
+
+  REGISTER i AS LONG
+
+  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
+  FOR i = fromIndex TO toIndex
+    m15ModelBuffer_Overlay(i).clr(0) = r
+    m15ModelBuffer_Overlay(i).clr(1) = g
+    m15ModelBuffer_Overlay(i).clr(2) = b
+  NEXT
+
+END SUB
+
+SUB tbgl_m15GetVertexRGB ALIAS "tbgl_m15GetVertexRGB" ( BYVAL Model AS LONG, BYVAL index AS LONG, BYREF r AS BYTE, BYREF g AS BYTE, BYREF b AS BYTE ) EXPORT
+  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
+
+  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
+  r = m15ModelBuffer_Overlay(index).clr(0)
+  g = m15ModelBuffer_Overlay(index).clr(1)
+  b = m15ModelBuffer_Overlay(index).clr(2)
+
+END SUB
+
+SUB tbgl_m15SetVertexTexXY ALIAS "tbgl_m15SetVertexTexXY" ( BYVAL Model AS LONG, BYVAL fromIndex AS LONG, BYVAL toIndex AS LONG, BYVAL u AS SINGLE, BYVAL v AS SINGLE ) EXPORT
+  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
+
+  REGISTER i AS LONG
+
+  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
+  FOR i = fromIndex TO toIndex
+    m15ModelBuffer_Overlay(i).TexXY(0) = u
+    m15ModelBuffer_Overlay(i).TexXY(1) = v
+  NEXT
+
+END SUB
+
+SUB tbgl_m15GetVertexTexXY ALIAS "tbgl_m15GetVertexTexXY" ( BYVAL Model AS LONG, BYVAL index AS LONG, BYREF u AS SINGLE, BYREF v AS SINGLE ) EXPORT
+  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
+
+  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
+  u = m15ModelBuffer_Overlay(index).TexXY(0)
+  v = m15ModelBuffer_Overlay(index).TexXY(1)
+
+END SUB
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+FUNCTION Exec_TBGL_m15InitModelBuffers() AS EXT
+  LOCAL n AS EXT, n2 AS EXT
+
+  thinBASIC_Parse2Numbers( n, n2 )
+  FUNCTION = tbgl_m15InitModelBuffers( n, n2 )
+
+END FUNCTION
+
+' -- Anisotropy level is optional, when omitted the current one is kept
+SUB Exec_TBGL_m15SetDefaultTextureFilter()
+  LOCAL eFilter, eAniso AS EXT
+
+  IF thinBasic_ParseXNumbers(1, 2, eFilter, eAniso ) = 1 THEN eAniso = -1
+  tbgl_m15SetDefaultTextureFilter( eFilter, eAniso )
+
+END SUB
+
+' -- fileName, textureDirectory, model, makeList, normalMethod
+FUNCTION Exec_TBGL_m15LoadModel() AS LONG
+
+  LOCAL FileName AS STRING, TextureDirectory AS STRING,Model AS EXT, MakeList AS EXT, NormalMethod AS EXT
+
+  thinBasic_ParseString FileName
+
+  IF thinBasic_CheckComma_Mandatory THEN
+    thinBasic_ParseString TextureDirectory
+
+    IF thinBasic_CheckComma_Mandatory THEN
+      thinBasic_ParseNumber Model
+
+      IF Model < 1 THEN tbglError filename+":"+$CRLF+"Model index must be positive number (used "+FORMAT$(model)+")" : EXIT FUNCTION
+
+      IF thinBasic_CheckComma_Mandatory THEN
+        thinBasic_ParseNumber Makelist
+
+        IF thinBasic_CheckComma_Mandatory THEN
+          thinBasic_ParseNumber NormalMethod
+
+          FUNCTION = tbgl_m15LoadModel( FileName, TextureDirectory, Model, MakeList, NormalMethod )
+
+        END IF
+      END IF
+    END IF
+  END IF
+
+END FUNCTION
+
+SUB Exec_TBGL_m15DrawModel(  )
+  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
+  tbgl_m15DrawModel( thinBasic_Parse1Number )
+END SUB
+
+' -- model, normalType [, layerName ]
+SUB Exec_TBGL_m15RecalcNormals()
+  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
+  LOCAL Model AS EXT
+  LOCAL nType AS EXT
+  LOCAL Layer AS STRING
+
+  thinBasic_ParseNumber Model
+  IF thinBasic_CheckComma_Mandatory THEN
+    thinBasic_ParseNumber nType
+    IF thinBasic_CheckComma_Optional THEN thinBasic_ParseString Layer
+
+    tbgl_m15RecalcNormals( Model, nType, Layer )
+
+  END IF
+END SUB
+
+SUB Exec_TBGL_m15ClearModel()
+  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
+  tbgl_m15ClearModel( thinBasic_Parse1Number )
+END SUB
+
+FUNCTION Exec_TBGL_m15GetModelVertexcount() AS LONG
+  IF m15ModelNum = 0 THEN tbglError "Invalid function call to M15 related function"+$CRLF+"You must specify model buffer using TBGL_m15InitModelBuffer" : EXIT FUNCTION
+  FUNCTION = tbgl_m15GetModelVertexcount( thinBasic_Parse1Number() )
+END FUNCTION
+
+SUB Exec_TBGL_m15SetModelVertexcount()
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
   LOCAL Model AS EXT
   LOCAL i AS EXT
+
+  thinBasic_Parse2Numbers( Model, i)
+  tbgl_m15SetModelVertexcount( Model, i )
+
+END SUB
+
+FUNCTION Exec_TBGL_m15GetModelPolycount() AS EXT
+  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT FUNCTION
+  FUNCTION = tbgl_m15GetModelPolycount( thinBasic_Parse1Number )
+END FUNCTION
+
+' -- ( model, widthVariable, heightVariable, lengthVariable )
+SUB EXEC_TBGL_m15GetModelDimensions()
+  LOCAL Model AS EXT
 
   LOCAL lVariablePtr1     AS LONG
   LOCAL lVariableAbsPos1  AS LONG
@@ -959,12 +932,286 @@ SUB Exec_TBGL_m15GetVertexRGB()
   LOCAL lVariablePtr3     AS LONG
   LOCAL lVariableAbsPos3  AS LONG
 
-
-  LOCAL r,g,b AS EXT
+  LOCAL x,y,z AS SINGLE
 
   IF thinBasic_CheckOpenParens THEN
     thinBasic_ParseNumber Model
-    REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
+    IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+      thinBasic_VariableParse(lVariablePtr1, lVariableAbsPos1)
+      IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+        thinBasic_VariableParse(lVariablePtr2, lVariableAbsPos2)
+        IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+          thinBasic_VariableParse(lVariablePtr3, lVariableAbsPos3)
+          IF thinBasic_CheckCloseParens THEN
+
+            tbgl_m15GetModelDimensions( Model, x, y, z )
+
+            '---Now assign values to referenced variables
+            thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, x)
+            thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, y)
+            thinBasic_ChangeVariableNumberDirect (lVariablePtr3, lVariableAbsPos3, z)
+
+          END IF
+        END IF
+      END IF
+    END IF
+  END IF
+
+END SUB
+
+SUB Exec_TBGL_m15SetVertexParam()
+  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
+  LOCAL Model AS EXT
+  LOCAL i AS EXT
+  LOCAL param AS EXT
+  LOCAL value AS EXT
+
+  thinBasic_Parse4Numbers( Model, i, Param, value )
+  tbgl_m15SetVertexParam( Model, i, Param, value )
+
+END SUB
+
+FUNCTION Exec_TBGL_m15GetVertexParam() AS SINGLE
+  IF m15ModelNum = 0 THEN tbglError "Invalid function call to M15 related function"+$CRLF+"You must specify model buffer using TBGL_m15InitModelBuffer" : EXIT FUNCTION
+  LOCAL Model AS EXT
+  LOCAL i AS EXT
+  LOCAL param AS EXT
+
+  thinBasic_Parse3Numbers( Model, i, Param)
+  FUNCTION = tbgl_m15GetVertexParam( Model, i, Param )
+
+END FUNCTION
+
+' -- ( model, index, value ) or ( model, fromIndex, toIndex, value )
+SUB Exec_TBGL_m15SetVertexX()
+  LOCAL Model, index, Num1, Num2 AS EXT
+
+  SELECT CASE thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
+    CASE 3 : tbgl_m15SetVertexX( Model, index, index, Num1 )
+    CASE 4 : tbgl_m15SetVertexX( Model, index, Num1, Num2 )
+  END SELECT
+
+END SUB
+
+FUNCTION Exec_TBGL_m15GetVertexX() AS EXT
+  LOCAL Model, index AS EXT
+
+  thinBasic_Parse2Numbers(Model, index)
+  FUNCTION = tbgl_m15GetVertexX( Model, index )
+
+END FUNCTION
+
+' -- ( model, index, value ) or ( model, fromIndex, toIndex, value )
+SUB Exec_TBGL_m15SetVertexY()
+  LOCAL Model, index, Num1, Num2 AS EXT
+
+  SELECT CASE thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
+    CASE 3 : tbgl_m15SetVertexY( Model, index, index, Num1 )
+    CASE 4 : tbgl_m15SetVertexY( Model, index, Num1, Num2 )
+  END SELECT
+
+END SUB
+
+FUNCTION Exec_TBGL_m15GetVertexY() AS EXT
+  LOCAL Model, index AS EXT
+
+  thinBasic_Parse2Numbers(Model, index)
+  FUNCTION = tbgl_m15GetVertexY( Model, index )
+
+END FUNCTION
+
+' -- ( model, index, value ) or ( model, fromIndex, toIndex, value )
+SUB Exec_TBGL_m15SetVertexZ()
+  LOCAL Model, index, Num1, Num2 AS EXT
+
+  SELECT CASE thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
+    CASE 3 : tbgl_m15SetVertexZ( Model, index, index, Num1 )
+    CASE 4 : tbgl_m15SetVertexZ( Model, index, Num1, Num2 )
+  END SELECT
+
+END SUB
+
+FUNCTION Exec_TBGL_m15GetVertexZ() AS EXT
+  LOCAL Model, index AS EXT
+
+  thinBasic_Parse2Numbers(Model, index)
+  FUNCTION = tbgl_m15GetVertexZ( Model, index )
+
+END FUNCTION
+
+' -- ( model, index, value ) or ( model, fromIndex, toIndex, value )
+SUB Exec_TBGL_m15SetVertexPStop()
+  LOCAL Model, index, Num1, Num2 AS EXT
+
+  SELECT CASE thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
+    CASE 3 : tbgl_m15SetVertexPStop( Model, index, index, Num1 )
+    CASE 4 : tbgl_m15SetVertexPStop( Model, index, Num1, Num2 )
+  END SELECT
+
+END SUB
+
+FUNCTION Exec_TBGL_m15GetVertexPStop() AS EXT
+  LOCAL Model, index AS EXT
+
+  thinBasic_Parse2Numbers(Model, index)
+  FUNCTION = tbgl_m15GetVertexPStop( Model, index )
+
+END FUNCTION
+
+' -- ( model, index, value ) or ( model, fromIndex, toIndex, value )
+SUB Exec_TBGL_m15SetVertexR()
+  LOCAL Model, index, Num1, Num2 AS EXT
+
+  SELECT CASE thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
+    CASE 3 : tbgl_m15SetVertexR( Model, index, index, Num1 )
+    CASE 4 : tbgl_m15SetVertexR( Model, index, Num1, Num2 )
+  END SELECT
+
+END SUB
+
+FUNCTION Exec_TBGL_m15GetVertexR() AS EXT
+  LOCAL Model, index AS EXT
+
+  thinBasic_Parse2Numbers(Model, index)
+  FUNCTION = tbgl_m15GetVertexR( Model, index )
+
+END FUNCTION
+
+' -- ( model, index, value ) or ( model, fromIndex, toIndex, value )
+SUB Exec_TBGL_m15SetVertexG()
+  LOCAL Model, index, Num1, Num2 AS EXT
+
+  SELECT CASE thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
+    CASE 3 : tbgl_m15SetVertexG( Model, index, index, Num1 )
+    CASE 4 : tbgl_m15SetVertexG( Model, index, Num1, Num2 )
+  END SELECT
+
+END SUB
+
+FUNCTION Exec_TBGL_m15GetVertexG() AS EXT
+  LOCAL Model, index AS EXT
+
+  thinBasic_Parse2Numbers(Model, index)
+  FUNCTION = tbgl_m15GetVertexG( Model, index )
+
+END FUNCTION
+
+' -- ( model, index, value ) or ( model, fromIndex, toIndex, value )
+SUB Exec_TBGL_m15SetVertexB()
+  LOCAL Model, index, Num1, Num2 AS EXT
+
+  SELECT CASE thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
+    CASE 3 : tbgl_m15SetVertexB( Model, index, index, Num1 )
+    CASE 4 : tbgl_m15SetVertexB( Model, index, Num1, Num2 )
+  END SELECT
+
+END SUB
+
+FUNCTION Exec_TBGL_m15GetVertexB() AS EXT
+  LOCAL Model, index AS EXT
+
+  thinBasic_Parse2Numbers(Model, index)
+  FUNCTION = tbgl_m15GetVertexB( Model, index )
+
+END FUNCTION
+
+' -- ( model, index, value ) or ( model, fromIndex, toIndex, value )
+SUB Exec_TBGL_m15SetVertexTexN()
+  LOCAL Model, index, Num1, Num2 AS EXT
+
+  SELECT CASE thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
+    CASE 3 : tbgl_m15SetVertexTexN( Model, index, index, Num1 )
+    CASE 4 : tbgl_m15SetVertexTexN( Model, index, Num1, Num2 )
+  END SELECT
+
+END SUB
+
+FUNCTION Exec_TBGL_m15GetVertexTexN() AS EXT
+  LOCAL Model, index AS EXT
+
+  thinBasic_Parse2Numbers(Model, index)
+  FUNCTION = tbgl_m15GetVertexTexN( Model, index )
+
+END FUNCTION
+
+' -- ( model, index, value ) or ( model, fromIndex, toIndex, value )
+SUB Exec_TBGL_m15SetVertexTexX()
+  LOCAL Model, index, Num1, Num2 AS EXT
+
+  SELECT CASE thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
+    CASE 3 : tbgl_m15SetVertexTexX( Model, index, index, Num1 )
+    CASE 4 : tbgl_m15SetVertexTexX( Model, index, Num1, Num2 )
+  END SELECT
+
+END SUB
+
+FUNCTION Exec_TBGL_m15GetVertexTexX() AS EXT
+  LOCAL Model, index AS EXT
+
+  thinBasic_Parse2Numbers(Model, index)
+  FUNCTION = tbgl_m15GetVertexTexX( Model, index )
+
+END FUNCTION
+
+' -- ( model, index, value ) or ( model, fromIndex, toIndex, value )
+SUB Exec_TBGL_m15SetVertexTexY()
+  LOCAL Model, index, Num1, Num2 AS EXT
+
+  SELECT CASE thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
+    CASE 3 : tbgl_m15SetVertexTexY( Model, index, index, Num1 )
+    CASE 4 : tbgl_m15SetVertexTexY( Model, index, Num1, Num2 )
+  END SELECT
+
+END SUB
+
+FUNCTION Exec_TBGL_m15GetVertexTexY() AS EXT
+  LOCAL Model, index AS EXT
+
+  thinBasic_Parse2Numbers(Model, index)
+  FUNCTION = tbgl_m15GetVertexTexY( Model, index )
+
+END FUNCTION
+
+' -- ( model, index, value ) or ( model, fromIndex, toIndex, value )
+SUB Exec_TBGL_m15SetVertexLayer()
+  LOCAL Model, index, Num1, Num2 AS EXT
+
+  SELECT CASE thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
+    CASE 3 : tbgl_m15SetVertexLayer( Model, index, index, Num1 )
+    CASE 4 : tbgl_m15SetVertexLayer( Model, index, Num1, Num2 )
+  END SELECT
+
+END SUB
+
+FUNCTION Exec_TBGL_m15GetVertexLayer() AS EXT
+  LOCAL Model, index AS EXT
+
+  thinBasic_Parse2Numbers(Model, index)
+  FUNCTION = tbgl_m15GetVertexLayer( Model, index )
+
+END FUNCTION
+
+' -- ( model, index, x, y, z ) or ( model, fromIndex, toIndex, x, y, z )
+SUB Exec_TBGL_m15SetVertexXYZ()
+  LOCAL Model, index, Num1, Num2, Num3, Num4 AS EXT
+
+  SELECT CASE thinBasic_ParseXNumbers(5, 6, Model, index, Num1, Num2, Num3, Num4)
+    CASE 5 : tbgl_m15SetVertexXYZ( Model, index, index, Num1, Num2, Num3 )
+    CASE 6 : tbgl_m15SetVertexXYZ( Model, index, Num1, Num2, Num3, Num4 )
+  END SELECT
+
+END SUB
+
+' -- ( model, index, xVariable, yVariable, zVariable )
+SUB Exec_TBGL_m15GetVertexXYZ()
+  LOCAL Model, i AS EXT
+  LOCAL x, y, z AS SINGLE
+  LOCAL lVariablePtr1, lVariableAbsPos1 AS LONG
+  LOCAL lVariablePtr2, lVariableAbsPos2 AS LONG
+  LOCAL lVariablePtr3, lVariableAbsPos3 AS LONG
+
+  IF thinBasic_CheckOpenParens THEN
+    thinBasic_ParseNumber Model
     IF thinBasic_CheckComma_Mandatory THEN
       thinBasic_ParseNumber i
       IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
@@ -973,18 +1220,12 @@ SUB Exec_TBGL_m15GetVertexRGB()
           thinBasic_VariableParse(lVariablePtr2, lVariableAbsPos2)
           IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
             thinBasic_VariableParse(lVariablePtr3, lVariableAbsPos3)
-            IF thinBasic_CheckCloseParens THEN
-
-              R = m15ModelBuffer_Overlay(i).clr(0)
-              G = m15ModelBuffer_Overlay(i).clr(1)
-              B = m15ModelBuffer_Overlay(i).clr(2)
-
-              '---Now assign values to referenced variables
-              thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, R)
-              thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, G)
-              thinBasic_ChangeVariableNumberDirect (lVariablePtr3, lVariableAbsPos3, B)
-
-            END IF
+        IF thinBasic_CheckCloseParens THEN
+          tbgl_m15GetVertexXYZ( Model, i, x, y, z )
+                thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, x)
+                thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, y)
+                thinBasic_ChangeVariableNumberDirect (lVariablePtr3, lVariableAbsPos3, z)
+        END IF
           END IF
         END IF
       END IF
@@ -993,201 +1234,90 @@ SUB Exec_TBGL_m15GetVertexRGB()
 
 END SUB
 
-' -----------------------------------------------------------------------------
-' -- Textures
-' -----------------------------------------------------------------------------
+' -- ( model, index, r, g, b ) or ( model, fromIndex, toIndex, r, g, b )
+SUB Exec_TBGL_m15SetVertexRGB()
+  LOCAL Model, index, Num1, Num2, Num3, Num4 AS EXT
 
-' -- Texture number
-SUB Exec_TBGL_m15SetVertexTexN()
-  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
-
-  REGISTER i AS LONG
-  LOCAL Model, index, Num1, Num2, nFound AS EXT
-
-  nFound = thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
-  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-  IF nFound = 3 THEN
-    m15ModelBuffer_Overlay(index).TexN = Num1
-
-  ELSEIF nFound = 4 THEN
-    FOR i = index TO Num1
-      m15ModelBuffer_Overlay(i).TexN = Num2
-    NEXT
-
-  END IF
-
-  m15ModelData(Model).isTextured = m15ModelBuffer_Overlay(index).TexN > 0
+  SELECT CASE thinBasic_ParseXNumbers(5, 6, Model, index, Num1, Num2, Num3, Num4)
+    CASE 5 : tbgl_m15SetVertexRGB( Model, index, index, Num1, Num2, Num3 )
+    CASE 6 : tbgl_m15SetVertexRGB( Model, index, Num1, Num2, Num3, Num4 )
+  END SELECT
 
 END SUB
 
-FUNCTION Exec_TBGL_m15GetVertexTexN() AS EXT
-
-  LOCAL Model, index AS EXT
-
-  thinBasic_Parse2Numbers(Model, index)
-  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-  FUNCTION = m15ModelBuffer_Overlay(index).TexN
-
-END FUNCTION
-
-' -- Setting texture U coordinate
-SUB Exec_TBGL_m15SetVertexTexX()
+' -- ( model, index, rVariable, gVariable, bVariable )
+SUB Exec_TBGL_m15GetVertexRGB()
   IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
-
-  REGISTER i AS LONG
-  LOCAL Model, index, Num1, Num2, nFound AS EXT
-
-  nFound = thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
-  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-  IF nFound = 3 THEN
-    m15ModelBuffer_Overlay(index).TexXY(0) = Num1
-
-  ELSEIF nFound = 4 THEN
-    FOR i = index TO Num1
-      m15ModelBuffer_Overlay(i).TexXY(0) = Num2
-    NEXT
-
-  END IF
-END SUB
-
-FUNCTION Exec_TBGL_m15GetVertexTexX() AS EXT
-
-  LOCAL Model, index AS EXT
-
-  thinBasic_Parse2Numbers(Model, index)
-  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-  FUNCTION = m15ModelBuffer_Overlay(index).TexXY(0)
-
-END FUNCTION
-
-' -- Setting texture V coordinate
-SUB Exec_TBGL_m15SetVertexTexY()
-  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
-
-  REGISTER i AS LONG
-  LOCAL Model, index, Num1, Num2, nFound AS EXT
-
-  nFound = thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
-  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-  IF nFound = 3 THEN
-    m15ModelBuffer_Overlay(index).TexXY(1) = Num1
-
-  ELSEIF nFound = 4 THEN
-    FOR i = index TO Num1
-      m15ModelBuffer_Overlay(i).TexXY(1) = Num2
-    NEXT
-
-  END IF
-END SUB
-
-FUNCTION Exec_TBGL_m15GetVertexTexY() AS EXT
-
-  LOCAL Model, index AS EXT
-
-  thinBasic_Parse2Numbers(Model, index)
-  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-  FUNCTION = m15ModelBuffer_Overlay(index).TexXY(1)
-
-END FUNCTION
-
-' -- Setting texture UV coordinate
-SUB Exec_TBGL_m15SetVertexTexXY()
-  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
-
-  REGISTER i AS LONG
-  LOCAL Model, index, Num1, Num2, Num3, nFound AS EXT
-
-  nFound = thinBasic_ParseXNumbers(4, 5, Model, index, Num1, Num2, Num3)
-  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-  IF nFound = 4 THEN
-    m15ModelBuffer_Overlay(index).TexXY(0) = Num1
-    m15ModelBuffer_Overlay(index).TexXY(1) = Num2
-
-  ELSEIF nFound = 5 THEN
-    FOR i = index TO Num1
-      m15ModelBuffer_Overlay(i).TexXY(0) = Num2
-      m15ModelBuffer_Overlay(i).TexXY(1) = Num3
-    NEXT
-
-  END IF
-
-END SUB
-
-SUB Exec_TBGL_m15GetVertexTexXY()
-
-  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
-  LOCAL Model AS EXT
-  LOCAL i AS EXT
-
-  LOCAL lVariablePtr1     AS LONG
-  LOCAL lVariableAbsPos1  AS LONG
-
-  LOCAL lVariablePtr2     AS LONG
-  LOCAL lVariableAbsPos2  AS LONG
-
-  LOCAL x,y AS EXT
+  LOCAL Model, i AS EXT
+  LOCAL r, g, b AS BYTE
+  LOCAL lVariablePtr1, lVariableAbsPos1 AS LONG
+  LOCAL lVariablePtr2, lVariableAbsPos2 AS LONG
+  LOCAL lVariablePtr3, lVariableAbsPos3 AS LONG
 
   IF thinBasic_CheckOpenParens THEN
     thinBasic_ParseNumber Model
-    REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
     IF thinBasic_CheckComma_Mandatory THEN
       thinBasic_ParseNumber i
       IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
         thinBasic_VariableParse(lVariablePtr1, lVariableAbsPos1)
         IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
           thinBasic_VariableParse(lVariablePtr2, lVariableAbsPos2)
-            IF thinBasic_CheckCloseParens THEN
-
-              x = m15ModelBuffer_Overlay(i).TexXY(0)
-              y = m15ModelBuffer_Overlay(i).TexXY(1)
-
-              '---Now assign values to referenced variables
-              thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, x)
-              thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, y)
-
-            END IF
+          IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+            thinBasic_VariableParse(lVariablePtr3, lVariableAbsPos3)
+        IF thinBasic_CheckCloseParens THEN
+          tbgl_m15GetVertexRGB( Model, i, r, g, b )
+                thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, r)
+                thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, g)
+                thinBasic_ChangeVariableNumberDirect (lVariablePtr3, lVariableAbsPos3, b)
+        END IF
           END IF
         END IF
       END IF
     END IF
-
-
-END SUB
-
-
-' -----------------------------------------------------------------------------
-' -- LAYERS
-' -----------------------------------------------------------------------------
-
-' -- Layer number
-SUB Exec_TBGL_m15SetVertexLayer()
-  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
-
-  REGISTER i AS LONG
-  LOCAL Model, index, Num1, Num2, nFound AS EXT
-
-  nFound = thinBasic_ParseXNumbers(3, 4, Model, index, Num1, Num2)
-  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-  IF nFound = 3 THEN
-    m15ModelBuffer_Overlay(index).Layer = Num1
-
-  ELSEIF nFound = 4 THEN
-    FOR i = index TO Num1
-      m15ModelBuffer_Overlay(i).Layer = Num2
-    NEXT
-
   END IF
+
 END SUB
 
-FUNCTION Exec_TBGL_m15GetVertexLayer() AS EXT
+' -- ( model, index, u, v ) or ( model, fromIndex, toIndex, u, v )
+SUB Exec_TBGL_m15SetVertexTexXY()
+  LOCAL Model, index, Num1, Num2, Num3 AS EXT
 
-  LOCAL Model, index AS EXT
+  SELECT CASE thinBasic_ParseXNumbers(4, 5, Model, index, Num1, Num2, Num3)
+    CASE 4 : tbgl_m15SetVertexTexXY( Model, index, index, Num1, Num2 )
+    CASE 5 : tbgl_m15SetVertexTexXY( Model, index, Num1, Num2, Num3 )
+  END SELECT
 
-  thinBasic_Parse2Numbers(Model, index)
-  REDIM m15ModelBuffer_Overlay(1 TO m15ModelData(Model).vertexCount) AT STRPTR(m15ModelBuffer(Model))
-  FUNCTION = m15ModelBuffer_Overlay(index).Layer
+END SUB
 
-END FUNCTION
+' -- ( model, index, uVariable, vVariable )
+SUB Exec_TBGL_m15GetVertexTexXY()
+  IF m15ModelNum = 0 THEN tbglError $ERR_MODELBUFFER : EXIT SUB
+  LOCAL Model, i AS EXT
+  LOCAL u, v AS SINGLE
+  LOCAL lVariablePtr1, lVariableAbsPos1 AS LONG
+  LOCAL lVariablePtr2, lVariableAbsPos2 AS LONG
+
+  IF thinBasic_CheckOpenParens THEN
+    thinBasic_ParseNumber Model
+    IF thinBasic_CheckComma_Mandatory THEN
+      thinBasic_ParseNumber i
+      IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+        thinBasic_VariableParse(lVariablePtr1, lVariableAbsPos1)
+        IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+          thinBasic_VariableParse(lVariablePtr2, lVariableAbsPos2)
+        IF thinBasic_CheckCloseParens THEN
+          tbgl_m15GetVertexTexXY( Model, i, u, v )
+              thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, u)
+              thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, v)
+        END IF
+        END IF
+      END IF
+    END IF
+  END IF
+
+END SUB
+
+#ENDIF
 
 ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 SUB internal_RecalcNormals( BYVAL Model AS LONG, BYVAL nType AS LONG )

@@ -24,20 +24,23 @@ $ERR_MODELBUFFER      = "Problem" + $TAB + "Usage of tbgl_m15* statement without
 ' -----------------------------------------------------------------------------
 
 GLOBAL error_display AS LONG
+GLOBAL g_LastError   AS STRING
 
 ' -----------------------------------------------------------------------------
 
-FUNCTION Exec_TBGL_ErrorMessages( ) AS LONG
+' -- Sets how errors are reported: %TBGL_ERROR_NONE, %TBGL_ERROR_MSGBOX or %TBGL_ERROR_FILE
+FUNCTION tbgl_ErrorMessages ALIAS "tbgl_ErrorMessages" ( BYVAL displayMode AS LONG ) EXPORT AS LONG
 
-  LOCAL x AS EXT
-
-  x = thinBasic_Parse1Number
-
-  IF x = < %TBGL_ERROR_FILE AND x >= %TBGL_ERROR_NONE THEN
-    error_display = x
+  IF displayMode = < %TBGL_ERROR_FILE AND displayMode >= %TBGL_ERROR_NONE THEN
+    error_display = displayMode
   ELSE
     FUNCTION = %TBGL_FUNCTION_ERROR
   END IF
+END FUNCTION
+
+' -- Returns text of the last TBGL error, empty if none occurred
+FUNCTION tbgl_GetLastError ALIAS "tbgl_GetLastError" ( ) EXPORT AS STRING
+  FUNCTION = g_LastError
 END FUNCTION
 
 ' -- Internal function to handle error situation according to setup by TBGL_ErrorMessages
@@ -45,8 +48,14 @@ FUNCTION TBGLError ( mtext AS STRING ) AS LONG
 
   STATIC ErrorCount AS LONG
 
+  g_LastError = mText
+
   IF error_display = %TBGL_ERROR_MSGBOX THEN
-    thinbasic_RunTimeError ( %ERR__MODULE_SPECIFIC, mText )
+    #IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+      thinbasic_RunTimeError ( %ERR__MODULE_SPECIFIC, mText )
+    #ELSE
+      MessageBox( g_Win.HANDLE, BYCOPY mText, "TBGL", %MB_OK OR %MB_ICONERROR )
+    #ENDIF
 
   ELSEIF error_display = %TBGL_ERROR_FILE THEN
 
@@ -55,9 +64,9 @@ FUNCTION TBGLError ( mtext AS STRING ) AS LONG
 
     INCR ErrorCount
 
-    IF ErrorCount = 1 THEN KILL thinBasic_GetRunTimeInfo( "SCRIPT_PATH" ) + "TBGLModuleErrors.log"
+    IF ErrorCount = 1 THEN KILL internal_GetBasePath( ) + "TBGLModuleErrors.log"
 
-    OPEN thinBasic_GetRunTimeInfo( "SCRIPT_PATH" ) + "TBGLModuleErrors.log" FOR APPEND AS #x
+    OPEN internal_GetBasePath( ) + "TBGLModuleErrors.log" FOR APPEND AS #x
       IF ErrorCount = 1 THEN PRINT #x, "This file contains list of problems which occured in TBGL module during the run of the script" : PRINT #x, "Log started on " + DATE$ + " at " + TIME$
       PRINT #x, mText
     CLOSE #x
@@ -74,7 +83,7 @@ sub ReportError(errorContext as string, description as string)
 end sub
 
 ' -- Returns last error in OpenGL
-FUNCTION Exec_TBGL_GetLastGLError ( ) AS STRING
+FUNCTION tbgl_GetLastGLError ALIAS "tbgl_GetLastGLError" ( ) EXPORT AS STRING
 
   LOCAL errorCode AS LONG
   errorCode = glGetError ( )
@@ -86,3 +95,18 @@ FUNCTION Exec_TBGL_GetLastGLError ( ) AS STRING
   END IF
 
 END FUNCTION
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+FUNCTION Exec_TBGL_ErrorMessages( ) AS LONG
+  FUNCTION = tbgl_ErrorMessages( thinBasic_Parse1Number )
+END FUNCTION
+
+FUNCTION Exec_TBGL_GetLastGLError ( ) AS STRING
+  FUNCTION = tbgl_GetLastGLError( )
+END FUNCTION
+
+#ENDIF

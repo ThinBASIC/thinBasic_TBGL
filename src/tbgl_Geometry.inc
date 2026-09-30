@@ -23,55 +23,71 @@
 ' -----------------------------------------------------------------------------
 
 ' -- Sets point size
-SUB Exec_TBGL_PointSize( )
+SUB tbgl_PointSize ALIAS "tbgl_PointSize" ( BYVAL pointSize AS SINGLE ) EXPORT
 
-  LOCAL x AS EXT
-
-  x = thinBasic_Parse1Number
-  glPointSize x
+  glPointSize pointSize
 
 END SUB
 
 ' -- Sets line width in pixels
-SUB Exec_TBGL_LineWidth( )
+SUB tbgl_LineWidth ALIAS "tbgl_LineWidth" ( BYVAL lineWidth AS SINGLE ) EXPORT
 
-  LOCAL x AS EXT
-
-  x = thinBasic_Parse1Number
-
-  glLineWidth x
+  glLineWidth lineWidth
 
 END SUB
 
 ' -- Setups pattern for stipple
-SUB Exec_TBGL_LineStipple( )
+SUB tbgl_LineStipple ALIAS "tbgl_LineStipple" ( BYVAL factor AS LONG, BYVAL pattern AS WORD ) EXPORT
 
-  LOCAL x, y AS EXT
-  LOCAL lx, ly AS LONG
-
-  thinBasic_Parse2Numbers( x, y )
-
-  lx = x
-  ly = y
-
-  glLineStipple lx, ly
+  glLineStipple factor, pattern
 
 END SUB
 
 ' -- Enables or disables use of line stipple
-SUB Exec_TBGL_UseLineStipple( )
+SUB tbgl_UseLineStipple ALIAS "tbgl_UseLineStipple" ( BYVAL flag AS LONG ) EXPORT
 
-  ' MACRO placed in thinbasic_tbgl
-  MACRO_Use1Param(%GL_LINE_STIPPLE)
+  IF flag THEN glEnable %GL_LINE_STIPPLE ELSE glDisable %GL_LINE_STIPPLE
 
 END SUB
 
 ' -- Modifies polygon look
-SUB Exec_TBGL_PolygonLook( )
-  LOCAL x AS EXT
+SUB tbgl_PolygonLook ALIAS "tbgl_PolygonLook" ( BYVAL polygonMode AS DWORD ) EXPORT
 
-  x = thinBasic_Parse1Number
-
-  glPolygonMode %GL_FRONT_AND_BACK, x
+  glPolygonMode %GL_FRONT_AND_BACK, polygonMode
 
 END SUB
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+SUB Exec_TBGL_PointSize( )
+  tbgl_PointSize( thinBasic_Parse1Number )
+END SUB
+
+SUB Exec_TBGL_LineWidth( )
+  tbgl_LineWidth( thinBasic_Parse1Number )
+END SUB
+
+SUB Exec_TBGL_LineStipple( )
+  LOCAL x, y AS EXT
+
+  thinBasic_Parse2Numbers( x, y )
+  tbgl_LineStipple( x, y )
+
+END SUB
+
+SUB Exec_TBGL_UseLineStipple( )
+  LOCAL flag AS EXT
+
+  flag = thinBasic_Parse1Number
+  IF thinBasic_ErrorFree THEN tbgl_UseLineStipple( ISTRUE flag )
+
+END SUB
+
+SUB Exec_TBGL_PolygonLook( )
+  tbgl_PolygonLook( thinBasic_Parse1Number )
+END SUB
+
+#ENDIF

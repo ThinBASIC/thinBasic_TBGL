@@ -31,25 +31,20 @@ MACRO macro_t_Entity_Sphere_FillData(ptrTo_t_EntityInfo, radius, tex, cr, cg, cb
 
 END MACRO
 
-' -- Creates sphere
-SUB Exec_TBGL_EntityCreateSphere()
-
-  LOCAL ScriptSceneID AS EXT
-
-  LOCAL EntityID AS EXT
-  LOCAL radius,tex,r,g,b AS EXT
-  LOCAL PARENT AS EXT
-  LOCAL n AS LONG
-
-  n = thinBASIC_ParseXNumbers( 2, 8, ScriptSceneID, EntityID, PARENT, radius, tex, r, g, b )
+' -- Creates sphere, radius 0 means 1, texture 0 means no texture
+SUB tbgl_EntityCreateSphere ALIAS "tbgl_EntityCreateSphere" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityID AS LONG _
+  , BYVAL PARENT AS LONG _
+  , BYVAL radius AS SINGLE _
+  , BYVAL tex AS LONG _
+  , BYVAL r AS BYTE _
+  , BYVAL g AS BYTE _
+  , BYVAL b AS BYTE _
+  ) EXPORT
 
   IF radius = 0 THEN radius = 1
   IF tex    = 0 THEN tex = -1
-  IF n < 6 THEN
-    r = 255
-    g = 255
-    b = 255
-  END IF
 
   internal_EntityRedimArrayIfNeeded(ScriptSceneID, EntityID)
 
@@ -71,3 +66,29 @@ SUB Exec_TBGL_EntityCreateSphere()
   TBGLSceneEntitiesNames(EntityID) = ""
 
 END SUB
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+SUB Exec_TBGL_EntityCreateSphere()
+  LOCAL ScriptSceneID AS EXT
+  LOCAL EntityID AS EXT
+  LOCAL radius,tex,r,g,b AS EXT
+  LOCAL PARENT AS EXT
+  LOCAL n AS LONG
+
+  n = thinBASIC_ParseXNumbers( 2, 8, ScriptSceneID, EntityID, PARENT, radius, tex, r, g, b )
+
+  IF n < 6 THEN
+    r = 255
+    g = 255
+    b = 255
+  END IF
+
+  tbgl_EntityCreateSphere( ScriptSceneID, EntityID, PARENT, radius, tex, r, g, b )
+
+END SUB
+
+#ENDIF

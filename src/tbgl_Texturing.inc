@@ -83,7 +83,7 @@ END SUB
 function internal_LoadTextureFileFromDisk(byref fileName as string, byref descriptionCandidate as string) as string
 
   dim srcPath as string
-  srcPath = thinBasic_GetRunTimeInfo( "SCRIPT_PATH" )
+  srcPath = internal_GetBasePath( )
 
   dim isFullPath as long
   dim isNetworkPath as long
@@ -116,7 +116,7 @@ function internal_LoadTextureFileFromDisk(byref fileName as string, byref descri
 end function
 
 ' -- [!] Loads BMP or TGA, will be optimized via GDIPlus for wider format support
-function internal_LoadTexture(TexName as string, TexNum as long, TexFilter as long, eAnisoLevel as ext, lRGB as long) as long
+function internal_LoadTexture(TexName as string, TexNum as long, TexFilter as long, byval eAnisoLevel as single, lRGB as long) as long
   if TexNum < 0 OR TexNum > %LIMIT_MAX_TEXTUREINDEX then
     TBGLError "Statement:" + $TAB + "tbgl_LoadTexture" + $CRLF + "Problem:" + $TAB + $TAB + $ERR_BADTEXTUREINDEX + $CRLF + $CRLF + "Passed:" + $TAB + format$(TexNum)
     function = %TBGL_FUNCTION_ERROR
@@ -133,22 +133,21 @@ function internal_LoadTexture(TexName as string, TexNum as long, TexFilter as lo
 
 end function
 
-FUNCTION Exec_TBGL_LoadTexture( ) AS LONG
-  LOCAL eTexNum, eTexFilter, eAnisoLevel, eRGB AS EXT
-  LOCAL TexName AS STRING, TexNum, TexFilter, lRGB AS LONG
-  LOCAL numParsed AS LONG
-  numParsed = thinBASIC_Parse1StringXNumbers( 2, 4, TexName, eTexNum, eTexFilter, eAnisoLevel, eRGB )
-  lRGB = eRGB
-  TexNum = eTexNum
-  TexFilter = eTexFilter
+' -- Loads BMP or TGA texture to slot TexNum, lRGB is color key for transparency (-1 = none)
+FUNCTION tbgl_LoadTexture ALIAS "tbgl_LoadTexture" ( _
+    BYVAL TexName AS STRING _
+  , BYVAL TexNum AS LONG _
+  , BYVAL TexFilter AS LONG _
+  , BYVAL anisoLevel AS SINGLE _
+  , BYVAL lRGB AS LONG _
+  ) EXPORT AS LONG
 
-  IF numParsed <> 4 THEN lRGB = - 1
-  FUNCTION = internal_LoadTexture(TexName, TexNum, TexFilter, eAnisoLevel, lRGB )
+  FUNCTION = internal_LoadTexture(TexName, TexNum, TexFilter, anisoLevel, lRGB )
 
 END FUNCTION
 
 ' -- [!] Loads BMP or TGA, will be optimized via GDIPlus for wider format support
-FUNCTION internal_LoadTexturesFromTiles(TexName AS STRING, TexNum AS LONG, numCols AS LONG, numRows AS LONG, TexFilter AS LONG, eAnisoLevel AS EXT, lRGB AS LONG ) AS LONG
+FUNCTION internal_LoadTexturesFromTiles(TexName AS STRING, TexNum AS LONG, numCols AS LONG, numRows AS LONG, TexFilter AS LONG, BYVAL eAnisoLevel AS SINGLE, lRGB AS LONG ) AS LONG
   IF TexNum < 0 OR TexNum > %LIMIT_MAX_TEXTUREINDEX THEN
     TBGLError "Statement:" + $TAB + "tbgl_LoadTexture" + $CRLF + "Problem:" + $TAB + $TAB + $ERR_BADTEXTUREINDEX + $CRLF + $CRLF + "Passed:" + $TAB + FORMAT$( TexNum )
     FUNCTION = %TBGL_FUNCTION_ERROR
@@ -163,32 +162,35 @@ FUNCTION internal_LoadTexturesFromTiles(TexName AS STRING, TexNum AS LONG, numCo
 
 END FUNCTION
 
-FUNCTION Exec_TBGL_LoadTexturesFromTiles( ) AS LONG
-  LOCAL eTexNum, eCols, eRows, eTexFilter, eAnisoLevel, eRGB AS EXT
-  LOCAL TexName AS STRING, TexNum, TexFilter, lRGB, lCols, lRows AS LONG
-  LOCAL numParsed AS LONG
+' -- Loads texture atlas into numCols x numRows consecutive slots starting at TexNum, lRGB is color key (-1 = none)
+FUNCTION tbgl_LoadTexturesFromTiles ALIAS "tbgl_LoadTexturesFromTiles" ( _
+    BYVAL TexName AS STRING _
+  , BYVAL TexNum AS LONG _
+  , BYVAL numCols AS LONG _
+  , BYVAL numRows AS LONG _
+  , BYVAL TexFilter AS LONG _
+  , BYVAL anisoLevel AS SINGLE _
+  , BYVAL lRGB AS LONG _
+  ) EXPORT AS LONG
 
-  eRGB = - 1
-  numParsed = thinBASIC_Parse1StringXNumbers( 4, 7, TexName, eTexNum, eCols, eRows, eTexFilter, eAnisoLevel, eRGB )
-  lRGB = eRGB
-  TexNum = eTexNum
-  TexFilter = eTexFilter
-  lCols = eCols
-  lRows = eRows
-
-
-  FUNCTION = internal_LoadTexturesFromTiles(TexName, TexNum, lCols, lRows, TexFilter, eAnisoLevel, lRGB )
+  FUNCTION = internal_LoadTexturesFromTiles(TexName, TexNum, numCols, numRows, TexFilter, anisoLevel, lRGB )
 
 END FUNCTION
 
-' -- Makes texture from memory buffer
-FUNCTION Exec_TBGL_MakeTexture( ) AS LONG
+' -- Makes texture from memory buffer (or file for %TBGL_FILE_BMP / %TBGL_FILE_TGA), lRGB is color key (-1 = none)
+FUNCTION tbgl_MakeTexture ALIAS "tbgl_MakeTexture" ( _
+    BYVAL TexBuffer AS STRING _
+  , BYVAL texType AS LONG _
+  , BYVAL x AS LONG _
+  , BYVAL y AS LONG _
+  , BYVAL TexNum AS LONG _
+  , BYVAL TexFilter AS LONG _
+  , BYVAL AnisoX AS SINGLE _
+  , BYVAL lRGB AS LONG _
+  ) EXPORT AS LONG
 
   REGISTER i AS LONG
 
-  LOCAL eTexType, eX, eY, eTexNum, eTexFilter, eAnisoLevel, eRGB AS EXT
-  LOCAL TexBuffer AS STRING, TexNum, TexFilter, lRGB AS LONG
-  LOCAL numParsed AS LONG
   LOCAL bytePointer AS BYTE PTR
   LOCAL lenTexBuffer AS LONG
   LOCAL pTex AS BYTE PTR
@@ -198,36 +200,21 @@ FUNCTION Exec_TBGL_MakeTexture( ) AS LONG
   LOCAL rPointer AS BYTE PTR
   LOCAL bPointer AS BYTE PTR
 
-  numParsed = thinBASIC_Parse1StringXNumbers( 5, 7, TexBuffer, eTexType, eX, eY, eTexNum, eTexFilter, eAnisoLevel, eRGB )
-
-  IF numParsed < 7 THEN
-    lRGB = - 1
-  ELSE
-    lRGB = eRGB
-  END IF
-
-  TexNum = eTexNum
-  TexFilter = eTexFilter
-
   IF TexNum < 0 OR TexNum > %LIMIT_MAX_TEXTUREINDEX THEN
     TBGLError "Statement:" + $TAB + "tbgl_MakeTexture" + $CRLF + "Problem:" + $TAB + $TAB + $ERR_BADTEXTUREINDEX + $CRLF + $CRLF + "Passed:" + $TAB + FORMAT$( TexNum )
     FUNCTION = %TBGL_FUNCTION_ERROR
     EXIT FUNCTION
   END IF
 
-  LOCAL x, y AS LONG, AnisoX AS SINGLE
-  x = ex
-  y = ey
-  AnisoX = eAnisoLevel
-
-  SELECT CASE AS LONG eTexType
+  SELECT CASE AS LONG texType
     ' ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
     CASE %TBGL_FILE_BMP
-      TextureLoadBMP( 0, TexBuffer, TexNum, TexFilter, eAnisoLevel, IIF( numParsed = 4, lRGB, - 1 ))
+      ' -- [!] Color key is not applied for BMP files here (historical behavior)
+      TextureLoadBMP( 0, TexBuffer, TexNum, TexFilter, AnisoX, - 1 )
 
     ' ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
     CASE %TBGL_FILE_TGA
-      TextureLoadTGA( 0, TexBuffer, TexNum, TexFilter, eAnisoLevel )
+      TextureLoadTGA( 0, TexBuffer, TexNum, TexFilter, AnisoX )
 
     ' ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
     CASE %TBGL_DATA_RGB
@@ -357,24 +344,19 @@ END FUNCTION
 ' -----------------------------------------------------------------------------
 
 ' -- Enables texture mapping
-SUB Exec_TBGL_UseTexturing()
+SUB tbgl_UseTexturing ALIAS "tbgl_UseTexturing" ( BYVAL flag AS LONG ) EXPORT
 
-  ' MACRO placed in thinbasic_tbgl
-  MACRO_Use1Param(%GL_TEXTURE_2D)
+  IF flag THEN glEnable %GL_TEXTURE_2D ELSE glDisable %GL_TEXTURE_2D
 
 END SUB
 
 ' -- Is texturing enabled?
-FUNCTION Exec_TBGL_GetUseTexturing( ) AS EXT
-  IF thinBasic_CheckOpenParens_Optional THEN thinBasic_CheckCloseParens_Mandatory
+FUNCTION tbgl_GetUseTexturing ALIAS "tbgl_GetUseTexturing" ( ) EXPORT AS LONG
   FUNCTION = glIsEnabled( %GL_TEXTURE_2D )
 END FUNCTION
 
 ' -- Sets active texure
-FUNCTION Exec_TBGL_BindTexture( ) AS LONG
-  LOCAL TexNum AS EXT
-
-  texNum = thinBasic_Parse1Number
+FUNCTION tbgl_BindTexture ALIAS "tbgl_BindTexture" ( BYVAL TexNum AS LONG ) EXPORT AS LONG
 
   IF TexNum < 0 OR TexNum > %LIMIT_MAX_TEXTUREINDEX THEN
     TBGLError "Statement:" + $TAB + "tbgl_BindTexture" + $CRLF + "Problem:" + $TAB + $TAB + $ERR_BADTEXTUREINDEX + $CRLF + $CRLF + "Passed:" + $TAB + FORMAT$( TexNum )
@@ -394,14 +376,11 @@ GLOBAL BindTextureStackDepth AS LONG
 
 
 ' -- Enables texture in given section, and makes sure it is returned back on the end
-SUB Exec_TBGL_PushTexture( )
-
-  LOCAL parameter AS EXT
+SUB tbgl_PushTexture ALIAS "tbgl_PushTexture" ( BYVAL parameter AS LONG ) EXPORT
 
   INCR BindTextureStackDepth
   IF BindTextureStackDepth > UBOUND(BindTextureStack) THEN REDIM PRESERVE BindTextureStack(1 TO BindTextureStackDepth+4)
 
-  thinBasic_ParseNumber parameter
   ' -- Backup the texture
   glGetIntegerV(%GL_TEXTURE_BINDING_2D, BindTextureStack(BindTextureStackDepth))
 
@@ -417,7 +396,7 @@ SUB Exec_TBGL_PushTexture( )
 END SUB
 
 ' -- Ends texture region
-SUB Exec_TBGL_PopTexture( )
+SUB tbgl_PopTexture ALIAS "tbgl_PopTexture" ( ) EXPORT
 
   IF BindTextureStackDepth = 0 THEN
     IF gOpenGLStarted THEN
@@ -442,10 +421,7 @@ END SUB
 
 
 ' -- 2D texture coordinate for use with immediate mode
-SUB Exec_TBGL_TexCoord2D( )
-  LOCAL u, v AS EXT
-
-  thinBasic_Parse2Numbers( u, v )
+SUB tbgl_TexCoord2D ALIAS "tbgl_TexCoord2D" ( BYVAL u AS SINGLE, BYVAL v AS SINGLE ) EXPORT
 
   glTexCoord2f u, v
 
@@ -456,11 +432,8 @@ END SUB
 ' -----------------------------------------------------------------------------
 
 ' -- [!] Compatible rendering to texture, would benefit from using FBO on better hardware
-SUB Exec_TBGL_RenderToTexture( )
+SUB tbgl_RenderToTexture ALIAS "tbgl_RenderToTexture" ( BYVAL destTexture AS LONG, BYVAL x AS LONG, BYVAL y AS LONG, BYVAL twidth AS LONG, BYVAL theight AS LONG ) EXPORT
 
-  LOCAL destTexture AS EXT, x, y, twidth, theight AS EXT
-
-  thinBasic_Parse5Numbers( destTexture, x, y, twidth, theight )
   glFinish
   glBindTexture %GL_TEXTURE_2D, lpTexture( destTexture )
   glGetIntegerV( %GL_VIEWPORT, Viewport( 0 ))
@@ -472,62 +445,27 @@ END SUB
 
 ' -- Very useful for render to texture on OLD hardware, returns best match of non-power of two rectangle
 ' -- to power of two rectangle
-SUB Exec_TBGL_EvaluatePOTMatch( )
+SUB tbgl_EvaluatePOTMatch ALIAS "tbgl_EvaluatePOTMatch" ( BYVAL resX AS LONG, BYVAL resY AS LONG, BYREF fitX AS LONG, BYREF fitY AS LONG ) EXPORT
 
   REGISTER i AS LONG
 
-  LOCAL resX, resY, fitX, fitY AS EXT
   LOCAL tempX, tempY AS LONG
 
+  i = 1
+  tempX = 1
+  WHILE tempX <= resX
+    fitX = tempX
+    tempX = 2^ i
+    INCR i
+  WEND
 
-  LOCAL lVariablePtr1 AS LONG
-  LOCAL lVariableAbsPos1 AS LONG
-
-  LOCAL lVariablePtr2 AS LONG
-  LOCAL lVariableAbsPos2 AS LONG
-
-  LOCAL eResult1 AS EXT
-  LOCAL eResult2 AS EXT
-
-  IF thinBasic_CheckOpenParens_Mandatory THEN
-    thinBasic_ParseNumber resX
-    IF thinBasic_CheckComma_Mandatory THEN
-      thinBasic_ParseNumber resY
-
-      IF thinBasic_CheckComma_Mandatory THEN
-        thinBasic_VariableParse( lVariablePtr1, lVariableAbsPos1 )
-
-        IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-          thinBasic_VariableParse( lVariablePtr2, lVariableAbsPos2 )
-          IF thinBasic_CheckCloseParens_Mandatory THEN
-            IF thinBasic_ErrorFree THEN
-              i = 1
-              tempX = 1
-              WHILE tempX <= resX
-                fitX = tempX
-                tempX = 2^ i
-                INCR i
-              WEND
-
-              i = 1
-              tempY = 1
-              WHILE tempY <= resY
-                fitY = tempY
-                tempY = 2^ i
-                INCR i
-              WEND
-
-              eResult1 = fitX
-              eResult2 = fitY
-              thinBasic_ChangeVariableNumberDirect( lVariablePtr1, lVariableAbsPos1, eResult1 )
-              thinBasic_ChangeVariableNumberDirect( lVariablePtr2, lVariableAbsPos2, eResult2 )
-
-            END IF
-          END IF
-        END IF
-      END IF
-    END IF
-  END IF
+  i = 1
+  tempY = 1
+  WHILE tempY <= resY
+    fitY = tempY
+    tempY = 2^ i
+    INCR i
+  WEND
 
 END SUB
 
@@ -536,7 +474,7 @@ END SUB
 ' -----------------------------------------------------------------------------
 
 ' -- Returns texture list
-FUNCTION Exec_TBGL_GetTextureList( ) AS STRING
+FUNCTION tbgl_GetTextureList ALIAS "tbgl_GetTextureList" ( ) EXPORT AS STRING
   REGISTER i AS LONG
   LOCAL Temp AS STRING
 
@@ -547,10 +485,7 @@ FUNCTION Exec_TBGL_GetTextureList( ) AS STRING
 END FUNCTION
 
 ' -- Returns name of texture in given slot
-FUNCTION Exec_TBGL_GetTextureName( ) AS STRING
-  LOCAL i AS EXT
-
-  i = thinBASIC_Parse1Number
+FUNCTION tbgl_GetTextureName ALIAS "tbgl_GetTextureName" ( BYVAL i AS LONG ) EXPORT AS STRING
 
   IF i < %LIMIT_MAX_TEXTUREINDEX AND i > 0 THEN
     FUNCTION = TextureList( i )
@@ -561,54 +496,18 @@ FUNCTION Exec_TBGL_GetTextureName( ) AS STRING
 END FUNCTION
 
 ' -- Gets texture width x height
-SUB Exec_TBGL_GetTextureResolution( )
+SUB tbgl_GetTextureResolution ALIAS "tbgl_GetTextureResolution" ( BYVAL nTex AS LONG, BYREF nWidth AS LONG, BYREF nHeight AS LONG ) EXPORT
 
-  LOCAL lVariablePtr1 AS LONG
-  LOCAL lVariableAbsPos1 AS LONG
+  glBindTexture( %GL_TEXTURE_2D, lpTexture( nTex ))
 
-  LOCAL lVariablePtr2 AS LONG
-  LOCAL lVariableAbsPos2 AS LONG
+  GLGETTEXLEVELPARAMETERIV( %GL_TEXTURE_2D, 0, %GL_TEXTURE_WIDTH, nWidth )
+  GLGETTEXLEVELPARAMETERIV( %GL_TEXTURE_2D, 0, %GL_TEXTURE_HEIGHT, nHeight )
 
-  LOCAL eResult1 AS EXT
-  LOCAL eResult2 AS EXT
-
-
-  LOCAL nTex AS EXT, nWidth, nHeight AS LONG
-
-  LOCAL ParensPresent AS LONG
-  IF thinBasic_CheckOpenParens_Optional = %TRUE THEN ParensPresent = %TRUE
-
-  thinBasic_ParseNumber nTex
-  IF thinBasic_CheckComma_Mandatory THEN
-    thinBasic_VariableParse( lVariablePtr1, lVariableAbsPos1 )
-
-    IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-      thinBasic_VariableParse( lVariablePtr2, lVariableAbsPos2 )
-
-      IF thinBasic_ErrorFree THEN
-        glBindTexture( %GL_TEXTURE_2D, lpTexture( nTex ))
-
-        GLGETTEXLEVELPARAMETERIV( %GL_TEXTURE_2D, 0, %GL_TEXTURE_WIDTH, nWidth )
-        GLGETTEXLEVELPARAMETERIV( %GL_TEXTURE_2D, 0, %GL_TEXTURE_HEIGHT, nHeight )
-        eResult1 = nWidth
-        eResult2 = nHeight
-        thinBasic_ChangeVariableNumberDirect( lVariablePtr1, lVariableAbsPos1, eResult1 )
-        thinBasic_ChangeVariableNumberDirect( lVariablePtr2, lVariableAbsPos2, eResult2 )
-
-      END IF
-
-    END IF
-  END IF
-
-  IF ParensPresent = %TRUE THEN thinBasic_CheckCloseParens_Mandatory
   IF LastBindedTexture >= 0 THEN glBindTexture %GL_TEXTURE_2D, lpTexture( LastBindedTexture )
 
 END SUB
 
-FUNCTION Exec_TBGL_GetTextureHandle( ) AS EXT
-  LOCAL TexNum AS EXT
-
-  TexNum = thinBASIC_Parse1Number
+FUNCTION tbgl_GetTextureHandle ALIAS "tbgl_GetTextureHandle" ( BYVAL TexNum AS LONG ) EXPORT AS DWORD
 
   IF TexNum < %LIMIT_MAX_TEXTUREINDEX AND TexNum > 0 THEN
     FUNCTION = lpTexture( TexNum )
@@ -618,119 +517,88 @@ FUNCTION Exec_TBGL_GetTextureHandle( ) AS EXT
 
 END FUNCTION
 
-FUNCTION Exec_TBGL_GetFreeTextureIndex( ) AS EXT
-  REGISTER i AS LONG, nWidth AS LONG
+' -- Returns first unused texture slot, 0 if none
+FUNCTION tbgl_GetFreeTextureIndex ALIAS "tbgl_GetFreeTextureIndex" ( ) EXPORT AS LONG
+  REGISTER i AS LONG
 
-  IF thinBasic_CheckOpenParens_Mandatory( ) THEN
-    IF thinBasic_CheckCloseParens_Mandatory( ) THEN
-      FOR i = 1 TO %LIMIT_MAX_TEXTUREINDEX-1
-        IF glIsTexture( lpTexture(i) ) = %GL_FALSE THEN
-          FUNCTION = i
-          EXIT FUNCTION
-        END IF
-      NEXT
-      FUNCTION = 0
+  FOR i = 1 TO %LIMIT_MAX_TEXTUREINDEX-1
+    IF glIsTexture( lpTexture(i) ) = %GL_FALSE THEN
+      FUNCTION = i
+      EXIT FUNCTION
     END IF
-  END IF
+  NEXT
   FUNCTION = 0
 
 END FUNCTION
 
-' -- Gets texture width x height
-FUNCTION Exec_TBGL_GetTextureData( ) AS STRING
+' -- Gets texture data in given format (%TBGL_DATA_RGB, %TBGL_DATA_RGBA, %TBGL_DATA_BGR, %TBGL_DATA_BGRA)
+FUNCTION tbgl_GetTextureData ALIAS "tbgl_GetTextureData" ( BYVAL nTex AS LONG, BYVAL nFormat AS LONG ) EXPORT AS STRING
 
-  LOCAL nTex, nFormat AS EXT
   LOCAL nFormatGL, nWidth, nHeight, nBlockSize AS LONG
 
-  thinBASIC_Parse2Numbers(nTex, nFormat)
+  ' -- Parameter validation
+  IF nTex > %LIMIT_MAX_TEXTUREINDEX AND nTex < 0 THEN
+    TBGLError "TBGL_GetTextureData: " + $ERR_BADTEXTUREINDEX + "( Passed value = " + FORMAT$( nTex ) + ")"
+    FUNCTION = ""
+    EXIT FUNCTION
+  END IF
 
-  IF thinBasic_ErrorFree THEN
+  SELECT CASE nFormat
+    CASE %TBGL_DATA_RGB
+      nFormatGL = %GL_RGB
+      nBlockSize = 3
 
-    ' -- Parameter validation
-    IF nTex > %LIMIT_MAX_TEXTUREINDEX AND nTex < 0 THEN
-      TBGLError "TBGL_GetTextureData: " + $ERR_BADTEXTUREINDEX + "( Passed value = " + FORMAT$( nTex ) + ")"
+    CASE %TBGL_DATA_RGBA
+      nFormatGL = %GL_RGBA
+      nBlockSize = 4
+
+    CASE %TBGL_DATA_BGR
+      nFormatGL = %GL_BGR
+      nBlockSize = 3
+
+    CASE %TBGL_DATA_BGRA
+      nFormatGL = %GL_BGRA
+      nBlockSize = 4
+
+    CASE ELSE
+      TBGLError "TBGL_GetTextureData: Invalid data format. The accepted values are %TBGL_RGB, %TBGL_RGBA, %TBGL_BGR, %TBGL_BGRA ( Passed value = " + FORMAT$( nFormat ) + ")"
       FUNCTION = ""
       EXIT FUNCTION
-    END IF
 
-    SELECT CASE nFormat
-      CASE %TBGL_DATA_RGB
-        nFormatGL = %GL_RGB
-        nBlockSize = 3
+  END SELECT
 
-      CASE %TBGL_DATA_RGBA
-        nFormatGL = %GL_RGBA
-        nBlockSize = 4
+  ' -- Bind the texture
+  glBindTexture( %GL_TEXTURE_2D, lpTexture( nTex ))
 
-      CASE %TBGL_DATA_BGR
-        nFormatGL = %GL_BGR
-        nBlockSize = 3
+  ' -- Get the resolution
+  glGetTexLevelParameterIV( %GL_TEXTURE_2D, 0, %GL_TEXTURE_WIDTH, nWidth )
+  glGetTexLevelParameterIV( %GL_TEXTURE_2D, 0, %GL_TEXTURE_HEIGHT, nHeight )
 
-      CASE %TBGL_DATA_BGRA
-        nFormatGL = %GL_BGRA
-        nBlockSize = 4
+  ' -- Get the image data
+  LOCAL sBuffer AS STRING
+  sBuffer = STRING$(nWidth * nHeight * nBlockSize, $SPC)
+  glGetTexImage( %GL_TEXTURE_2D, 0, nFormatGL, %GL_UNSIGNED_BYTE, BYVAL STRPTR(sBuffer))
 
-      CASE ELSE
-        TBGLError "TBGL_GetTextureData: Invalid data format. The accepted values are %TBGL_RGB, %TBGL_RGBA, %TBGL_BGR, %TBGL_BGRA ( Passed value = " + FORMAT$( nFormat ) + ")"
-        FUNCTION = ""
-        EXIT FUNCTION
-
-    END SELECT
-
-    ' -- Bind the texture
-    glBindTexture( %GL_TEXTURE_2D, lpTexture( nTex ))
-
-    ' -- Get the resolution
-    glGetTexLevelParameterIV( %GL_TEXTURE_2D, 0, %GL_TEXTURE_WIDTH, nWidth )
-    glGetTexLevelParameterIV( %GL_TEXTURE_2D, 0, %GL_TEXTURE_HEIGHT, nHeight )
-
-    ' -- Get the image data
-    LOCAL sBuffer AS STRING
-    sBuffer = STRING$(nWidth * nHeight * nBlockSize, $SPC)
-    glGetTexImage( %GL_TEXTURE_2D, 0, nFormatGL, %GL_UNSIGNED_BYTE, BYVAL STRPTR(sBuffer))
-
-    IF LastBindedTexture >= 0 THEN glBindTexture %GL_TEXTURE_2D, lpTexture( LastBindedTexture )
-    FUNCTION = sBuffer
-  ELSE
-    FUNCTION = ""
-
-  END IF
+  IF LastBindedTexture >= 0 THEN glBindTexture %GL_TEXTURE_2D, lpTexture( LastBindedTexture )
+  FUNCTION = sBuffer
 
 END FUNCTION
 
 ' -- Query on texturing abilities of given hardware
-SUB Exec_TBGL_TexturingQuery( )
+SUB tbgl_TexturingQuery ALIAS "tbgl_TexturingQuery" ( BYREF texturingInfo AS TBGL_tTexturingInfo ) EXPORT
 
   LOCAL resolution AS LONG
-  LOCAL pVar, pData AS LONG
 
-  IF thinBasic_CheckOpenParens_Mandatory( ) THEN
+  glGetIntegerV( %GL_MAX_TEXTURE_SIZE, resolution )
 
-    thinBasic_VariableParsePtr( pVar )
-    pData = thinBasic_DirectPtrToDataPtr( pVar )
-
-    thinBasic_CheckCloseParens_Mandatory( )
-
-    IF thinBasic_ErrorFree THEN
-
-      glGetIntegerV( %GL_MAX_TEXTURE_SIZE, resolution )
-
-      REDIM MyUDT( 1& TO 1& ) AS TBGL_tTexturingInfo AT pData
-      MyUDT( 1& ).maxWidth = resolution
-      MyUDT( 1& ).maxHeight = resolution
-      MyUDT( 1& ).NPOTSupport = internal_IsExtensionSupported( "GL_ARB_TEXTURE_NON_POWER_OF_TWO" )
-    END IF
-
-
-  END IF
+  texturingInfo.maxWidth = resolution
+  texturingInfo.maxHeight = resolution
+  texturingInfo.NPOTSupport = internal_IsExtensionSupported( "GL_ARB_TEXTURE_NON_POWER_OF_TWO" )
 
 END SUB
 
 ' -- Deletes texture
-SUB Exec_TBGL_DeleteTexture()
-  LOCAL texID AS LONG
-
-  texID = thinBasic_Parse1Number
+SUB tbgl_DeleteTexture ALIAS "tbgl_DeleteTexture" ( BYVAL texID AS LONG ) EXPORT
 
   ' -- Looks odd, but it is safe to do it this way
   IF glIsTexture( lpTexture( texID )  ) THEN
@@ -740,16 +608,8 @@ SUB Exec_TBGL_DeleteTexture()
 
 END SUB
 
-' -- Sets repeating mode
-SUB Exec_TBGL_SetTextureRepeatMode()
-  DIM nParams AS LONG
-  DIM textureIndex AS EXT, param1 AS EXT, param2 AS EXT
-
-  nParams = thinBasic_ParseXNumbers( 2, 3, textureIndex, param1, param2 )
-
-  IF nParams = 2 THEN
-    param2 = param1
-  END IF
+' -- Sets repeating mode (%TBGL_REPEAT or %TBGL_CLAMPTOEDGE) for U and V coordinate
+SUB tbgl_SetTextureRepeatMode ALIAS "tbgl_SetTextureRepeatMode" ( BYVAL textureIndex AS LONG, BYVAL param1 AS LONG, BYVAL param2 AS LONG ) EXPORT
 
   DIM textureHandleCurrent AS LONG
   glGetIntegerV(%GL_TEXTURE_BINDING_2D, textureHandleCurrent)
@@ -784,6 +644,232 @@ SUB Exec_TBGL_SetTextureRepeatMode()
     glBindTexture(%GL_TEXTURE_2D, textureHandleCurrent)
   END IF
 END SUB
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+' -- Filter, anisotropy and color key are optional
+FUNCTION Exec_TBGL_LoadTexture( ) AS LONG
+  LOCAL eTexNum, eTexFilter, eAnisoLevel, eRGB AS EXT
+  LOCAL TexName AS STRING
+  LOCAL numParsed AS LONG
+
+  numParsed = thinBASIC_Parse1StringXNumbers( 2, 4, TexName, eTexNum, eTexFilter, eAnisoLevel, eRGB )
+  IF numParsed <> 4 THEN eRGB = - 1
+
+  FUNCTION = tbgl_LoadTexture( TexName, eTexNum, eTexFilter, eAnisoLevel, eRGB )
+
+END FUNCTION
+
+FUNCTION Exec_TBGL_LoadTexturesFromTiles( ) AS LONG
+  LOCAL eTexNum, eCols, eRows, eTexFilter, eAnisoLevel, eRGB AS EXT
+  LOCAL TexName AS STRING
+
+  eRGB = - 1
+  thinBASIC_Parse1StringXNumbers( 4, 7, TexName, eTexNum, eCols, eRows, eTexFilter, eAnisoLevel, eRGB )
+
+  FUNCTION = tbgl_LoadTexturesFromTiles( TexName, eTexNum, eCols, eRows, eTexFilter, eAnisoLevel, eRGB )
+
+END FUNCTION
+
+FUNCTION Exec_TBGL_MakeTexture( ) AS LONG
+  LOCAL eTexType, eX, eY, eTexNum, eTexFilter, eAnisoLevel, eRGB AS EXT
+  LOCAL TexBuffer AS STRING
+
+  IF thinBASIC_Parse1StringXNumbers( 5, 7, TexBuffer, eTexType, eX, eY, eTexNum, eTexFilter, eAnisoLevel, eRGB ) < 7 THEN eRGB = - 1
+
+  FUNCTION = tbgl_MakeTexture( TexBuffer, eTexType, eX, eY, eTexNum, eTexFilter, eAnisoLevel, eRGB )
+
+END FUNCTION
+
+SUB Exec_TBGL_UseTexturing()
+  LOCAL flag AS EXT
+
+  flag = thinBasic_Parse1Number
+  IF thinBasic_ErrorFree THEN tbgl_UseTexturing( ISTRUE flag )
+
+END SUB
+
+FUNCTION Exec_TBGL_GetUseTexturing( ) AS EXT
+  IF thinBasic_CheckOpenParens_Optional THEN thinBasic_CheckCloseParens_Mandatory
+  FUNCTION = tbgl_GetUseTexturing( )
+END FUNCTION
+
+FUNCTION Exec_TBGL_BindTexture( ) AS LONG
+  FUNCTION = tbgl_BindTexture( thinBasic_Parse1Number )
+END FUNCTION
+
+SUB Exec_TBGL_PushTexture( )
+  LOCAL parameter AS EXT
+
+  thinBasic_ParseNumber parameter
+  tbgl_PushTexture( parameter )
+
+END SUB
+
+SUB Exec_TBGL_PopTexture( )
+  tbgl_PopTexture( )
+END SUB
+
+SUB Exec_TBGL_TexCoord2D( )
+  LOCAL u, v AS EXT
+
+  thinBasic_Parse2Numbers( u, v )
+  tbgl_TexCoord2D( u, v )
+
+END SUB
+
+SUB Exec_TBGL_RenderToTexture( )
+  LOCAL destTexture AS EXT, x, y, twidth, theight AS EXT
+
+  thinBasic_Parse5Numbers( destTexture, x, y, twidth, theight )
+  tbgl_RenderToTexture( destTexture, x, y, twidth, theight )
+
+END SUB
+
+SUB Exec_TBGL_EvaluatePOTMatch( )
+
+  LOCAL resX, resY AS EXT
+  LOCAL fitX, fitY AS LONG
+
+  LOCAL lVariablePtr1 AS LONG
+  LOCAL lVariableAbsPos1 AS LONG
+
+  LOCAL lVariablePtr2 AS LONG
+  LOCAL lVariableAbsPos2 AS LONG
+
+  IF thinBasic_CheckOpenParens_Mandatory THEN
+    thinBasic_ParseNumber resX
+    IF thinBasic_CheckComma_Mandatory THEN
+      thinBasic_ParseNumber resY
+
+      IF thinBasic_CheckComma_Mandatory THEN
+        thinBasic_VariableParse( lVariablePtr1, lVariableAbsPos1 )
+
+        IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+          thinBasic_VariableParse( lVariablePtr2, lVariableAbsPos2 )
+          IF thinBasic_CheckCloseParens_Mandatory THEN
+            IF thinBasic_ErrorFree THEN
+              tbgl_EvaluatePOTMatch( resX, resY, fitX, fitY )
+
+              thinBasic_ChangeVariableNumberDirect( lVariablePtr1, lVariableAbsPos1, fitX )
+              thinBasic_ChangeVariableNumberDirect( lVariablePtr2, lVariableAbsPos2, fitY )
+
+            END IF
+          END IF
+        END IF
+      END IF
+    END IF
+  END IF
+
+END SUB
+
+FUNCTION Exec_TBGL_GetTextureList( ) AS STRING
+  FUNCTION = tbgl_GetTextureList( )
+END FUNCTION
+
+FUNCTION Exec_TBGL_GetTextureName( ) AS STRING
+  FUNCTION = tbgl_GetTextureName( thinBASIC_Parse1Number )
+END FUNCTION
+
+SUB Exec_TBGL_GetTextureResolution( )
+
+  LOCAL lVariablePtr1 AS LONG
+  LOCAL lVariableAbsPos1 AS LONG
+
+  LOCAL lVariablePtr2 AS LONG
+  LOCAL lVariableAbsPos2 AS LONG
+
+  LOCAL nTex AS EXT, nWidth, nHeight AS LONG
+
+  LOCAL ParensPresent AS LONG
+  IF thinBasic_CheckOpenParens_Optional = %TRUE THEN ParensPresent = %TRUE
+
+  thinBasic_ParseNumber nTex
+  IF thinBasic_CheckComma_Mandatory THEN
+    thinBasic_VariableParse( lVariablePtr1, lVariableAbsPos1 )
+
+    IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+      thinBasic_VariableParse( lVariablePtr2, lVariableAbsPos2 )
+
+      IF thinBasic_ErrorFree THEN
+        tbgl_GetTextureResolution( nTex, nWidth, nHeight )
+
+        thinBasic_ChangeVariableNumberDirect( lVariablePtr1, lVariableAbsPos1, nWidth )
+        thinBasic_ChangeVariableNumberDirect( lVariablePtr2, lVariableAbsPos2, nHeight )
+
+      END IF
+
+    END IF
+  END IF
+
+  IF ParensPresent = %TRUE THEN thinBasic_CheckCloseParens_Mandatory
+
+END SUB
+
+FUNCTION Exec_TBGL_GetTextureHandle( ) AS EXT
+  FUNCTION = tbgl_GetTextureHandle( thinBASIC_Parse1Number )
+END FUNCTION
+
+FUNCTION Exec_TBGL_GetFreeTextureIndex( ) AS EXT
+
+  IF thinBasic_CheckOpenParens_Mandatory( ) THEN
+    IF thinBasic_CheckCloseParens_Mandatory( ) THEN
+      FUNCTION = tbgl_GetFreeTextureIndex( )
+    END IF
+  END IF
+
+END FUNCTION
+
+FUNCTION Exec_TBGL_GetTextureData( ) AS STRING
+  LOCAL nTex, nFormat AS EXT
+
+  thinBASIC_Parse2Numbers(nTex, nFormat)
+
+  IF thinBasic_ErrorFree THEN
+    FUNCTION = tbgl_GetTextureData( nTex, nFormat )
+  END IF
+
+END FUNCTION
+
+SUB Exec_TBGL_TexturingQuery( )
+
+  LOCAL pVar, pData AS LONG
+
+  IF thinBasic_CheckOpenParens_Mandatory( ) THEN
+
+    thinBasic_VariableParsePtr( pVar )
+    pData = thinBasic_DirectPtrToDataPtr( pVar )
+
+    thinBasic_CheckCloseParens_Mandatory( )
+
+    IF thinBasic_ErrorFree THEN
+      tbgl_TexturingQuery( BYVAL pData )
+    END IF
+
+  END IF
+
+END SUB
+
+SUB Exec_TBGL_DeleteTexture()
+  tbgl_DeleteTexture( thinBasic_Parse1Number )
+END SUB
+
+' -- With single mode, it applies to both U and V
+SUB Exec_TBGL_SetTextureRepeatMode()
+  DIM textureIndex AS EXT, param1 AS EXT, param2 AS EXT
+
+  IF thinBasic_ParseXNumbers( 2, 3, textureIndex, param1, param2 ) = 2 THEN
+    param2 = param1
+  END IF
+
+  tbgl_SetTextureRepeatMode( textureIndex, param1, param2 )
+
+END SUB
+
+#ENDIF
 
 ' ===============================================================================================
 

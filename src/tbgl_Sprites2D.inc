@@ -250,23 +250,23 @@
     callEventLevel += 1
     SELECT CASE AS LONG eventID
         CASE %TBGL_OnBeforeUpdate
-            thinBasic_FunctionSimpleCall_ByPtr(@pSprite.sevOnBeforeUpdate, VARPTR (retExt) )
+            internal_InvokeCallback(@pSprite.sevOnBeforeUpdate, VARPTR (retExt) )
         CASE %TBGL_OnAfterUpdate
-            thinBasic_FunctionSimpleCall_ByPtr(@pSprite.sevOnAfterUpdate, VARPTR (retExt) )
+            internal_InvokeCallback(@pSprite.sevOnAfterUpdate, VARPTR (retExt) )
         CASE %TBGL_OnBeforeDraw
-            thinBasic_FunctionSimpleCall_ByPtr(@pSprite.sevOnBeforeDraw, VARPTR (retExt) )
+            internal_InvokeCallback(@pSprite.sevOnBeforeDraw, VARPTR (retExt) )
         CASE %TBGL_OnAfterDraw
-            thinBasic_FunctionSimpleCall_ByPtr(@pSprite.sevOnAfterDraw, VARPTR (retExt) )
+            internal_InvokeCallback(@pSprite.sevOnAfterDraw, VARPTR (retExt) )
         CASE %TBGL_OnCollision
-            thinBasic_FunctionSimpleCall_ByPtr(@pSprite.sevOnCollision, VARPTR (retExt) )
+            internal_InvokeCallback(@pSprite.sevOnCollision, VARPTR (retExt) )
         CASE %TBGL_OnBeforeAnimate
-            thinBasic_FunctionSimpleCall_ByPtr(@pSprite.sevOnBeforeAnimate, VARPTR (retExt) )
+            internal_InvokeCallback(@pSprite.sevOnBeforeAnimate, VARPTR (retExt) )
         CASE %TBGL_OnAfterAnimate
-            thinBasic_FunctionSimpleCall_ByPtr(@pSprite.sevOnAfterAnimate, VARPTR (retExt) )
+            internal_InvokeCallback(@pSprite.sevOnAfterAnimate, VARPTR (retExt) )
         CASE %TBGL_OnDelete
-            thinBasic_FunctionSimpleCall_ByPtr(@pSprite.sevOnDelete, VARPTR (retExt) )
+            internal_InvokeCallback(@pSprite.sevOnDelete, VARPTR (retExt) )
         CASE %TBGL_OnMouseOver
-            thinBasic_FunctionSimpleCall_ByPtr(@pSprite.sevOnMouseOver, VARPTR (retExt) )
+            internal_InvokeCallback(@pSprite.sevOnMouseOver, VARPTR (retExt) )
     END SELECT
     callEventLevel -= 1
     meSprite = meSpriteOld
@@ -415,25 +415,15 @@
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetSpeedAngle() AS EXT
+  FUNCTION tbgl_SpriteGetSpeedAngle ALIAS "tbgl_SpriteGetSpeedAngle" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS SINGLE
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number
-    pSprite = sp
     FUNCTION = @pSprite.iSpeedAngle
   END FUNCTION
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetSpeed() AS EXT
+  FUNCTION tbgl_SpriteGetSpeed ALIAS "tbgl_SpriteGetSpeed" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS SINGLE
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number
-    pSprite = sp
     FUNCTION = @pSprite.iSpeed
   END FUNCTION
 
@@ -901,26 +891,9 @@
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteLoad() AS EXT
+  FUNCTION tbgl_SpriteLoad ALIAS "tbgl_SpriteLoad" ( BYVAL TexName AS STRING, BYVAL lRGB AS LONG ) EXPORT AS DWORD
   '*****************************************************************
-
     LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL eRGB AS EXT
-    LOCAL lRGB AS LONG
-    LOCAL texname AS STRING
-
-    IF thinBasic_CheckOpenParens_Mandatory THEN
-        thinBasic_ParseString TexName
-        IF thinBasic_CheckCloseParens_Optional THEN
-            lRGB = - 1
-        ELSE
-            IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-                thinBasic_ParseNumber eRGB
-                lRGB = eRGB
-            END IF
-            thinBasic_CheckCloseParens_Mandatory
-        END IF
-    END IF
 
     pSprite = internal_Memalloc(SIZEOF(TBGL_tSprite))
 
@@ -962,12 +935,10 @@
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteCreate() AS EXT
+  FUNCTION tbgl_SpriteCreate ALIAS "tbgl_SpriteCreate" ( BYVAL etex AS LONG ) EXPORT AS DWORD
   '*****************************************************************
     LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL etex AS EXT
 
-    etex = thinBasic_Parse1Number
     pSprite = internal_Memalloc(SIZEOF(TBGL_tSprite))
 
     internal_InitSprite(pSprite)
@@ -996,13 +967,11 @@
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteCreateAnim() AS EXT
+  FUNCTION tbgl_SpriteCreateAnim ALIAS "tbgl_SpriteCreateAnim" ( BYVAL etex AS LONG, BYVAL ecw AS LONG, BYVAL ech AS LONG ) EXPORT AS DWORD
   '*****************************************************************
     LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL etex, ech, ecw AS EXT
     LOCAL cw, ch AS LONG
 
-    thinBasic_Parse3Numbers(etex, ecw, ech)
     pSprite = internal_Memalloc(SIZEOF(TBGL_tSprite))
     ch = ech
     cw = ecw
@@ -1039,17 +1008,11 @@
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteLoadAnim() AS EXT
+  FUNCTION tbgl_SpriteLoadAnim ALIAS "tbgl_SpriteLoadAnim" ( BYVAL TexName AS STRING, BYVAL ecw AS LONG, BYVAL ech AS LONG, BYVAL lRGB AS LONG ) EXPORT AS DWORD
   '*****************************************************************
-    LOCAL nParsed AS LONG
     LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL eRGB, ech, ecw AS EXT
-    LOCAL lRGB, cw, ch AS LONG
-    LOCAL texname AS STRING
+    LOCAL cw, ch AS LONG
 
-    nParsed = thinBASIC_Parse1StringXNumbers( 2, 3, TexName, ecw, ech, eRGB )
-    lRGB = eRGB
-    IF nParsed <> 3 THEN lRGB = - 1
     pSprite = internal_Memalloc(SIZEOF(TBGL_tSprite))
     ch = ech
     cw = ecw
@@ -1094,237 +1057,140 @@
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteLoadSheet() AS EXT
+  ' -- Creates one sprite per frame of texture sheet, returns number of sprites (their IDs are kept in aSprite())
+  ' -- IDs are also stored to spriteIDs (up to maxCount items, spriteIDs can be 0)
+  FUNCTION internal_SpriteCreateSheet(BYVAL textureID AS LONG, BYVAL cw AS LONG, BYVAL ch AS LONG, BYVAL spriteIDs AS DWORD PTR, BYVAL maxCount AS LONG) AS LONG
   '*****************************************************************
-    LOCAL eRGB, ech, ecw AS EXT
-    LOCAL lRGB, cw, ch AS LONG
-    LOCAL texname AS STRING
-    LOCAL textureID,WidthTile,HeightTile AS LONG
+    LOCAL WidthTile,HeightTile AS LONG
     LOCAL framecount,framecols,framerows AS LONG
     LOCAL i AS LONG
 
     LOCAL spcount AS LONG
     LOCAL currrow AS LONG, currcol AS LONG
-    LOCAL pVar AS LONG
+
+    glBindTexture( %GL_TEXTURE_2D, lpTexture( textureID ))
+    GLGETTEXLEVELPARAMETERIV( %GL_TEXTURE_2D, 0, %GL_TEXTURE_WIDTH,  WidthTile )
+    GLGETTEXLEVELPARAMETERIV( %GL_TEXTURE_2D, 0, %GL_TEXTURE_HEIGHT, HeightTile )
+
+    framecols = Widthtile/cw
+    framerows = HeightTile/ch
+    framecount = framecols * framerows
+
+    spCount = framecount
+    DIM aSprite(spCount) AS GLOBAL TBGL_tSprite PTR
 
 
-    spcount = 0
-    IF thinBasic_CheckOpenParens_Mandatory THEN
-        thinBasic_ParseString TexName
-        IF thinBasic_CheckComma_Mandatory THEN
-            thinBAsic_ParseNumber ecw
-            IF thinBasic_CheckComma_Mandatory THEN
-                thinBAsic_ParseNumber ech
-                IF thinBasic_CheckComma_Mandatory THEN
-                    'thinBasic_VariableParse(lArrayPtr, lArrayPos)
-                    thinBasic_VariableParsePtr(pVar)
-                    IF thinBasic_CheckOpenParens_Optional THEN thinBasic_CheckCloseParens_Mandatory
-                    IF thinBasic_CheckComma_Optional THEN
-                        thinBAsic_ParseNumber eRGB
-                        lRGB = eRGB
-                     ELSE
-                        lRGB = -1
-                    END IF
-                    IF thinBasic_CheckCloseParens_Mandatory AND thinBasic_ErrorFree THEN
+    FOR i = 1 TO spCount
+        aSprite(i) = internal_Memalloc(SIZEOF(TBGL_tSprite))
+        internal_InitSprite(aSprite(i))
 
-                        ch = ech
-                        cw = ecw
+        @aSprite(i).textureID = textureID
 
-                        textureID = meIsTextureLoaded( UCASE$(TRIM$(texname) ) )
-                        IF textureID = 0 THEN
-                            spriteTexNum += 1
-                            textureID = 1024 - spriteTexNum
-                            internal_LoadTexture(TRIM$(texname), textureID, %TBGL_TEX_NEAREST, 1, lRGB )
-                        END IF
-                        glBindTexture( %GL_TEXTURE_2D, lpTexture( textureID ))
-                        GLGETTEXLEVELPARAMETERIV( %GL_TEXTURE_2D, 0, %GL_TEXTURE_WIDTH,  WidthTile )
-                        GLGETTEXLEVELPARAMETERIV( %GL_TEXTURE_2D, 0, %GL_TEXTURE_HEIGHT, HeightTile )
+        @aSprite(i).iWidthTile = WidthTile
+        @aSprite(i).iHeightTile = HeightTile
+        @aSprite(i).iWidthBase = cw
+        @aSprite(i).iHeightBase = ch
 
+        @aSprite(i).iWidth = cw
+        @aSprite(i).iHeight = ch
+        internal_InitSpriteSize(aSprite(i))
 
-                        framecols = Widthtile/cw
-                        framerows = HeightTile/ch
-                        framecount = framecols * framerows
-
-                        spCount = framecount
-                        DIM aSprite(spCount) AS GLOBAL TBGL_tSprite PTR
-
-
-                        FOR i = 1 TO spCount
-                            aSprite(i) = internal_Memalloc(SIZEOF(TBGL_tSprite))
-                            internal_InitSprite(aSprite(i))
-
-                            @aSprite(i).textureID = textureID
-
-                            @aSprite(i).iWidthTile = WidthTile
-                            @aSprite(i).iHeightTile = HeightTile
-                            @aSprite(i).iWidthBase = cw
-                            @aSprite(i).iHeightBase = ch
-
-                            @aSprite(i).iWidth = cw
-                            @aSprite(i).iHeight = ch
-                            internal_InitSpriteSize(aSprite(i))
-
-                            internal_StoreSprite(aSprite(i))
-                        NEXT
-                        i = 0
-                        FOR currrow = 1 TO Framerows
-                            FOR currcol = 1 TO FrameCols
-                                i += 1
-                                @aSprite(i).tx1(1) = (1.0/FrameCols)*(currcol - 1)
-                                @aSprite(i).tx2(1) = (1.0/FrameCols)*(currcol)
-                                @aSprite(i).ty1(1) = (1.0/Framerows)*(Framerows - currrow)
-                                @aSprite(i).ty2(1) = (1.0/Framerows)*(Framerows - currrow+1)
-                            NEXT
-                        NEXT
-
-                        glTexParameterI(%gl_texture_2d, %gl_texture_wrap_s, %gl_clamp_to_edge)
-                        glTexParameterI(%gl_texture_2d, %gl_texture_wrap_t, %gl_clamp_to_edge)
-
-                        thinBasic_VariableRedim(pVar, %FALSE, spCount, 0, 0)
-                        FOR i = 1 TO spCount
-                            thinBasic_ChangeVariableNumberDirect (pVar, i, asprite(i))
-                        NEXT
-                    END IF
-                END IF
-            END IF
-        END IF
-    END IF
-    FUNCTION = spcount
-  END FUNCTION
-
-
-  '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteCreateSheet() AS EXT
-  '*****************************************************************
-    LOCAL etex, eRGB, ech, ecw AS EXT
-    LOCAL lRGB, cw, ch AS LONG
-    LOCAL textureID,WidthTile,HeightTile AS LONG
-    LOCAL framecount,framecols,framerows AS LONG
-    LOCAL i AS LONG
-
-    LOCAL spcount AS LONG
-    LOCAL currrow AS LONG, currcol AS LONG
-    LOCAL pVar AS LONG
-
-
-    spcount = 0
-    IF thinBasic_CheckOpenParens_Mandatory THEN
-        thinBasic_ParseNumber etex
-        IF thinBasic_CheckComma_Mandatory THEN
-            thinBAsic_ParseNumber ecw
-            IF thinBasic_CheckComma_Mandatory THEN
-                thinBAsic_ParseNumber ech
-                IF thinBasic_CheckComma_Mandatory THEN
-                    thinBasic_VariableParsePtr(pVar)
-                    IF thinBasic_CheckOpenParens_Optional THEN thinBasic_CheckCloseParens_Mandatory
-                    IF thinBasic_CheckComma_Optional THEN
-                        thinBAsic_ParseNumber eRGB
-                        lRGB = eRGB
-                     ELSE
-                        lRGB = -1
-                    END IF
-                    IF thinBasic_CheckCloseParens_Mandatory AND thinBasic_ErrorFree THEN
-
-                        ch = ech
-                        cw = ecw
-
-                        textureID = etex
-                        glBindTexture( %GL_TEXTURE_2D, lpTexture( textureID ))
-                        GLGETTEXLEVELPARAMETERIV( %GL_TEXTURE_2D, 0, %GL_TEXTURE_WIDTH,  WidthTile )
-                        GLGETTEXLEVELPARAMETERIV( %GL_TEXTURE_2D, 0, %GL_TEXTURE_HEIGHT, HeightTile )
-
-
-                        framecols = Widthtile/cw
-                        framerows = HeightTile/ch
-                        framecount = framecols * framerows
-
-                        spCount = framecount
-                        DIM aSprite(spCount) AS GLOBAL TBGL_tSprite PTR
-
-
-                        FOR i = 1 TO spCount
-                            aSprite(i) = internal_Memalloc(SIZEOF(TBGL_tSprite))
-                            internal_InitSprite(aSprite(i))
-
-                            @aSprite(i).textureID = textureID
-
-                            @aSprite(i).iWidthTile = WidthTile
-                            @aSprite(i).iHeightTile = HeightTile
-                            @aSprite(i).iWidthBase = cw
-                            @aSprite(i).iHeightBase = ch
-
-                            @aSprite(i).iWidth = cw
-                            @aSprite(i).iHeight = ch
-                            internal_InitSpriteSize(aSprite(i))
-
-                            internal_StoreSprite(aSprite(i))
-                        NEXT
-                        i = 0
-                        FOR currrow = 1 TO Framerows
-                            FOR currcol = 1 TO FrameCols
-                                i += 1
-                                @aSprite(i).tx1(1) = (1.0/FrameCols)*(currcol - 1)
-                                @aSprite(i).tx2(1) = (1.0/FrameCols)*(currcol)
-                                @aSprite(i).ty1(1) = (1.0/Framerows)*(Framerows - currrow)
-                                @aSprite(i).ty2(1) = (1.0/Framerows)*(Framerows - currrow+1)
-                            NEXT
-                        NEXT
-
-                        glTexParameterI(%gl_texture_2d, %gl_texture_wrap_s, %gl_clamp_to_edge)
-                        glTexParameterI(%gl_texture_2d, %gl_texture_wrap_t, %gl_clamp_to_edge)
-
-                        thinBasic_VariableRedim(pVar, %FALSE, spCount, 0, 0)
-                        FOR i = 1 TO spCount
-                            thinBasic_ChangeVariableNumberDirect (pVar, i, asprite(i))
-                        NEXT
-                    END IF
-                END IF
-            END IF
-        END IF
-    END IF
-    FUNCTION = spcount
-  END FUNCTION
-
-
-  '*****************************************************************
-  FUNCTION Exec_TBGL_SpritesCount() AS EXT
-  '*****************************************************************
-    LOCAL i AS LONG, c AS LONG, group AS LONG
-    LOCAL nParsed AS LONG
-    LOCAL egroup AS EXT
-    LOCAL pSprite AS TBGL_tSprite PTR
-
-    nParsed = thinBasic_ParseXNumbers(0,1, egroup)
-    IF nParsed = 0 THEN
-        FUNCTION = spritecount
-        EXIT FUNCTION
-    ELSE
-        group = egroup
-        c = 0
-        FOR i = 1 TO maxsprites
-            IF sprites(i) THEN
-                pSprite = sprites(i)
-                IF @pSprite.iGroup <> group AND nparsed THEN ITERATE FOR
-                c += 1
-            END IF
+        internal_StoreSprite(aSprite(i))
+    NEXT
+    i = 0
+    FOR currrow = 1 TO Framerows
+        FOR currcol = 1 TO FrameCols
+            i += 1
+            @aSprite(i).tx1(1) = (1.0/FrameCols)*(currcol - 1)
+            @aSprite(i).tx2(1) = (1.0/FrameCols)*(currcol)
+            @aSprite(i).ty1(1) = (1.0/Framerows)*(Framerows - currrow)
+            @aSprite(i).ty2(1) = (1.0/Framerows)*(Framerows - currrow+1)
         NEXT
-        FUNCTION = c
+    NEXT
 
+    glTexParameterI(%gl_texture_2d, %gl_texture_wrap_s, %gl_clamp_to_edge)
+    glTexParameterI(%gl_texture_2d, %gl_texture_wrap_t, %gl_clamp_to_edge)
+
+    IF spriteIDs THEN
+        FOR i = 1 TO MIN&(spCount, maxCount)
+            @spriteIDs[i-1] = aSprite(i)
+        NEXT
     END IF
+
+    FUNCTION = spcount
   END FUNCTION
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteCopy() AS EXT
+  ' -- Loads texture and creates one sprite per cw x ch frame, see internal_SpriteCreateSheet
+  FUNCTION tbgl_SpriteLoadSheet ALIAS "tbgl_SpriteLoadSheet" ( _
+      BYVAL TexName AS STRING _
+    , BYVAL cw AS LONG _
+    , BYVAL ch AS LONG _
+    , BYVAL lRGB AS LONG _
+    , BYVAL spriteIDs AS DWORD PTR _
+    , BYVAL maxCount AS LONG _
+    ) EXPORT AS LONG
+  '*****************************************************************
+    LOCAL textureID AS LONG
+
+    textureID = meIsTextureLoaded( UCASE$(TRIM$(texname) ) )
+    IF textureID = 0 THEN
+        spriteTexNum += 1
+        textureID = 1024 - spriteTexNum
+        internal_LoadTexture(TRIM$(texname), textureID, %TBGL_TEX_NEAREST, 1, lRGB )
+    END IF
+
+    FUNCTION = internal_SpriteCreateSheet( textureID, cw, ch, spriteIDs, maxCount )
+  END FUNCTION
+
+
+  '*****************************************************************
+  ' -- Creates one sprite per cw x ch frame of texture etex, see internal_SpriteCreateSheet
+  FUNCTION tbgl_SpriteCreateSheet ALIAS "tbgl_SpriteCreateSheet" ( _
+      BYVAL etex AS LONG _
+    , BYVAL cw AS LONG _
+    , BYVAL ch AS LONG _
+    , BYVAL spriteIDs AS DWORD PTR _
+    , BYVAL maxCount AS LONG _
+    ) EXPORT AS LONG
   '*****************************************************************
 
+    FUNCTION = internal_SpriteCreateSheet( etex, cw, ch, spriteIDs, maxCount )
+  END FUNCTION
+
+
+  '*****************************************************************
+  FUNCTION tbgl_SpritesCount ALIAS "tbgl_SpritesCount" (  ) EXPORT AS LONG
+  '*****************************************************************
+    FUNCTION = spritecount
+  END FUNCTION
+
+
+  '*****************************************************************
+  FUNCTION tbgl_SpritesCountGroup ALIAS "tbgl_SpritesCountGroup" ( BYVAL group AS LONG ) EXPORT AS LONG
+  '*****************************************************************
+    LOCAL i AS LONG, c AS LONG
     LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
+
+    c = 0
+    FOR i = 1 TO maxsprites
+        IF sprites(i) THEN
+            pSprite = sprites(i)
+            IF @pSprite.iGroup <> group THEN ITERATE FOR
+            c += 1
+        END IF
+    NEXT
+    FUNCTION = c
+  END FUNCTION
+
+
+  '*****************************************************************
+  FUNCTION tbgl_SpriteCopy ALIAS "tbgl_SpriteCopy" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS DWORD
+  '*****************************************************************
     LOCAL pNewSprite AS TBGL_tSprite PTR
     LOCAL sbuffer AS STRING
 
-    sp = thinBASIC_Parse1Number
-    pSprite = sp
 
     pNewSprite = internal_Memalloc(SIZEOF(TBGL_tSprite))
 
@@ -1338,13 +1204,10 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteDelete()
+  SUB tbgl_SpriteDelete ALIAS "tbgl_SpriteDelete" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT
   '*****************************************************************
-    LOCAL pSprite, pSpriteParent AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
+    LOCAL pSpriteParent AS TBGL_tSprite PTR
 
-    sp = thinBasic_Parse1Number
-    pSprite = sp
 
     IF @pSprite.sevOnDelete THEN
         internal_CallSpriteEvent(pSprite,0,%TBGL_OnDelete)
@@ -1371,76 +1234,74 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpritesDeleteAll()
+  SUB tbgl_SpritesDeleteAll ALIAS "tbgl_SpritesDeleteAll" (  ) EXPORT
   '*****************************************************************
-    LOCAL i AS LONG, iGroup AS LONG
+    LOCAL i AS LONG
     LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL egroup AS EXT
-    LOCAL nParsed AS LONG
-    egroup = 0
-    nParsed = thinBasic_ParseXNumbers(0,1, egroup)
 
-    IF nparsed = 0 AND callEventLevel = 0 THEN
-        FOR i = 1 TO maxsprites
-            IF sprites(i) THEN
-                pSprite = sprites(i)
-                IF @pSprite.sevOnDelete THEN
-                    internal_CallSpriteEvent(pSprite,0,%TBGL_OnDelete)
-                END IF
-                spritecount -= 1
-                SpriteUserData(@pSprite.userpointer) = ""
-                internal_MemFree(pSprite)
-                sprites(i) = 0
-            END IF
-        NEXT
-        spritesDeleted = 0
-    ELSE
-        igroup = egroup
-        FOR i = 1 TO maxsprites
-            IF sprites(i) THEN
-                pSprite = sprites(i)
-                IF @pSprite.igroup <> igroup THEN ITERATE FOR
-
-                IF @pSprite.sevOnDelete THEN
-                    internal_CallSpriteEvent(pSprite,0,%TBGL_OnDelete)
-                END IF
-
-                @pSprite.isDeleted = %TRUE
-                @pSprite.isActive = %FALSE
-                @pSprite.isVisible = %FALSE
-                spritesDeleted += 1
-            END IF
-        NEXT
-        IF callEventLevel = 0 THEN internal_DeleteSprites()
+    ' -- Called from sprite event, only sprites of group 0 are deleted
+    IF callEventLevel <> 0 THEN
+        tbgl_SpritesDeleteGroup( 0 )
+        EXIT SUB
     END IF
+
+    FOR i = 1 TO maxsprites
+        IF sprites(i) THEN
+            pSprite = sprites(i)
+            IF @pSprite.sevOnDelete THEN
+                internal_CallSpriteEvent(pSprite,0,%TBGL_OnDelete)
+            END IF
+            spritecount -= 1
+            SpriteUserData(@pSprite.userpointer) = ""
+            internal_MemFree(pSprite)
+            sprites(i) = 0
+        END IF
+    NEXT
+    spritesDeleted = 0
   END SUB
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteAddSpin()
+  SUB tbgl_SpritesDeleteGroup ALIAS "tbgl_SpritesDeleteGroup" ( BYVAL igroup AS LONG ) EXPORT
   '*****************************************************************
+    LOCAL i AS LONG
     LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, spinSpeed AS EXT
 
-    thinBasic_Parse2Numbers(sp, spinSpeed)
-    pSprite = sp
+    FOR i = 1 TO maxsprites
+        IF sprites(i) THEN
+            pSprite = sprites(i)
+            IF @pSprite.igroup <> igroup THEN ITERATE FOR
+
+            IF @pSprite.sevOnDelete THEN
+                internal_CallSpriteEvent(pSprite,0,%TBGL_OnDelete)
+            END IF
+
+            @pSprite.isDeleted = %TRUE
+            @pSprite.isActive = %FALSE
+            @pSprite.isVisible = %FALSE
+            spritesDeleted += 1
+        END IF
+    NEXT
+    IF callEventLevel = 0 THEN internal_DeleteSprites()
+  END SUB
+
+
+  '*****************************************************************
+  SUB tbgl_SpriteAddSpin ALIAS "tbgl_SpriteAddSpin" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL spinSpeed AS SINGLE ) EXPORT
+  '*****************************************************************
     @pSprite.iSpeedSpin += spinSpeed
   END SUB
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetShadow()
+  SUB tbgl_SpriteSetShadow ALIAS "tbgl_SpriteSetShadow" ( _
+      BYVAL pSprite AS TBGL_tSprite PTR _
+    , BYVAL eAlpha AS SINGLE _
+    , BYVAL eXOff AS SINGLE _
+    , BYVAL eYOff AS SINGLE _
+    , BYVAL eSize AS SINGLE _
+    ) EXPORT
   '*****************************************************************
-    LOCAL nParsed AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, eAlpha, eXOff, eYOff, eSize AS EXT
-
-    eXOff = 32.0
-    eYOff = 32.0
-    eSize = 0.8
-
-    nParsed = thinBasic_ParseXNumbers(2,5, sp, eAlpha, eXOff, eYOff, eSize)
-    pSprite = sp
     IF eAlpha THEN
         @pSprite.iShadow = %True
     ELSE
@@ -1455,58 +1316,42 @@
   END SUB
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetAlpha()
+  SUB tbgl_SpriteSetAlpha ALIAS "tbgl_SpriteSetAlpha" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL eAlpha AS SINGLE ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, eAlpha AS EXT
-
-    thinBasic_Parse2Numbers(sp, eAlpha)
-    pSprite = sp
     @pSprite.iAlpha = eAlpha
 
   END SUB
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetColor()
+  SUB tbgl_SpriteSetColor ALIAS "tbgl_SpriteSetColor" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL eRed AS BYTE, BYVAL eGreen AS BYTE, BYVAL eBlue AS BYTE ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, eRed, eGreen, eBlue AS EXT
 
-    thinBasic_Parse4Numbers(sp, eRed, eGreen, eBlue)
-    pSprite = sp
+    internal_SpriteSetColorF( pSprite, eRed / 255.0, eGreen / 255.0, eBlue / 255.0 )
+  END SUB
 
-    @pSprite.iRed = eRed / 255.0
-    @pSprite.iGreen = eGreen / 255.0
-    @pSprite.iBlue = eBlue / 255.0
+  ' -- Components in 0..1, not clamped (thinBasic keyword passes script values / 255 unrounded)
+  SUB internal_SpriteSetColorF( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL eRed AS SINGLE, BYVAL eGreen AS SINGLE, BYVAL eBlue AS SINGLE )
+
+    @pSprite.iRed = eRed
+    @pSprite.iGreen = eGreen
+    @pSprite.iBlue = eBlue
   END SUB
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetSpin()
+  SUB tbgl_SpriteSetSpin ALIAS "tbgl_SpriteSetSpin" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL spinSpeed AS SINGLE ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, spinSpeed AS EXT
-
-    thinBasic_Parse2Numbers(sp, spinSpeed)
-    pSprite = sp
     @pSprite.iSpeedSpin = spinSpeed
     IF @pSprite.iChildCount THEN internal_ChildSpriteSetSpin(pSprite,@pSprite.iSpeedSpin)
   END SUB
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetAngle()
+  SUB tbgl_SpriteSetAngle ALIAS "tbgl_SpriteSetAngle" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL eangle AS SINGLE, BYVAL erelative AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL nParsed AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, eangle, erelative AS EXT
     LOCAL oldangle, diffangle AS SINGLE
 
-    erelative = 0
-    nParsed = thinBasic_ParseXNumbers(2,3, sp, eangle, erelative)
-
-    pSprite = sp
     oldangle = @pSprite.iAngle
     internal_SpriteSetOldAngle(pSprite)
     IF erelative = 0 THEN
@@ -1530,14 +1375,17 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetTexCoord()
+  SUB tbgl_SpriteSetTexCoord ALIAS "tbgl_SpriteSetTexCoord" ( _
+      BYVAL pSprite AS TBGL_tSprite PTR _
+    , BYVAL eframe AS LONG _
+    , BYVAL ex1 AS SINGLE _
+    , BYVAL ey1 AS SINGLE _
+    , BYVAL ex2 AS SINGLE _
+    , BYVAL ey2 AS SINGLE _
+    ) EXPORT
   '*****************************************************************
     LOCAL f AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, eframe, ex1, ey1, ex2, ey2 AS EXT
 
-    thinBasic_Parse6Numbers(sp, eframe, ex1, ey1, ex2, ey2)
-    pSprite = sp
     f = eframe
     @pSprite.tx1(f) = ex1/(@pSprite.iWidthTile)
     @pSprite.tx2(f) = (ex2+1)/(@pSprite.iWidthTile)
@@ -1549,13 +1397,8 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetBaseSize()
+  SUB tbgl_SpriteSetBaseSize ALIAS "tbgl_SpriteSetBaseSize" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL ewidth AS LONG, BYVAL eheight AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, ewidth, eheight AS EXT
-
-    thinBasic_Parse3Numbers(sp, ewidth, eheight)
-    pSprite = sp
     @pSprite.iWidthBase = ewidth
     @pSprite.iHeightBase = eheight
     @pSprite.iWidth = @pSprite.iWidthBase
@@ -1569,26 +1412,16 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetTexFrame()
+  SUB tbgl_SpriteSetTexFrame ALIAS "tbgl_SpriteSetTexFrame" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL eframe AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, eframe AS EXT
-
-    thinBasic_Parse2Numbers(sp, eframe)
-    pSprite = sp
     @pSprite.icurrtexframe = eframe
     IF @pSprite.isanimated = %TRUE THEN @pSprite.iAnimTime(@pSprite.iAnimgroup) = eframe
   END SUB
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetTexture()
+  SUB tbgl_SpriteSetTexture ALIAS "tbgl_SpriteSetTexture" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL etex AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, etex AS EXT
-
-    thinBasic_Parse2Numbers(sp, etex)
-    pSprite = sp
     @pSprite.textureID = etex
     glBindTexture( %GL_TEXTURE_2D, lpTexture( @pSprite.textureID ))
 
@@ -1598,58 +1431,32 @@
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetTexture() AS EXT
+  FUNCTION tbgl_SpriteGetTexture ALIAS "tbgl_SpriteGetTexture" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS LONG
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number
-    pSprite = sp
     FUNCTION = @pSprite.textureID
   END FUNCTION
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetTexFrame() AS EXT
+  FUNCTION tbgl_SpriteGetTexFrame ALIAS "tbgl_SpriteGetTexFrame" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS LONG
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number
-    pSprite = sp
     FUNCTION = @pSprite.icurrtexframe
   END FUNCTION
 
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteUpdate()
+  SUB tbgl_SpriteUpdate ALIAS "tbgl_SpriteUpdate" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL SPEED AS SINGLE ) EXPORT
   '*****************************************************************
-    LOCAL nParsed AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, eSpeed AS EXT
-    LOCAL SPEED AS SINGLE
-    espeed = 1.0
-    nParsed = thinBasic_ParseXNumbers(1,2, sp, eSpeed)
-    pSprite = sp
-    SPEED = espeed
     internal_UpdateSprite(pSprite, SPEED)
     internal_DeleteSprites()
   END SUB
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpritesAnimateAll()
+  SUB tbgl_SpritesAnimateAll ALIAS "tbgl_SpritesAnimateAll" ( BYVAL SPEED AS SINGLE ) EXPORT
   '*****************************************************************
     LOCAL i AS LONG
-    LOCAL nParsed AS LONG
     LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL eSpeed AS EXT
-    LOCAL SPEED AS SINGLE
-
-
-    espeed = 1.0
-    nParsed = thinBasic_ParseXNumbers(0,1, eSpeed)
-    SPEED = espeed
 
     FOR i = 1 TO maxsprites
   Label002:
@@ -1665,22 +1472,13 @@
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetID() AS EXT
+  ' -- Returns ID of index-th sprite
+  FUNCTION tbgl_SpriteGetID ALIAS "tbgl_SpriteGetID" ( BYVAL index AS LONG ) EXPORT AS DWORD
   '*****************************************************************
-    LOCAL i AS LONG, c AS LONG, igroup AS LONG, index AS LONG
-    LOCAL nParsed AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL eIndex , eGroup AS EXT
-
-    egroup = 0
-    nParsed = thinBasic_ParseXNumbers(1,2, eindex, egroup)
-    index = eindex
-    igroup = egroup
+    LOCAL i AS LONG, c AS LONG
 
     FOR i = 1 TO maxsprites
         IF sprites(i) THEN
-            pSprite = sprites(i)
-            IF @pSprite.iGroup <> igroup AND nparsed=2 THEN ITERATE FOR
             c += 1
             IF c=index THEN
                 FUNCTION = sprites(i)
@@ -1693,18 +1491,32 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpritesUpdateAll()
+  ' -- Returns ID of index-th sprite of group igroup
+  FUNCTION tbgl_SpriteGetIDInGroup ALIAS "tbgl_SpriteGetIDInGroup" ( BYVAL index AS LONG, BYVAL igroup AS LONG ) EXPORT AS DWORD
+  '*****************************************************************
+    LOCAL i AS LONG, c AS LONG
+    LOCAL pSprite AS TBGL_tSprite PTR
+
+    FOR i = 1 TO maxsprites
+        IF sprites(i) THEN
+            pSprite = sprites(i)
+            IF @pSprite.iGroup <> igroup THEN ITERATE FOR
+            c += 1
+            IF c=index THEN
+                FUNCTION = sprites(i)
+                EXIT FUNCTION
+            END IF
+        END IF
+    NEXT
+    FUNCTION = 0
+  END FUNCTION
+
+
+  '*****************************************************************
+  SUB tbgl_SpritesUpdateAll ALIAS "tbgl_SpritesUpdateAll" ( BYVAL SPEED AS SINGLE ) EXPORT
   '*****************************************************************
     LOCAL i AS LONG
-    LOCAL nParsed AS LONG
     LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL eSpeed AS EXT
-    LOCAL SPEED AS SINGLE
-
-
-    espeed = 1.0
-    nParsed = thinBasic_ParseXNumbers(0,1, eSpeed)
-    SPEED = espeed
 
     FOR i = 1 TO maxsprites
   Label003:
@@ -1720,23 +1532,16 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpritesDrawAll()
+  SUB tbgl_SpritesDrawAll ALIAS "tbgl_SpritesDrawAll" (  ) EXPORT
   '*****************************************************************
-    LOCAL i AS LONG, igroup AS LONG
+    LOCAL i AS LONG
     LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL egroup AS EXT
-    LOCAL nParsed AS LONG
-    egroup = 0
-    nParsed = thinBasic_ParseXNumbers(0,1, egroup)
-    igroup = egroup
 
     FOR i = 1 TO maxsprites
   Label001:
         IF sprites(i) THEN
             pSprite = sprites(i)
             IF @pSprite.isActive = %FALSE THEN ITERATE FOR
-
-            IF @pSprite.igroup <> igroup AND nparsed THEN ITERATE FOR
 
             internal_DrawSprite(pSprite)
             IF pSprite <> sprites(i) THEN GOTO Label001
@@ -1747,13 +1552,32 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSlide()
+  SUB tbgl_SpritesDrawGroup ALIAS "tbgl_SpritesDrawGroup" ( BYVAL igroup AS LONG ) EXPORT
   '*****************************************************************
+    LOCAL i AS LONG
     LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, ex,ey,angle AS EXT
 
-    thinBasic_Parse3Numbers(sp, ex, ey)
-    pSprite = sp
+    FOR i = 1 TO maxsprites
+  Label001:
+        IF sprites(i) THEN
+            pSprite = sprites(i)
+            IF @pSprite.isActive = %FALSE THEN ITERATE FOR
+
+            IF @pSprite.igroup <> igroup THEN ITERATE FOR
+
+            internal_DrawSprite(pSprite)
+            IF pSprite <> sprites(i) THEN GOTO Label001
+        END IF
+    NEXT
+    internal_DeleteSprites()
+  END SUB
+
+
+  '*****************************************************************
+  SUB tbgl_SpriteSlide ALIAS "tbgl_SpriteSlide" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL ex AS SINGLE, BYVAL ey AS SINGLE ) EXPORT
+  '*****************************************************************
+    LOCAL angle AS DOUBLE
+
     internal_SpriteSetOldPos(pSprite)
     IF ex THEN
         angle = (@pSprite.iAngle) * 0.0174533
@@ -1770,14 +1594,10 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteAddSpeedXY()
+  SUB tbgl_SpriteAddSpeedXY ALIAS "tbgl_SpriteAddSpeedXY" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL ex AS SINGLE, BYVAL ey AS SINGLE, BYVAL eflag AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL nParsed AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, ex,ey,eflag, angle AS EXT
-    eflag = 0
-    nParsed = thinBasic_ParseXNumbers(3,4, sp, ex, ey, eFlag)
-    pSprite = sp
+    LOCAL angle AS DOUBLE
+
 
     IF eFlag THEN
         IF ex THEN
@@ -1807,20 +1627,11 @@
   END SUB
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteAddSpeed()
+  SUB tbgl_SpriteAddSpeed ALIAS "tbgl_SpriteAddSpeed" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL espeed AS SINGLE, BYVAL eangle AS SINGLE ) EXPORT
   '*****************************************************************
-    LOCAL nParsed AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, eSpeed,  eAngle AS EXT
     LOCAL angle, SPEED AS SINGLE
 
-    nParsed = thinBasic_ParseXNumbers(2,3, sp, espeed, eangle)
-    pSprite = sp
-    IF nParsed = 2 THEN
-        angle = @pSprite.iAngle
-    ELSE
-        angle = eangle
-    END IF
+    angle = eangle
     angle *= 0.0174532925
     SPEED = espeed
     @pSprite.iSpeedX += SIN(angle) * SPEED
@@ -1841,20 +1652,11 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetSpeed()
+  SUB tbgl_SpriteSetSpeed ALIAS "tbgl_SpriteSetSpeed" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL espeed AS SINGLE, BYVAL eangle AS SINGLE ) EXPORT
   '*****************************************************************
-    LOCAL nParsed AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, espeed, eangle, SPEED,  angle AS EXT
+    LOCAL SPEED, angle AS DOUBLE
 
-    nParsed = thinBasic_ParseXNumbers(2,3, sp, eSpeed, eAngle)
-    pSprite = sp
-
-    IF nParsed = 2 THEN
-        angle = @pSprite.iAngle
-    ELSE
-        angle = eangle
-    END IF
+    angle = eangle
     angle *= 0.0174532925
     SPEED = espeed
     @pSprite.iSpeedX = SIN(angle) * SPEED
@@ -1875,16 +1677,13 @@
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetTargetAngle() AS EXT
+  FUNCTION tbgl_SpriteGetTargetAngle ALIAS "tbgl_SpriteGetTargetAngle" ( _
+      BYVAL pSprite AS TBGL_tSprite PTR _
+    , BYVAL pSpriteTarget AS TBGL_tSprite PTR _
+    , BYVAL eflag AS LONG _
+    ) EXPORT AS SINGLE
   '*****************************************************************
-    LOCAL nParsed AS LONG
-    LOCAL pSprite, pSpriteTarget AS TBGL_tSprite PTR
-    LOCAL sp, spTarget, eflag AS EXT
     LOCAL xdiff, ydiff, angle AS SINGLE
-
-    nParsed = thinBasic_ParseXNumbers(2,3, sp, spTarget, eflag)
-    pSprite = sp
-    pSpriteTarget = spTarget
 
     xdiff = @pSpriteTarget.xPos - @pSprite.xPos
     ydiff = @pSpriteTarget.yPos - @pSprite.yPos
@@ -1912,15 +1711,14 @@
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetVectorAngle() AS EXT
+  FUNCTION tbgl_SpriteGetVectorAngle ALIAS "tbgl_SpriteGetVectorAngle" ( _
+      BYVAL pSprite AS TBGL_tSprite PTR _
+    , BYVAL xpos AS SINGLE _
+    , BYVAL ypos AS SINGLE _
+    , BYVAL eflag AS LONG _
+    ) EXPORT AS SINGLE
   '*****************************************************************
-    LOCAL nParsed AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, xpos, ypos, eflag AS EXT
     LOCAL xdiff, ydiff, angle AS SINGLE
-
-    nParsed = thinBasic_ParseXNumbers(3,4, sp, xpos, ypos, eflag)
-    pSprite = sp
 
     xdiff = xPos - @pSprite.xPos
     ydiff = yPos - @pSprite.yPos
@@ -1948,15 +1746,9 @@
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetTargetDist() AS EXT
+  FUNCTION tbgl_SpriteGetTargetDist ALIAS "tbgl_SpriteGetTargetDist" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL pSpriteTarget AS TBGL_tSprite PTR ) EXPORT AS SINGLE
   '*****************************************************************
-    LOCAL pSprite, pSpriteTarget AS TBGL_tSprite PTR
-    LOCAL sp, spTarget AS EXT
     LOCAL xdiff, ydiff, dist AS SINGLE
-
-    thinBasic_Parse2Numbers(sp, spTarget)
-    pSprite = sp
-    pSpriteTarget = spTarget
 
     xdiff = @pSprite.xPos - @pSpriteTarget.xPos
     ydiff = @pSprite.yPos - @pSpriteTarget.yPos
@@ -1969,15 +1761,9 @@
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetVectorDist() AS EXT
+  FUNCTION tbgl_SpriteGetVectorDist ALIAS "tbgl_SpriteGetVectorDist" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL xpos AS SINGLE, BYVAL ypos AS SINGLE ) EXPORT AS SINGLE
   '*****************************************************************
-    LOCAL nParsed AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, xpos, ypos AS EXT
     LOCAL xdiff, ydiff, dist AS SINGLE
-
-    nParsed = thinBasic_ParseXNumbers(2,3, sp, xpos, ypos)
-    pSprite = sp
 
     xdiff = @pSprite.xPos - xPos
     ydiff = @pSprite.yPos - yPos
@@ -1990,21 +1776,11 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetSpeedAngle()
+  SUB tbgl_SpriteSetSpeedAngle ALIAS "tbgl_SpriteSetSpeedAngle" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL eangle AS SINGLE ) EXPORT
   '*****************************************************************
-    LOCAL nParsed AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, eangle AS EXT
     LOCAL SPEED, angle AS SINGLE
 
-    nParsed = thinBasic_ParseXNumbers(1,2, sp, eAngle)
-    pSprite = sp
-
-    IF nParsed = 1 THEN
-        angle = @pSprite.iAngle
-    ELSE
-        angle = eangle
-    END IF
+    angle = eangle
     angle *= 0.0174532925
     SPEED = @pSprite.iSpeed
     @pSprite.iSpeedX = SIN(angle) * SPEED
@@ -2024,16 +1800,10 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetSpeedXY()
+  SUB tbgl_SpriteSetSpeedXY ALIAS "tbgl_SpriteSetSpeedXY" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL ex AS SINGLE, BYVAL ey AS SINGLE, BYVAL eflag AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL nParsed AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, ex, ey, eflag AS EXT
     LOCAL angle,xx,xy,yx,yy AS SINGLE
 
-    eflag = 0
-    nParsed = thinBasic_ParseXNumbers(3,4, sp, ex, ey, eflag)
-    pSprite = sp
 
     IF eFlag THEN
         IF ex THEN
@@ -2067,7 +1837,7 @@
 
 
   '*****************************************************************
-  SUB internal_ChildSpriteSetScale(BYVAL pSprite AS TBGL_tSprite PTR, eScale AS EXT , erelative AS EXT)
+  SUB internal_ChildSpriteSetScale(BYVAL pSprite AS TBGL_tSprite PTR, BYVAL eScale AS SINGLE, BYVAL erelative AS LONG)
   '*****************************************************************
     LOCAL i AS LONG, c AS LONG
     LOCAL pSpriteChild AS TBGL_tSprite PTR
@@ -2099,7 +1869,7 @@
 
 
   '*****************************************************************
-  SUB internal_ChildSpriteSetAngle( BYVAL pSprite AS TBGL_tSprite PTR, eAngle AS EXT , erelative AS EXT)
+  SUB internal_ChildSpriteSetAngle( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL eAngle AS SINGLE, BYVAL erelative AS LONG)
   '*****************************************************************
     LOCAL i AS LONG, c AS LONG
     LOCAL pSpriteChild AS TBGL_tSprite PTR
@@ -2263,7 +2033,7 @@
   END SUB
 
   '*****************************************************************
-  SUB internal_ChildSpriteSetPos( BYVAL pSprite AS TBGL_tSprite PTR, ex AS EXT, ey AS EXT , erelative AS EXT)
+  SUB internal_ChildSpriteSetPos( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL ex AS SINGLE, BYVAL ey AS SINGLE, BYVAL erelative AS LONG)
   '*****************************************************************
     LOCAL i AS LONG, c AS LONG
     LOCAL pSpriteChild AS TBGL_tSprite PTR
@@ -2295,7 +2065,7 @@
 
 
   '*****************************************************************
-  SUB internal_ChildSpriteSlide( BYVAL pSprite AS TBGL_tSprite PTR, ex AS EXT, ey AS EXT, BYVAL pSpriteAngle AS TBGL_tSprite PTR )
+  SUB internal_ChildSpriteSlide( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL ex AS SINGLE, BYVAL ey AS SINGLE, BYVAL pSpriteAngle AS TBGL_tSprite PTR )
   '*****************************************************************
     LOCAL i AS LONG, c AS LONG
     LOCAL pSpriteChild AS TBGL_tSprite PTR
@@ -2329,15 +2099,8 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetPos()
+  SUB tbgl_SpriteSetPos ALIAS "tbgl_SpriteSetPos" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL ex AS SINGLE, BYVAL ey AS SINGLE, BYVAL erelative AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL nParsed AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, ex,ey,erelative AS EXT
-
-    erelative = 0
-    nParsed = thinBasic_ParseXNumbers(3,4, sp, ex, ey, erelative)
-    pSprite = sp
     internal_SpriteSetOldPos(pSprite)
     IF erelative THEN
         @pSprite.xPos += ex
@@ -2353,59 +2116,34 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetTag()
+  SUB tbgl_SpriteSetTag ALIAS "tbgl_SpriteSetTag" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL eTag AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, eTag AS EXT
-
-    thinBasic_Parse2Numbers(sp, eTag)
-    pSprite = sp
     @pSprite.iTag = eTag
   END SUB
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetGroup()
+  SUB tbgl_SpriteSetGroup ALIAS "tbgl_SpriteSetGroup" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL egroup AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, egroup AS EXT
-
-    thinBasic_Parse2Numbers(sp, egroup)
-    pSprite = sp
     @pSprite.iGroup = eGroup
   END SUB
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetTag() AS EXT
+  FUNCTION tbgl_SpriteGetTag ALIAS "tbgl_SpriteGetTag" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS LONG
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number()
-    pSprite = sp
     FUNCTION = @pSprite.iTag
   END FUNCTION
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetGroup() AS EXT
+  FUNCTION tbgl_SpriteGetGroup ALIAS "tbgl_SpriteGetGroup" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS LONG
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number()
-    pSprite = sp
     FUNCTION = @pSprite.iGroup
   END FUNCTION
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetParent()
+  SUB tbgl_SpriteSetParent ALIAS "tbgl_SpriteSetParent" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL eparent AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, eparent AS EXT
-
-    thinBasic_Parse2Numbers(sp, eparent)
-    pSprite = sp
     IF eParent THEN
         @pSprite.iParent = eparent
         pSprite = eParent
@@ -2423,52 +2161,31 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetParentMode()
+  SUB tbgl_SpriteSetParentMode ALIAS "tbgl_SpriteSetParentMode" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL emode AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, emode AS EXT
-
-    thinBasic_Parse2Numbers(sp, emode)
-    pSprite = sp
     @pSprite.iParentMode = emode
   END SUB
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetParent() AS EXT
+  FUNCTION tbgl_SpriteGetParent ALIAS "tbgl_SpriteGetParent" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS LONG
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number()
-    pSprite = sp
     FUNCTION = @pSprite.iParent
   END FUNCTION
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetChildCount() AS EXT
+  FUNCTION tbgl_SpriteGetChildCount ALIAS "tbgl_SpriteGetChildCount" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS LONG
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number()
-    pSprite = sp
     FUNCTION = @pSprite.iChildCount
   END FUNCTION
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetChildID() AS EXT
+  FUNCTION tbgl_SpriteGetChildID ALIAS "tbgl_SpriteGetChildID" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL index AS LONG ) EXPORT AS DWORD
   '*****************************************************************
     LOCAL i AS LONG, c AS LONG
-    LOCAL pSprite, pSpriteChild AS TBGL_tSprite PTR
-    LOCAL sp, eindex AS EXT
-    LOCAL index AS LONG
+    LOCAL pSpriteChild AS TBGL_tSprite PTR
     c = 0
-
-    thinBasic_Parse2Numbers(sp, eindex)
-    pSprite = sp
-    index = eindex
 
     FOR i = 1 TO maxsprites
         IF sprites(i) THEN
@@ -2483,15 +2200,8 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetScale()
+  SUB tbgl_SpriteSetScale ALIAS "tbgl_SpriteSetScale" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL eScale AS SINGLE, BYVAL erelative AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL nParsed AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, eScale, erelative AS EXT
-
-    erelative = 0
-    nParsed = thinBasic_ParseXNumbers(2,3, sp, eScale, erelative)
-    pSprite = sp
     internal_SpriteSetOldScale(pSprite)
     IF erelative = 0 THEN
         @pSprite.iScale = eScale
@@ -2505,35 +2215,20 @@
   END SUB
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetHFlip()
+  SUB tbgl_SpriteSetHFlip ALIAS "tbgl_SpriteSetHFlip" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL eflag AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, eFlag AS EXT
-
-    thinBasic_Parse2Numbers(sp, eFlag)
-    pSprite = sp
     @pSprite.iHFlip = eflag
   END SUB
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetVFlip()
+  SUB tbgl_SpriteSetVFlip ALIAS "tbgl_SpriteSetVFlip" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL eflag AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, eFlag AS EXT
-
-    thinBasic_Parse2Numbers(sp, eFlag)
-    pSprite = sp
     @pSprite.iVFlip = eflag
   END SUB
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetLayer()
+  SUB tbgl_SpriteSetLayer ALIAS "tbgl_SpriteSetLayer" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL elayer AS SINGLE ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, elayer AS EXT
-
-    thinBasic_Parse2Numbers(sp, elayer)
-    pSprite = sp
     IF elayer > 256 THEN elayer = 256
     IF elayer < 1 THEN elayer = 1
     @pSprite.zPos = elayer/256.0
@@ -2541,43 +2236,24 @@
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetLayer() AS EXT
+  FUNCTION tbgl_SpriteGetLayer ALIAS "tbgl_SpriteGetLayer" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS LONG
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number
-    pSprite = sp
 
     FUNCTION = INT(256.0/@pSprite.zPos+0.99)
   END FUNCTION
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteAnimate()
+  SUB tbgl_SpriteAnimate ALIAS "tbgl_SpriteAnimate" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL SPEED AS SINGLE ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, eSpeed AS EXT
-    LOCAL SPEED AS SINGLE
-
-    thinBasic_Parse2Numbers(sp, eSpeed)
-    pSprite = sp
-    SPEED = espeed
     internal_AnimateSprite(pSprite, SPEED)
     internal_DeleteSprites()
   END SUB
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetAnim()
+  SUB tbgl_SpriteSetAnim ALIAS "tbgl_SpriteSetAnim" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL eStart AS LONG, BYVAL eEnd AS LONG, BYVAL group AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL nParsed,group AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, eStart, eEnd, egroup AS EXT
-    eGroup = 1
-    nParsed = thinBasic_ParseXNumbers(3,4, sp, eStart, eEnd, eGroup)
-    pSprite = sp
-    group = eGroup
     @pSprite.iStartFrame(group) = eStart
     @pSprite.iEndFrame(group) = eEnd
     @pSprite.iAnimLength(group) = @pSprite.iEndFrame(group) - @pSprite.iStartFrame(group) + 1
@@ -2588,68 +2264,40 @@
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetScale() AS EXT
+  FUNCTION tbgl_SpriteGetScale ALIAS "tbgl_SpriteGetScale" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS SINGLE
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number
-    pSprite = sp
     FUNCTION = @pSprite.iScale
 
   END FUNCTION
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetSpin() AS EXT
+  FUNCTION tbgl_SpriteGetSpin ALIAS "tbgl_SpriteGetSpin" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS SINGLE
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number
-    pSprite = sp
     FUNCTION = @pSprite.iSpeedSpin
 
   END FUNCTION
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetAnimtime()
+  SUB tbgl_SpriteSetAnimtime ALIAS "tbgl_SpriteSetAnimtime" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL etime AS SINGLE, BYVAL group AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL nParsed, group AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, egroup, etime AS EXT
-    egroup = 1.0
-    nParsed = thinBasic_ParseXNumbers(2,3, sp, etime, egroup)
-    pSprite = sp
-    group = egroup
     @pSprite.ianimTime(group) = etime
 
   END SUB
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetAnimtime() AS EXT
+  FUNCTION tbgl_SpriteGetAnimtime ALIAS "tbgl_SpriteGetAnimtime" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL group AS LONG ) EXPORT AS SINGLE
   '*****************************************************************
-    LOCAL nParsed, group AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, egroup AS EXT
-    egroup = 1.0
-    nParsed = thinBasic_ParseXNumbers(1,2, sp, egroup)
-    pSprite = sp
-    group = egroup
     FUNCTION = @pSprite.ianimTime(group)
 
   END FUNCTION
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetAnimGroup() AS EXT
+  FUNCTION tbgl_SpriteGetAnimGroup ALIAS "tbgl_SpriteGetAnimGroup" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS LONG
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-    sp = thinBasic_Parse1Number
-    pSprite = sp
 
     FUNCTION = @pSprite.ianimgroup
 
@@ -2657,31 +2305,16 @@
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetAnimLength() AS EXT
+  FUNCTION tbgl_SpriteGetAnimLength ALIAS "tbgl_SpriteGetAnimLength" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL group AS LONG ) EXPORT AS LONG
   '*****************************************************************
-    LOCAL nParsed, group AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, egroup AS EXT
-    egroup = 1.0
-
-    nParsed = thinBasic_ParseXNumbers(1,2, sp, egroup)
-    pSprite = sp
-    group = egroup
     FUNCTION = @pSprite.ianimLength(group)
 
   END FUNCTION
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetAnimSpeed()
+  SUB tbgl_SpriteSetAnimSpeed ALIAS "tbgl_SpriteSetAnimSpeed" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL espeed AS SINGLE, BYVAL group AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL nParsed, group AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp,espeed, egroup AS EXT
-    egroup = 1.0
-    nParsed = thinBasic_ParseXNumbers(2,3, sp,espeed, egroup)
-    pSprite = sp
-    group = egroup
     @pSprite.iAnimSpeed(group) = espeed
     IF espeed < 0 THEN
         @pSprite.ianimspin(@pSprite.iAnimGroup) = %TBGL_BACKWARD
@@ -2693,514 +2326,242 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetAnimGroup()
+  SUB tbgl_SpriteSetAnimGroup ALIAS "tbgl_SpriteSetAnimGroup" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL egroup AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, egroup AS EXT
-    thinBasic_Parse2Numbers(sp, egroup)
-    pSprite = sp
     @pSprite.iAnimgroup = egroup
 
   END SUB
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetAnimType()
+  SUB tbgl_SpriteSetAnimType ALIAS "tbgl_SpriteSetAnimType" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL eType AS BYTE, BYVAL eGroup AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp, eType, eGroup AS EXT
-    eGroup = 1
-    thinBasic_ParseXNumbers(2,3, sp, eType, eGroup)
-    pSprite = sp
     @pSprite.iAnimType(eGroup) = eType
 
   END SUB
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetCollisionType()
+  SUB tbgl_SpriteSetCollisionType ALIAS "tbgl_SpriteSetCollisionType" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL ect AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp,ect AS EXT
-
-    thinBasic_Parse2Numbers(sp,ect)
-    pSprite = sp
     @pSprite.icoltype = ect
 
   END SUB
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetCollisionWith() AS EXT
+  FUNCTION tbgl_SpriteGetCollisionWith ALIAS "tbgl_SpriteGetCollisionWith" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL w AS LONG ) EXPORT AS LONG
   '*****************************************************************
-    LOCAL w AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp,ew AS EXT
-
-    thinBasic_Parse2Numbers(sp,ew)
-    pSprite = sp
-    w = ew
     FUNCTION = @pSprite.icolwith(w)
 
   END FUNCTION
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetCollisionWith()
+  SUB tbgl_SpriteSetCollisionWith ALIAS "tbgl_SpriteSetCollisionWith" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL w AS LONG, BYVAL eflag AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL w AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp,ew,eflag AS EXT
-
-    thinBasic_Parse3Numbers(sp,ew,eflag)
-    pSprite = sp
-    w = ew
     @pSprite.icolwith(w) = eflag
 
   END SUB
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetCollisionMode()
+  SUB tbgl_SpriteSetCollisionMode ALIAS "tbgl_SpriteSetCollisionMode" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL emode AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp,emode AS EXT
-
-    thinBasic_Parse2Numbers(sp,emode)
-    pSprite = sp
     @pSprite.icolmode = emode
 
   END SUB
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetCollisionGroup()
+  SUB tbgl_SpriteSetCollisionGroup ALIAS "tbgl_SpriteSetCollisionGroup" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL ecg AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp,ecg AS EXT
-
-    thinBasic_Parse2Numbers(sp,ecg)
-    pSprite = sp
     @pSprite.icolgroup = ecg
 
   END SUB
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetCollisionRadius()
+  SUB tbgl_SpriteSetCollisionRadius ALIAS "tbgl_SpriteSetCollisionRadius" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL ecr AS SINGLE ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp,ecr AS EXT
-
-    thinBasic_Parse2Numbers(sp,ecr)
-    pSprite = sp
     @pSprite.iradius = ecr
     internal_SizeSprite(pSprite)
   END SUB
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetCollisionWidth()
+  SUB tbgl_SpriteSetCollisionWidth ALIAS "tbgl_SpriteSetCollisionWidth" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL ew AS SINGLE ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp,ew AS EXT
-
-    thinBasic_Parse2Numbers(sp,ew)
-    pSprite = sp
     @pSprite.icolwidth = ew
     internal_RotateSprite(pSprite)
   END SUB
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetCollisionHeight()
+  SUB tbgl_SpriteSetCollisionHeight ALIAS "tbgl_SpriteSetCollisionHeight" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL eh AS SINGLE ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp,eh AS EXT
-
-    thinBasic_Parse2Numbers(sp,eh)
-    pSprite = sp
     @pSprite.icolheight = eh
     internal_RotateSprite(pSprite)
   END SUB
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetCollisionType() AS EXT
+  FUNCTION tbgl_SpriteGetCollisionType ALIAS "tbgl_SpriteGetCollisionType" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS LONG
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number
-    pSprite = sp
     FUNCTION = @pSprite.icoltype
 
   END FUNCTION
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetCollisionMode() AS EXT
+  FUNCTION tbgl_SpriteGetCollisionMode ALIAS "tbgl_SpriteGetCollisionMode" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS LONG
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number
-    pSprite = sp
     FUNCTION = @pSprite.icolMode
 
   END FUNCTION
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetCollisionRadius() AS EXT
+  FUNCTION tbgl_SpriteGetCollisionRadius ALIAS "tbgl_SpriteGetCollisionRadius" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS SINGLE
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number
-    pSprite = sp
     FUNCTION = @pSprite.icolrad
 
   END FUNCTION
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetCollisionWidth() AS EXT
+  FUNCTION tbgl_SpriteGetCollisionWidth ALIAS "tbgl_SpriteGetCollisionWidth" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS SINGLE
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number
-    pSprite = sp
     FUNCTION = @pSprite.icolWidth
 
   END FUNCTION
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetCollisionHeight() AS EXT
+  FUNCTION tbgl_SpriteGetCollisionHeight ALIAS "tbgl_SpriteGetCollisionHeight" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS SINGLE
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number
-    pSprite = sp
     FUNCTION = @pSprite.icolHeight
 
   END FUNCTION
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetCollisionGroup() AS EXT
+  FUNCTION tbgl_SpriteGetCollisionGroup ALIAS "tbgl_SpriteGetCollisionGroup" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS LONG
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number
-    pSprite = sp
     FUNCTION = @pSprite.icolgroup
 
   END FUNCTION
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetActive()
+  SUB tbgl_SpriteSetActive ALIAS "tbgl_SpriteSetActive" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL ea AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp,ea AS EXT
-
-    thinBasic_Parse2Numbers(sp,ea)
-    pSprite = sp
     @pSprite.isActive = ea
 
   END SUB
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetVisible()
+  SUB tbgl_SpriteSetVisible ALIAS "tbgl_SpriteSetVisible" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL ev AS LONG ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp,ev AS EXT
-
-    thinBasic_Parse2Numbers(sp,ev)
-    pSprite = sp
     @pSprite.isVisible = ev
 
   END SUB
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetFriction()
+  SUB tbgl_SpriteSetFriction ALIAS "tbgl_SpriteSetFriction" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL eFriction AS SINGLE ) EXPORT
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp,eFriction AS EXT
-
-    thinBasic_Parse2Numbers(sp,eFriction)
-    pSprite = sp
     @pSprite.iFriction = eFriction
 
   END SUB
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetActive() AS EXT
+  FUNCTION tbgl_SpriteGetActive ALIAS "tbgl_SpriteGetActive" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS LONG
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number
-    pSprite = sp
     FUNCTION = @pSprite.isActive
 
   END FUNCTION
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetVisible() AS EXT
+  FUNCTION tbgl_SpriteGetVisible ALIAS "tbgl_SpriteGetVisible" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS LONG
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number
-    pSprite = sp
     FUNCTION = @pSprite.isVisible
 
   END FUNCTION
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetAngle() AS EXT
+  FUNCTION tbgl_SpriteGetAngle ALIAS "tbgl_SpriteGetAngle" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS SINGLE
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number
-    pSprite = sp
     FUNCTION = @pSprite.iAngle
 
   END FUNCTION
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetAlpha() AS EXT
+  FUNCTION tbgl_SpriteGetAlpha ALIAS "tbgl_SpriteGetAlpha" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS SINGLE
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number
-    pSprite = sp
     FUNCTION = @pSprite.iAlpha
 
   END FUNCTION
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetFriction() AS EXT
+  FUNCTION tbgl_SpriteGetFriction ALIAS "tbgl_SpriteGetFriction" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS SINGLE
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number
-    pSprite = sp
     FUNCTION = @pSprite.iFriction
 
   END FUNCTION
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteGetBaseSize()
+  SUB tbgl_SpriteGetBaseSize ALIAS "tbgl_SpriteGetBaseSize" ( BYVAL pSprite AS TBGL_tSprite PTR, BYREF w AS LONG, BYREF h AS LONG ) EXPORT
   '*****************************************************************
-
-    LOCAL pSprite AS TBGL_tSprite PTR
-    'LOCAL x, y, z AS EXT
-    LOCAL sp AS EXT
-
-    LOCAL lVariablePtr1     AS LONG
-    LOCAL lVariableAbsPos1  AS LONG
-
-    LOCAL lVariablePtr2     AS LONG
-    LOCAL lVariableAbsPos2  AS LONG
-
-
-    'nParsed = thinBasic_ParseXNumbers(3,4, sp, x, y, z)
-    IF thinBasic_CheckOpenParens_Mandatory THEN
-      thinBasic_ParseNumber sp
-      pSprite = sp
-      IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-        thinBasic_VariableParse(lVariablePtr1, lVariableAbsPos1)
-        IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-          thinBasic_VariableParse(lVariablePtr2, lVariableAbsPos2)
-          IF thinBasic_CheckCloseParens_Mandatory THEN
-            thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, @pSprite.iWidthBase)
-            thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, @pSprite.iHeightBase)
-          END IF
-        END IF
-      END IF
-    END IF
-
-
+    w = @pSprite.iWidthBase
+    h = @pSprite.iHeightBase
   END SUB
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteGetVector()
+  ' -- Position of point in distance SPEED from sprite in direction angle
+  SUB tbgl_SpriteGetVector ALIAS "tbgl_SpriteGetVector" ( _
+      BYVAL pSprite AS TBGL_tSprite PTR _
+    , BYVAL SPEED AS SINGLE _
+    , BYVAL angle AS SINGLE _
+    , BYREF x AS SINGLE _
+    , BYREF y AS SINGLE _
+    ) EXPORT
   '*****************************************************************
+    LOCAL xv,yv AS SINGLE
 
-    LOCAL pSprite AS TBGL_tSprite PTR
+    angle *= 0.0174532925
+    xv = SIN(angle) * SPEED
+    yv = -COS(angle) * SPEED
 
-    LOCAL sp, espeed, eangle AS EXT
-    LOCAL SPEED, angle,xv,yv AS SINGLE
-
-    LOCAL lVariablePtr1     AS LONG
-    LOCAL lVariableAbsPos1  AS LONG
-
-    LOCAL lVariablePtr2     AS LONG
-    LOCAL lVariableAbsPos2  AS LONG
-
-
-    IF thinBasic_CheckOpenParens_Mandatory THEN
-      thinBasic_ParseNumber sp
-      pSprite = sp
-      IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-          thinBasic_ParseNumber espeed
-          SPEED = espeed
-          IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-              thinBasic_ParseNumber eangle
-              angle = eangle
-              IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-                thinBasic_VariableParse(lVariablePtr1, lVariableAbsPos1)
-                IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-                    thinBasic_VariableParse(lVariablePtr2, lVariableAbsPos2)
-                    IF thinBasic_CheckCloseParens_Mandatory THEN
-
-                        angle *= 0.0174532925
-                        xv = SIN(angle) * SPEED
-                        yv = -COS(angle) * SPEED
-
-                        thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, @pSprite.xPos + xv)
-                        thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, @pSprite.yPos + yv)
-                    END IF
-                END IF
-              END IF
-          END IF
-      END IF
-    END IF
-
-
+    x = @pSprite.xPos + xv
+    y = @pSprite.yPos + yv
   END SUB
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteGetOldPos()
+  SUB tbgl_SpriteGetOldPos ALIAS "tbgl_SpriteGetOldPos" ( BYVAL pSprite AS TBGL_tSprite PTR, BYREF x AS SINGLE, BYREF y AS SINGLE ) EXPORT
   '*****************************************************************
-
-    LOCAL pSprite AS TBGL_tSprite PTR
-
-    LOCAL sp AS EXT
-
-    LOCAL lVariablePtr1     AS LONG
-    LOCAL lVariableAbsPos1  AS LONG
-
-    LOCAL lVariablePtr2     AS LONG
-    LOCAL lVariableAbsPos2  AS LONG
-
-
-    IF thinBasic_CheckOpenParens_Mandatory THEN
-      thinBasic_ParseNumber sp
-      pSprite = sp
-      IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-        thinBasic_VariableParse(lVariablePtr1, lVariableAbsPos1)
-        IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-          thinBasic_VariableParse(lVariablePtr2, lVariableAbsPos2)
-            IF  thinBasic_CheckCloseParens_Mandatory THEN
-                thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, @pSprite.OldxPos)
-                thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, @pSprite.OldyPos)
-            END IF
-        END IF
-      END IF
-    END IF
+    x = @pSprite.OldxPos
+    y = @pSprite.OldyPos
   END SUB
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteGetPos()
+  SUB tbgl_SpriteGetPos ALIAS "tbgl_SpriteGetPos" ( BYVAL pSprite AS TBGL_tSprite PTR, BYREF x AS SINGLE, BYREF y AS SINGLE, BYREF z AS SINGLE ) EXPORT
   '*****************************************************************
-
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    LOCAL lVariablePtr1     AS LONG
-    LOCAL lVariableAbsPos1  AS LONG
-
-    LOCAL lVariablePtr2     AS LONG
-    LOCAL lVariableAbsPos2  AS LONG
-
-    LOCAL lVariablePtr3     AS LONG
-    LOCAL lVariableAbsPos3  AS LONG
-
-    IF thinBasic_CheckOpenParens_Mandatory THEN
-      thinBasic_ParseNumber sp
-      pSprite = sp
-      IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-        thinBasic_VariableParse(lVariablePtr1, lVariableAbsPos1)
-        IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-          thinBasic_VariableParse(lVariablePtr2, lVariableAbsPos2)
-            IF thinBasic_CheckCloseParens_Optional THEN
-                thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, @pSprite.xPos)
-                thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, @pSprite.yPos)
-            ELSE
-                IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-                    thinBasic_VariableParse(lVariablePtr3, lVariableAbsPos3)
-
-                    thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, @pSprite.xPos)
-                    thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, @pSprite.yPos)
-                    thinBasic_ChangeVariableNumberDirect (lVariablePtr3, lVariableAbsPos3, @pSprite.zPos)
-                END IF
-                thinBasic_CheckCloseParens_Mandatory
-            END IF
-        END IF
-      END IF
-    END IF
-
-
+    x = @pSprite.xPos
+    y = @pSprite.yPos
+    z = @pSprite.zPos
   END SUB
 
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteGetSpeedXY()
+  SUB tbgl_SpriteGetSpeedXY ALIAS "tbgl_SpriteGetSpeedXY" ( BYVAL pSprite AS TBGL_tSprite PTR, BYREF x AS SINGLE, BYREF y AS SINGLE, BYREF spin AS SINGLE ) EXPORT
   '*****************************************************************
-
-    LOCAL pSprite AS TBGL_tSprite PTR
-
-    LOCAL sp AS EXT
-
-    LOCAL lVariablePtr1     AS LONG
-    LOCAL lVariableAbsPos1  AS LONG
-
-    LOCAL lVariablePtr2     AS LONG
-    LOCAL lVariableAbsPos2  AS LONG
-
-    LOCAL lVariablePtr3     AS LONG
-    LOCAL lVariableAbsPos3  AS LONG
-
-    IF thinBasic_CheckOpenParens_Mandatory THEN
-      thinBasic_ParseNumber sp
-      pSprite = sp
-      IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-        thinBasic_VariableParse(lVariablePtr1, lVariableAbsPos1)
-        IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-          thinBasic_VariableParse(lVariablePtr2, lVariableAbsPos2)
-            IF thinBasic_CheckCloseParens_Optional THEN
-                thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, @pSprite.iSpeedX)
-                thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, @pSprite.iSpeedY)
-            ELSE
-                IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-                    thinBasic_VariableParse(lVariablePtr3, lVariableAbsPos3)
-
-                    thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, @pSprite.iSpeedx)
-                    thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, @pSprite.iSpeedy)
-                    thinBasic_ChangeVariableNumberDirect (lVariablePtr3, lVariableAbsPos3, @pSprite.iSpeedSpin)
-                END IF
-                thinBasic_CheckCloseParens_Mandatory
-            END IF
-        END IF
-      END IF
-    END IF
-
-
+    x = @pSprite.iSpeedX
+    y = @pSprite.iSpeedY
+    spin = @pSprite.iSpeedSpin
   END SUB
 
 
@@ -3314,17 +2675,13 @@
   END SUB
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetOrder()
+  SUB tbgl_SpriteSetOrder ALIAS "tbgl_SpriteSetOrder" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL lOrder AS LONG ) EXPORT
   '*****************************************************************
     LOCAL i AS LONG
-    LOCAL sp,eo AS EXT
-    LOCAL isOrder,lOrder AS LONG
-    LOCAL pSprite,pSprite2 AS TBGL_tSprite PTR
+    LOCAL isOrder AS LONG
+    LOCAL pSprite2 AS TBGL_tSprite PTR
     LOCAL buffer AS STRING
 
-    thinBasic_Parse2Numbers(sp, eo)
-    pSprite = sp
-    lOrder = eo
     IF lorder > maxsprites THEN lorder = maxsprites
 
     'Get current order(position in sprite list)
@@ -3370,13 +2727,10 @@
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetOrder() AS EXT
+  FUNCTION tbgl_SpriteGetOrder ALIAS "tbgl_SpriteGetOrder" ( BYVAL sp AS DWORD ) EXPORT AS LONG
   '*****************************************************************
     LOCAL i AS LONG
-    LOCAL sp AS EXT
     LOCAL order AS LONG
-
-    sp = thinBasic_Parse1Number
 
     order = 0
     FOR i = 1 TO maxsprites
@@ -3391,13 +2745,8 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteDraw()
+  SUB tbgl_SpriteDraw ALIAS "tbgl_SpriteDraw" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT
   '*****************************************************************
-    LOCAL sp AS EXT
-    LOCAL pSprite AS TBGL_tSprite PTR
-
-    sp = thinBasic_Parse1Number
-    pSprite = sp
 
     internal_DrawSprite(pSprite)
     internal_DeleteSprites()
@@ -3405,22 +2754,12 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteDrawAt()
+  SUB tbgl_SpriteDrawAt ALIAS "tbgl_SpriteDrawAt" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL ex AS SINGLE, BYVAL ey AS SINGLE ) EXPORT
   '*****************************************************************
-    LOCAL nParsed AS LONG
-    LOCAL ex, ey, elayer, sp AS EXT
-    LOCAL pSprite AS TBGL_tSprite PTR
 
-    nParsed = thinBasic_ParseXNumbers(3,4, sp, ex, ey, elayer)
-    pSprite = sp
     internal_SpriteSetOldPos(pSprite)
     @pSprite.xPos = ex
     @pSprite.yPos = ey
-    IF nParsed = 4 THEN
-        IF elayer > 256.0 THEN elayer = 256.0
-        IF elayer < 1.0 THEN elayer = 1.0
-        @pSprite.zPos = elayer/256.0
-    END IF
 
     internal_DrawSprite(pSprite)
 
@@ -3428,52 +2767,43 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetEvent()
+  SUB tbgl_SpriteDrawAtLayer ALIAS "tbgl_SpriteDrawAtLayer" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL ex AS SINGLE, BYVAL ey AS SINGLE, BYVAL elayer AS SINGLE ) EXPORT
   '*****************************************************************
 
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL eid, sp AS EXT
-    LOCAL eventID AS LONG
-    LOCAL ScriptFuncPtr AS LONG
-    LOCAL funcname AS STRING
+    IF elayer > 256.0 THEN elayer = 256.0
+    IF elayer < 1.0 THEN elayer = 1.0
+    @pSprite.zPos = elayer/256.0
 
-    ScriptFuncPtr = 0
-    IF thinBasic_CheckOpenParens THEN
-      thinBasic_ParseNumber sp
-      pSprite = sp
-      IF thinBasic_CheckComma THEN
-          thinBasic_ParseNumber eid
-          eventID = eid
-          IF thinBasic_CheckComma THEN
-            'ScriptFuncPtr = thinBasic_FunctionParseAndGetPtr
-            thinBasic_ParseStr funcname
-            ScriptFuncPtr = thinBasic_FunctionGetPtr(funcname)
-            IF thinBasic_CheckCloseParens THEN
+    tbgl_SpriteDrawAt( pSprite, ex, ey )
 
-                SELECT CASE AS LONG eventID
-                CASE %TBGL_OnBeforeUpdate
-                    @pSprite.sevOnBeforeUpdate = ScriptFuncPtr
-                CASE %TBGL_OnAfterUpdate
-                    @pSprite.sevOnAfterUpdate = ScriptFuncPtr
-                CASE %TBGL_OnBeforeDraw
-                    @pSprite.sevOnBeforeDraw = ScriptFuncPtr
-                CASE %TBGL_OnAfterDraw
-                    @pSprite.sevOnAfterDraw = ScriptFuncPtr
-                CASE %TBGL_OnCollision
-                    @pSprite.sevOnCollision = ScriptFuncPtr
-                CASE %TBGL_OnBeforeAnimate
-                    @pSprite.sevOnBeforeAnimate = ScriptFuncPtr
-                CASE %TBGL_OnAfterAnimate
-                    @pSprite.sevOnAfterAnimate = ScriptFuncPtr
-                CASE %TBGL_OnDelete
-                    @pSprite.sevOnDelete = ScriptFuncPtr
-                CASE %TBGL_OnMouseOver
-                    @pSprite.sevOnMouseOver = ScriptFuncPtr
-                END SELECT
-            END IF
-          END IF
-      END IF
-    END IF
+  END SUB
+
+
+  '*****************************************************************
+  ' -- Sets callback for event %TBGL_OnBeforeUpdate ... %TBGL_OnMouseOver, 0 removes it
+  SUB tbgl_SpriteSetEvent ALIAS "tbgl_SpriteSetEvent" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL eventID AS LONG, BYVAL ScriptFuncPtr AS LONG ) EXPORT
+  '*****************************************************************
+
+    SELECT CASE AS LONG eventID
+    CASE %TBGL_OnBeforeUpdate
+        @pSprite.sevOnBeforeUpdate = ScriptFuncPtr
+    CASE %TBGL_OnAfterUpdate
+        @pSprite.sevOnAfterUpdate = ScriptFuncPtr
+    CASE %TBGL_OnBeforeDraw
+        @pSprite.sevOnBeforeDraw = ScriptFuncPtr
+    CASE %TBGL_OnAfterDraw
+        @pSprite.sevOnAfterDraw = ScriptFuncPtr
+    CASE %TBGL_OnCollision
+        @pSprite.sevOnCollision = ScriptFuncPtr
+    CASE %TBGL_OnBeforeAnimate
+        @pSprite.sevOnBeforeAnimate = ScriptFuncPtr
+    CASE %TBGL_OnAfterAnimate
+        @pSprite.sevOnAfterAnimate = ScriptFuncPtr
+    CASE %TBGL_OnDelete
+        @pSprite.sevOnDelete = ScriptFuncPtr
+    CASE %TBGL_OnMouseOver
+        @pSprite.sevOnMouseOver = ScriptFuncPtr
+    END SELECT
 
   END SUB
 
@@ -3841,19 +3171,14 @@
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteCheckMouse() AS EXT
+  FUNCTION tbgl_SpriteCheckMouse ALIAS "tbgl_SpriteCheckMouse" ( BYVAL pSpriteA AS TBGL_tSprite PTR, BYVAL ebutton AS LONG ) EXPORT AS LONG
   '*****************************************************************
-      LOCAL nParsed AS LONG
-      LOCAL pSpriteA AS TBGL_tSprite PTR
-      LOCAL sp, ex, ey, ebutton AS EXT
-      LOCAL retval AS EXT
+      LOCAL ex, ey AS SINGLE
+      LOCAL retval AS LONG
       LOCAL ibutton AS LONG
 
       LOCAL mouse AS POINTAPI
       LOCAL Win AS RECT                     ' Canvas
-      ebutton = 0
-      nParsed = thinBasic_ParseXNumbers(1,2, sp, ebutton)
-      pSpriteA = sp
       GetCursorPos mouse
       ibutton = ebutton
 
@@ -3889,19 +3214,16 @@
   END FUNCTION
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpritesCheckMouseAll() AS EXT
+  FUNCTION tbgl_SpritesCheckMouseAll ALIAS "tbgl_SpritesCheckMouseAll" ( BYVAL ebutton AS LONG ) EXPORT AS LONG
   '*****************************************************************
       LOCAL i AS LONG
-      LOCAL nParsed AS LONG
       LOCAL pSpriteA AS TBGL_tSprite PTR
-      LOCAL ex, ey, ebutton AS EXT
-      LOCAL retval AS EXT
+      LOCAL ex, ey AS SINGLE
+      LOCAL retval AS LONG
       LOCAL ibutton AS LONG
 
       LOCAL mouse AS POINTAPI
       LOCAL Win AS RECT                     ' Canvas
-      ebutton = 0
-      nParsed = thinBasic_ParseXNumbers(0,1, ebutton)
 
       GetCursorPos mouse
       ibutton = ebutton
@@ -3945,59 +3267,17 @@
   END FUNCTION
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteCollided() AS EXT
+  ' -- Tests collision of sprite with all other sprites, returns collision type of last test
+  FUNCTION tbgl_SpriteCollided ALIAS "tbgl_SpriteCollided" ( BYVAL pSpriteA AS TBGL_tSprite PTR ) EXPORT AS LONG
   '*****************************************************************
       LOCAL i AS LONG
-      LOCAL nParsed AS LONG
-      LOCAL sp,sp2 AS EXT
-      LOCAL pSpriteA AS TBGL_tSprite PTR
       LOCAL pSpriteB AS TBGL_tSprite PTR
-      LOCAL retval AS EXT
+      LOCAL retval AS LONG
 
-      nParsed = thinBasic_ParseXNumbers(1,2, sp, sp2)
-
-      pSpriteA = sp
       retval = 0
-
-
 
       IF @pSpriteA.isActive <> %FALSE THEN
           youSprite = 0
-          IF nParsed = 2 THEN
-            pSpriteB = sp2
-            IF @pSpriteA.iColWith(@pSpriteB.iColGroup)=%False THEN EXIT FUNCTION
-
-            IF @pSpriteB.isActive = %FALSE THEN
-                retval = 0
-            ELSE
-                IF @pSpriteA.iColType = %sctRect THEN
-
-                  IF @pSpriteB.iColType = %sctRect THEN
-                    retval = internal_SpriteCollided_Box2Box(pSpriteA, pSpriteB)
-                  ELSEIF @pSpriteB.iColType = %sctCircle THEN
-                    retval = internal_SpriteCollided_Box2Circle(pSpriteA, pSpriteB)
-                  ELSEIF @pSpriteB.iColType = %sctBoundBox THEN
-                    retval = internal_SpriteCollided_Bound2Bound(pSpriteA, pSpriteB)
-                  END IF
-
-                ELSEIF @pSpriteA.iColType = %sctCircle THEN
-
-                  IF @pSpriteB.iColType = %sctCircle THEN
-                    retval = internal_SpriteCollided_Circle2Circle(pSpriteA, pSpriteB)
-                  ELSEIF @pSpriteB.iColType = %sctRect THEN
-                    retval = internal_SpriteCollided_Circle2Box(pSpriteA, pSpriteB)
-                  ELSEIF @pSpriteB.iColType = %sctBoundBox THEN
-                    retval = internal_SpriteCollided_Bound2Bound(pSpriteA, pSpriteB)
-                  END IF
-
-                ELSEIF @pSpriteA.iColType = %sctBoundBox THEN
-
-                  retval = internal_SpriteCollided_Bound2Bound(pSpriteA, pSpriteB)
-
-                END IF
-
-            END IF
-          ELSE
             FOR i = 1 TO maxsprites
                 IF sprites(i)  AND sprites(i) <> pSpriteA THEN
                     pSpriteB = sprites(i)
@@ -4032,8 +3312,54 @@
                 END IF
                 IF retval AND @pSpriteA.iColMode THEN EXIT FOR
             NEXT
+      END IF
+      internal_DeleteSprites()
+      FUNCTION = retval
+  END FUNCTION
 
-          END IF
+
+  '*****************************************************************
+  ' -- Tests collision of two sprites, returns collision type (0 = none)
+  FUNCTION tbgl_SpriteCollidedWith ALIAS "tbgl_SpriteCollidedWith" ( BYVAL pSpriteA AS TBGL_tSprite PTR, BYVAL pSpriteB AS TBGL_tSprite PTR ) EXPORT AS LONG
+  '*****************************************************************
+      LOCAL retval AS LONG
+
+      retval = 0
+
+      IF @pSpriteA.isActive <> %FALSE THEN
+          youSprite = 0
+            IF @pSpriteA.iColWith(@pSpriteB.iColGroup)=%False THEN EXIT FUNCTION
+
+            IF @pSpriteB.isActive = %FALSE THEN
+                retval = 0
+            ELSE
+                IF @pSpriteA.iColType = %sctRect THEN
+
+                  IF @pSpriteB.iColType = %sctRect THEN
+                    retval = internal_SpriteCollided_Box2Box(pSpriteA, pSpriteB)
+                  ELSEIF @pSpriteB.iColType = %sctCircle THEN
+                    retval = internal_SpriteCollided_Box2Circle(pSpriteA, pSpriteB)
+                  ELSEIF @pSpriteB.iColType = %sctBoundBox THEN
+                    retval = internal_SpriteCollided_Bound2Bound(pSpriteA, pSpriteB)
+                  END IF
+
+                ELSEIF @pSpriteA.iColType = %sctCircle THEN
+
+                  IF @pSpriteB.iColType = %sctCircle THEN
+                    retval = internal_SpriteCollided_Circle2Circle(pSpriteA, pSpriteB)
+                  ELSEIF @pSpriteB.iColType = %sctRect THEN
+                    retval = internal_SpriteCollided_Circle2Box(pSpriteA, pSpriteB)
+                  ELSEIF @pSpriteB.iColType = %sctBoundBox THEN
+                    retval = internal_SpriteCollided_Bound2Bound(pSpriteA, pSpriteB)
+                  END IF
+
+                ELSEIF @pSpriteA.iColType = %sctBoundBox THEN
+
+                  retval = internal_SpriteCollided_Bound2Bound(pSpriteA, pSpriteB)
+
+                END IF
+
+            END IF
       END IF
       internal_DeleteSprites()
       FUNCTION = retval
@@ -4042,56 +3368,29 @@
 
 
   '*****************************************************************
-  SUB Exec_TBGL_SpriteSetUserData()
+  ' -- Stores copy of dataSize bytes from pData as sprite user data
+  SUB tbgl_SpriteSetUserData ALIAS "tbgl_SpriteSetUserData" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL pData AS DWORD, BYVAL dataSize AS LONG ) EXPORT
   '*****************************************************************
 
-    LOCAL sp AS EXT
-    LOCAL VariablePtr   AS LONG
-    LOCAL MainType      AS LONG
-    LOCAL SubType       AS LONG
-    LOCAL ElementsAreFixed AS LONG
-    LOCAL TotElements   AS LONG
-    LOCAL ElementSize   AS LONG
-    LOCAL DataPtr       AS LONG
-    LOCAL AbsPos        AS LONG
-
-    LOCAL sBuffer AS STRING
-    LOCAL pSprite AS TBGL_tSprite PTR
-
-    IF thinBasic_CheckOpenParens THEN
-      thinBasic_ParseNumber sp
-      pSprite = sp
-      IF thinBasic_CheckComma_Mandatory THEN
-
-        thinBasic_ParseVariableInfo( VariablePtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, DataPtr, AbsPos )
-        IF thinBasic_CheckCloseParens_Mandatory THEN
-
-          ' -- We mark STRINGs differentely for STRPTR/VARPTR purposes
-          IF ElementsAreFixed = %FALSE AND MainType = %VarMainType_IsString THEN
-            LOCAL p AS STRING PTR
-            p = DataPtr
-            sBuffer = LEFT$(@p, LEN(@p))
-          ELSE
-            ' -- 1234 is magic number which helps to differentiate STRING for numbers and ASCIIZ
-            sBuffer = PEEK$( DataPtr, ElementSize )+MKL$(1234)
-          END IF
-          SpriteUserdata(@pSprite.UserPointer) = sBuffer
-
-        END IF
-      END IF
-    END IF
+    ' -- 1234 is magic number which helps to differentiate STRING for numbers and ASCIIZ
+    SpriteUserdata(@pSprite.UserPointer) = PEEK$( pData, dataSize )+MKL$(1234)
 
   END SUB
 
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetUserDataPointer() AS EXT
+  ' -- Stores copy of string as sprite user data, it is marked differently for STRPTR/VARPTR purposes
+  SUB tbgl_SpriteSetUserDataString ALIAS "tbgl_SpriteSetUserDataString" ( BYVAL pSprite AS TBGL_tSprite PTR, BYVAL sData AS STRING ) EXPORT
   '*****************************************************************
 
-      LOCAL sp AS EXT
-      LOCAL pSprite AS TBGL_tSprite PTR
-      sp = thinBasic_Parse1Number
-      pSprite = sp
+    SpriteUserdata(@pSprite.UserPointer) = sData
+
+  END SUB
+
+
+  '*****************************************************************
+  FUNCTION tbgl_SpriteGetUserDataPointer ALIAS "tbgl_SpriteGetUserDataPointer" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS DWORD
+  '*****************************************************************
 
 
       IF RIGHT$(SpriteUserdata(@pSprite.userpointer), 4) = MKL$(1234) THEN
@@ -4103,24 +3402,15 @@
   END FUNCTION
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteGetUserDataID() AS EXT
+  FUNCTION tbgl_SpriteGetUserDataID ALIAS "tbgl_SpriteGetUserDataID" ( BYVAL pSprite AS TBGL_tSprite PTR ) EXPORT AS LONG
   '*****************************************************************
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number()
-    pSprite = sp
     FUNCTION = @pSprite.userpointer
   END FUNCTION
 
   '*****************************************************************
-  FUNCTION Exec_TBGL_SpriteExists() AS EXT
+  FUNCTION tbgl_SpriteExists ALIAS "tbgl_SpriteExists" ( BYVAL sp AS DWORD ) EXPORT AS LONG
   '*****************************************************************
     REGISTER i AS LONG
-    LOCAL pSprite AS TBGL_tSprite PTR
-    LOCAL sp AS EXT
-
-    sp = thinBasic_Parse1Number()
 
     IF sp < lbound(sprites) or sp > ubound(sprites) THEN
       FUNCTION = %FALSE
@@ -4132,3 +3422,934 @@
     FUNCTION = IIF(i > 0, %TRUE, %FALSE)
 
   END FUNCTION
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+  FUNCTION Exec_TBGL_SpriteGetSpeedAngle() AS EXT
+    FUNCTION = tbgl_SpriteGetSpeedAngle( thinBasic_Parse1Number )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteGetSpeed() AS EXT
+    FUNCTION = tbgl_SpriteGetSpeed( thinBasic_Parse1Number )
+  END FUNCTION
+
+  ' -- ( textureFile [, transparentColor] )
+  FUNCTION Exec_TBGL_SpriteLoad() AS EXT
+    LOCAL eRGB AS EXT
+    LOCAL lRGB AS LONG
+    LOCAL texname AS STRING
+
+    IF thinBasic_CheckOpenParens_Mandatory THEN
+        thinBasic_ParseString TexName
+        IF thinBasic_CheckCloseParens_Optional THEN
+            lRGB = - 1
+        ELSE
+            IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+                thinBasic_ParseNumber eRGB
+                lRGB = eRGB
+            END IF
+            thinBasic_CheckCloseParens_Mandatory
+        END IF
+    END IF
+
+    FUNCTION = tbgl_SpriteLoad( texname, lRGB )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteCreate() AS EXT
+    FUNCTION = tbgl_SpriteCreate( thinBasic_Parse1Number )
+  END FUNCTION
+
+  ' -- ( texture, frameWidth, frameHeight )
+  FUNCTION Exec_TBGL_SpriteCreateAnim() AS EXT
+    LOCAL etex, ecw, ech AS EXT
+
+    thinBasic_Parse3Numbers(etex, ecw, ech)
+    FUNCTION = tbgl_SpriteCreateAnim( etex, ecw, ech )
+  END FUNCTION
+
+  ' -- ( textureFile, frameWidth, frameHeight [, transparentColor] )
+  FUNCTION Exec_TBGL_SpriteLoadAnim() AS EXT
+    LOCAL nParsed AS LONG
+    LOCAL eRGB, ech, ecw AS EXT
+    LOCAL texname AS STRING
+
+    nParsed = thinBASIC_Parse1StringXNumbers( 2, 3, TexName, ecw, ech, eRGB )
+    IF nParsed <> 3 THEN eRGB = - 1
+    FUNCTION = tbgl_SpriteLoadAnim( texname, ecw, ech, eRGB )
+  END FUNCTION
+
+  ' -- ( textureFile, frameWidth, frameHeight, spriteIDs() [, transparentColor] )
+  FUNCTION Exec_TBGL_SpriteLoadSheet() AS EXT
+    LOCAL texname AS STRING
+    LOCAL eRGB, ech, ecw AS EXT
+    LOCAL lRGB AS LONG
+    LOCAL i AS LONG
+    LOCAL spcount AS LONG
+    LOCAL pVar AS LONG
+
+    spcount = 0
+    IF thinBasic_CheckOpenParens_Mandatory THEN
+        thinBasic_ParseString TexName
+        IF thinBasic_CheckComma_Mandatory THEN
+            thinBAsic_ParseNumber ecw
+            IF thinBasic_CheckComma_Mandatory THEN
+                thinBAsic_ParseNumber ech
+                IF thinBasic_CheckComma_Mandatory THEN
+                    thinBasic_VariableParsePtr(pVar)
+                    IF thinBasic_CheckOpenParens_Optional THEN thinBasic_CheckCloseParens_Mandatory
+                    IF thinBasic_CheckComma_Optional THEN
+                        thinBAsic_ParseNumber eRGB
+                        lRGB = eRGB
+                     ELSE
+                        lRGB = -1
+                    END IF
+                    IF thinBasic_CheckCloseParens_Mandatory AND thinBasic_ErrorFree THEN
+
+                        spcount = tbgl_SpriteLoadSheet( texname, ecw, ech, lRGB, 0, 0 )
+
+                        thinBasic_VariableRedim(pVar, %FALSE, spCount, 0, 0)
+                        FOR i = 1 TO spCount
+                            thinBasic_ChangeVariableNumberDirect (pVar, i, asprite(i))
+                        NEXT
+                    END IF
+                END IF
+            END IF
+        END IF
+    END IF
+    FUNCTION = spcount
+  END FUNCTION
+
+  ' -- ( texture, frameWidth, frameHeight, spriteIDs() [, transparentColor] )
+  FUNCTION Exec_TBGL_SpriteCreateSheet() AS EXT
+    LOCAL etex AS EXT
+    LOCAL eRGB, ech, ecw AS EXT
+    LOCAL lRGB AS LONG
+    LOCAL i AS LONG
+    LOCAL spcount AS LONG
+    LOCAL pVar AS LONG
+
+    spcount = 0
+    IF thinBasic_CheckOpenParens_Mandatory THEN
+        thinBasic_ParseNumber etex
+        IF thinBasic_CheckComma_Mandatory THEN
+            thinBAsic_ParseNumber ecw
+            IF thinBasic_CheckComma_Mandatory THEN
+                thinBAsic_ParseNumber ech
+                IF thinBasic_CheckComma_Mandatory THEN
+                    thinBasic_VariableParsePtr(pVar)
+                    IF thinBasic_CheckOpenParens_Optional THEN thinBasic_CheckCloseParens_Mandatory
+                    IF thinBasic_CheckComma_Optional THEN
+                        thinBAsic_ParseNumber eRGB
+                        lRGB = eRGB
+                     ELSE
+                        lRGB = -1
+                    END IF
+                    IF thinBasic_CheckCloseParens_Mandatory AND thinBasic_ErrorFree THEN
+
+                        spcount = tbgl_SpriteCreateSheet( etex, ecw, ech, 0, 0 )
+
+                        thinBasic_VariableRedim(pVar, %FALSE, spCount, 0, 0)
+                        FOR i = 1 TO spCount
+                            thinBasic_ChangeVariableNumberDirect (pVar, i, asprite(i))
+                        NEXT
+                    END IF
+                END IF
+            END IF
+        END IF
+    END IF
+    FUNCTION = spcount
+  END FUNCTION
+
+  ' -- ( [group] )
+  FUNCTION Exec_TBGL_SpritesCount() AS EXT
+    LOCAL egroup AS EXT
+
+    IF thinBasic_ParseXNumbers(0,1, egroup) = 0 THEN
+        FUNCTION = tbgl_SpritesCount()
+    ELSE
+        FUNCTION = tbgl_SpritesCountGroup( egroup )
+    END IF
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteCopy() AS EXT
+    FUNCTION = tbgl_SpriteCopy( thinBasic_Parse1Number )
+  END FUNCTION
+
+  SUB Exec_TBGL_SpriteDelete()
+    tbgl_SpriteDelete( thinBasic_Parse1Number )
+  END SUB
+
+  ' -- ( [group] )
+  SUB Exec_TBGL_SpritesDeleteAll()
+    LOCAL egroup AS EXT
+
+    IF thinBasic_ParseXNumbers(0,1, egroup) = 0 THEN
+        tbgl_SpritesDeleteAll()
+    ELSE
+        tbgl_SpritesDeleteGroup( egroup )
+    END IF
+  END SUB
+
+  SUB Exec_TBGL_SpriteAddSpin()
+    LOCAL sp, spinSpeed AS EXT
+
+    thinBasic_Parse2Numbers(sp, spinSpeed)
+    tbgl_SpriteAddSpin( sp, spinSpeed )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetShadow()
+    LOCAL sp, eAlpha, eXOff, eYOff, eSize AS EXT
+    eXOff = 32.0
+    eYOff = 32.0
+    eSize = 0.8
+
+    thinBasic_ParseXNumbers(2,5, sp, eAlpha, eXOff, eYOff, eSize)
+    tbgl_SpriteSetShadow( sp, eAlpha, eXOff, eYOff, eSize )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetAlpha()
+    LOCAL sp, eAlpha AS EXT
+
+    thinBasic_Parse2Numbers(sp, eAlpha)
+    tbgl_SpriteSetAlpha( sp, eAlpha )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetColor()
+    LOCAL sp, eRed, eGreen, eBlue AS EXT
+
+    thinBasic_Parse4Numbers(sp, eRed, eGreen, eBlue)
+    internal_SpriteSetColorF( sp, eRed / 255.0, eGreen / 255.0, eBlue / 255.0 )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetSpin()
+    LOCAL sp, spinSpeed AS EXT
+
+    thinBasic_Parse2Numbers(sp, spinSpeed)
+    tbgl_SpriteSetSpin( sp, spinSpeed )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetAngle()
+    LOCAL sp, eangle, erelative AS EXT
+
+    thinBasic_ParseXNumbers(2,3, sp, eangle, erelative)
+    tbgl_SpriteSetAngle( sp, eangle, ISTRUE erelative )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetTexCoord()
+    LOCAL sp, eframe, ex1, ey1, ex2, ey2 AS EXT
+
+    thinBasic_Parse6Numbers(sp, eframe, ex1, ey1, ex2, ey2)
+    tbgl_SpriteSetTexCoord( sp, eframe, ex1, ey1, ex2, ey2 )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetBaseSize()
+    LOCAL sp, ewidth, eheight AS EXT
+
+    thinBasic_Parse3Numbers(sp, ewidth, eheight)
+    tbgl_SpriteSetBaseSize( sp, ewidth, eheight )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetTexFrame()
+    LOCAL sp, eframe AS EXT
+
+    thinBasic_Parse2Numbers(sp, eframe)
+    tbgl_SpriteSetTexFrame( sp, eframe )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetTexture()
+    LOCAL sp, etex AS EXT
+
+    thinBasic_Parse2Numbers(sp, etex)
+    tbgl_SpriteSetTexture( sp, etex )
+  END SUB
+
+  FUNCTION Exec_TBGL_SpriteGetTexture() AS EXT
+    FUNCTION = tbgl_SpriteGetTexture( thinBasic_Parse1Number )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteGetTexFrame() AS EXT
+    FUNCTION = tbgl_SpriteGetTexFrame( thinBasic_Parse1Number )
+  END FUNCTION
+
+  ' -- ( sprite [, speed] )
+  SUB Exec_TBGL_SpriteUpdate()
+    LOCAL sp, eSpeed AS EXT
+
+    eSpeed = 1.0
+    thinBasic_ParseXNumbers(1,2, sp, eSpeed)
+    tbgl_SpriteUpdate( sp, eSpeed )
+  END SUB
+
+  ' -- ( [speed] )
+  SUB Exec_TBGL_SpritesAnimateAll()
+    LOCAL eSpeed AS EXT
+
+    eSpeed = 1.0
+    thinBasic_ParseXNumbers(0,1, eSpeed)
+    tbgl_SpritesAnimateAll( eSpeed )
+  END SUB
+
+  ' -- ( [speed] )
+  SUB Exec_TBGL_SpritesUpdateAll()
+    LOCAL eSpeed AS EXT
+
+    eSpeed = 1.0
+    thinBasic_ParseXNumbers(0,1, eSpeed)
+    tbgl_SpritesUpdateAll( eSpeed )
+  END SUB
+
+  ' -- ( index [, group] )
+  FUNCTION Exec_TBGL_SpriteGetID() AS EXT
+    LOCAL eIndex , eGroup AS EXT
+
+    IF thinBasic_ParseXNumbers(1,2, eindex, egroup) = 2 THEN
+        FUNCTION = tbgl_SpriteGetIDInGroup( eIndex, eGroup )
+    ELSE
+        FUNCTION = tbgl_SpriteGetID( eIndex )
+    END IF
+  END FUNCTION
+
+  ' -- ( [group] )
+  SUB Exec_TBGL_SpritesDrawAll()
+    LOCAL egroup AS EXT
+
+    IF thinBasic_ParseXNumbers(0,1, egroup) = 0 THEN
+        tbgl_SpritesDrawAll()
+    ELSE
+        tbgl_SpritesDrawGroup( egroup )
+    END IF
+  END SUB
+
+  SUB Exec_TBGL_SpriteSlide()
+    LOCAL sp, ex, ey AS EXT
+
+    thinBasic_Parse3Numbers(sp, ex, ey)
+    tbgl_SpriteSlide( sp, ex, ey )
+  END SUB
+
+  SUB Exec_TBGL_SpriteAddSpeedXY()
+    LOCAL sp, ex, ey, eflag AS EXT
+
+    thinBasic_ParseXNumbers(3,4, sp, ex, ey, eFlag)
+    tbgl_SpriteAddSpeedXY( sp, ex, ey, ISTRUE eflag )
+  END SUB
+
+  ' -- ( sprite, speed [, angle] ), angle defaults to sprite angle
+  SUB Exec_TBGL_SpriteAddSpeed()
+    LOCAL sp, eSpeed, eAngle AS EXT
+
+    IF thinBasic_ParseXNumbers(2,3, sp, eSpeed, eAngle) = 2 THEN eAngle = tbgl_SpriteGetAngle( sp )
+    tbgl_SpriteAddSpeed( sp, eSpeed, eAngle )
+  END SUB
+
+  ' -- ( sprite, speed [, angle] ), angle defaults to sprite angle
+  SUB Exec_TBGL_SpriteSetSpeed()
+    LOCAL sp, eSpeed, eAngle AS EXT
+
+    IF thinBasic_ParseXNumbers(2,3, sp, eSpeed, eAngle) = 2 THEN eAngle = tbgl_SpriteGetAngle( sp )
+    tbgl_SpriteSetSpeed( sp, eSpeed, eAngle )
+  END SUB
+
+  ' -- ( sprite, targetSprite [, relative] ), relative = %TRUE returns angle relative to sprite angle
+  FUNCTION Exec_TBGL_SpriteGetTargetAngle() AS EXT
+    LOCAL sp, spTarget, eflag AS EXT
+
+    thinBasic_ParseXNumbers(2,3, sp, spTarget, eflag)
+    FUNCTION = tbgl_SpriteGetTargetAngle( sp, spTarget, IIF&(eflag = %TRUE, %TRUE, %FALSE) )
+  END FUNCTION
+
+  ' -- ( sprite, x, y [, relative] ), relative = %TRUE returns angle relative to sprite angle
+  FUNCTION Exec_TBGL_SpriteGetVectorAngle() AS EXT
+    LOCAL sp, xpos, ypos, eflag AS EXT
+
+    thinBasic_ParseXNumbers(3,4, sp, xpos, ypos, eflag)
+    FUNCTION = tbgl_SpriteGetVectorAngle( sp, xpos, ypos, IIF&(eflag = %TRUE, %TRUE, %FALSE) )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteGetTargetDist() AS EXT
+    LOCAL sp, spTarget AS EXT
+
+    thinBasic_Parse2Numbers(sp, spTarget)
+    FUNCTION = tbgl_SpriteGetTargetDist( sp, spTarget )
+  END FUNCTION
+
+  ' -- ( sprite, x [, y] )
+  FUNCTION Exec_TBGL_SpriteGetVectorDist() AS EXT
+    LOCAL sp, xpos, ypos AS EXT
+
+    thinBasic_ParseXNumbers(2,3, sp, xpos, ypos)
+    FUNCTION = tbgl_SpriteGetVectorDist( sp, xpos, ypos )
+  END FUNCTION
+
+  ' -- ( sprite [, angle] ), angle defaults to sprite angle
+  SUB Exec_TBGL_SpriteSetSpeedAngle()
+    LOCAL sp, eAngle AS EXT
+
+    IF thinBasic_ParseXNumbers(1,2, sp, eAngle) = 1 THEN eAngle = tbgl_SpriteGetAngle( sp )
+    tbgl_SpriteSetSpeedAngle( sp, eAngle )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetSpeedXY()
+    LOCAL sp, ex, ey, eflag AS EXT
+
+    thinBasic_ParseXNumbers(3,4, sp, ex, ey, eflag)
+    tbgl_SpriteSetSpeedXY( sp, ex, ey, ISTRUE eflag )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetPos()
+    LOCAL sp, ex, ey, erelative AS EXT
+
+    thinBasic_ParseXNumbers(3,4, sp, ex, ey, erelative)
+    tbgl_SpriteSetPos( sp, ex, ey, ISTRUE erelative )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetTag()
+    LOCAL sp, eTag AS EXT
+
+    thinBasic_Parse2Numbers(sp, eTag)
+    tbgl_SpriteSetTag( sp, eTag )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetGroup()
+    LOCAL sp, egroup AS EXT
+
+    thinBasic_Parse2Numbers(sp, egroup)
+    tbgl_SpriteSetGroup( sp, egroup )
+  END SUB
+
+  FUNCTION Exec_TBGL_SpriteGetTag() AS EXT
+    FUNCTION = tbgl_SpriteGetTag( thinBasic_Parse1Number )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteGetGroup() AS EXT
+    FUNCTION = tbgl_SpriteGetGroup( thinBasic_Parse1Number )
+  END FUNCTION
+
+  SUB Exec_TBGL_SpriteSetParent()
+    LOCAL sp, eparent AS EXT
+
+    thinBasic_Parse2Numbers(sp, eparent)
+    tbgl_SpriteSetParent( sp, eparent )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetParentMode()
+    LOCAL sp, emode AS EXT
+
+    thinBasic_Parse2Numbers(sp, emode)
+    tbgl_SpriteSetParentMode( sp, emode )
+  END SUB
+
+  FUNCTION Exec_TBGL_SpriteGetParent() AS EXT
+    FUNCTION = tbgl_SpriteGetParent( thinBasic_Parse1Number )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteGetChildCount() AS EXT
+    FUNCTION = tbgl_SpriteGetChildCount( thinBasic_Parse1Number )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteGetChildID() AS EXT
+    LOCAL sp, eindex AS EXT
+
+    thinBasic_Parse2Numbers(sp, eindex)
+    FUNCTION = tbgl_SpriteGetChildID( sp, eindex )
+  END FUNCTION
+
+  SUB Exec_TBGL_SpriteSetScale()
+    LOCAL sp, eScale, erelative AS EXT
+
+    thinBasic_ParseXNumbers(2,3, sp, eScale, erelative)
+    tbgl_SpriteSetScale( sp, eScale, ISTRUE erelative )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetHFlip()
+    LOCAL sp, eFlag AS EXT
+
+    thinBasic_Parse2Numbers(sp, eFlag)
+    tbgl_SpriteSetHFlip( sp, eFlag )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetVFlip()
+    LOCAL sp, eFlag AS EXT
+
+    thinBasic_Parse2Numbers(sp, eFlag)
+    tbgl_SpriteSetVFlip( sp, eFlag )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetLayer()
+    LOCAL sp, elayer AS EXT
+
+    thinBasic_Parse2Numbers(sp, elayer)
+    tbgl_SpriteSetLayer( sp, elayer )
+  END SUB
+
+  FUNCTION Exec_TBGL_SpriteGetLayer() AS EXT
+    FUNCTION = tbgl_SpriteGetLayer( thinBasic_Parse1Number )
+  END FUNCTION
+
+  SUB Exec_TBGL_SpriteAnimate()
+    LOCAL sp, eSpeed AS EXT
+
+    thinBasic_Parse2Numbers(sp, eSpeed)
+    tbgl_SpriteAnimate( sp, eSpeed )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetAnim()
+    LOCAL sp, eStart, eEnd, eGroup AS EXT
+    eGroup = 1
+
+    thinBasic_ParseXNumbers(3,4, sp, eStart, eEnd, eGroup)
+    tbgl_SpriteSetAnim( sp, eStart, eEnd, eGroup )
+  END SUB
+
+  FUNCTION Exec_TBGL_SpriteGetScale() AS EXT
+    FUNCTION = tbgl_SpriteGetScale( thinBasic_Parse1Number )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteGetSpin() AS EXT
+    FUNCTION = tbgl_SpriteGetSpin( thinBasic_Parse1Number )
+  END FUNCTION
+
+  SUB Exec_TBGL_SpriteSetAnimtime()
+    LOCAL sp, etime, egroup AS EXT
+    egroup = 1
+
+    thinBasic_ParseXNumbers(2,3, sp, etime, egroup)
+    tbgl_SpriteSetAnimtime( sp, etime, egroup )
+  END SUB
+
+  ' -- ( sprite [, group] )
+  FUNCTION Exec_TBGL_SpriteGetAnimtime() AS EXT
+    LOCAL sp, egroup AS EXT
+
+    egroup = 1
+    thinBasic_ParseXNumbers(1,2, sp, egroup)
+    FUNCTION = tbgl_SpriteGetAnimtime( sp, egroup )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteGetAnimGroup() AS EXT
+    FUNCTION = tbgl_SpriteGetAnimGroup( thinBasic_Parse1Number )
+  END FUNCTION
+
+  ' -- ( sprite [, group] )
+  FUNCTION Exec_TBGL_SpriteGetAnimLength() AS EXT
+    LOCAL sp, egroup AS EXT
+
+    egroup = 1
+    thinBasic_ParseXNumbers(1,2, sp, egroup)
+    FUNCTION = tbgl_SpriteGetAnimLength( sp, egroup )
+  END FUNCTION
+
+  SUB Exec_TBGL_SpriteSetAnimSpeed()
+    LOCAL sp, espeed, egroup AS EXT
+    egroup = 1
+
+    thinBasic_ParseXNumbers(2,3, sp, espeed, egroup)
+    tbgl_SpriteSetAnimSpeed( sp, espeed, egroup )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetAnimGroup()
+    LOCAL sp, egroup AS EXT
+
+    thinBasic_Parse2Numbers(sp, egroup)
+    tbgl_SpriteSetAnimGroup( sp, egroup )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetAnimType()
+    LOCAL sp, eType, eGroup AS EXT
+    eGroup = 1
+
+    thinBasic_ParseXNumbers(2,3, sp, eType, eGroup)
+    tbgl_SpriteSetAnimType( sp, eType, eGroup )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetCollisionType()
+    LOCAL sp, ect AS EXT
+
+    thinBasic_Parse2Numbers(sp, ect)
+    tbgl_SpriteSetCollisionType( sp, ect )
+  END SUB
+
+  FUNCTION Exec_TBGL_SpriteGetCollisionWith() AS EXT
+    LOCAL sp, ew AS EXT
+
+    thinBasic_Parse2Numbers(sp,ew)
+    FUNCTION = tbgl_SpriteGetCollisionWith( sp, ew )
+  END FUNCTION
+
+  SUB Exec_TBGL_SpriteSetCollisionWith()
+    LOCAL sp, ew, eflag AS EXT
+
+    thinBasic_Parse3Numbers(sp, ew, eflag)
+    tbgl_SpriteSetCollisionWith( sp, ew, eflag )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetCollisionMode()
+    LOCAL sp, emode AS EXT
+
+    thinBasic_Parse2Numbers(sp, emode)
+    tbgl_SpriteSetCollisionMode( sp, emode )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetCollisionGroup()
+    LOCAL sp, ecg AS EXT
+
+    thinBasic_Parse2Numbers(sp, ecg)
+    tbgl_SpriteSetCollisionGroup( sp, ecg )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetCollisionRadius()
+    LOCAL sp, ecr AS EXT
+
+    thinBasic_Parse2Numbers(sp, ecr)
+    tbgl_SpriteSetCollisionRadius( sp, ecr )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetCollisionWidth()
+    LOCAL sp, ew AS EXT
+
+    thinBasic_Parse2Numbers(sp, ew)
+    tbgl_SpriteSetCollisionWidth( sp, ew )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetCollisionHeight()
+    LOCAL sp, eh AS EXT
+
+    thinBasic_Parse2Numbers(sp, eh)
+    tbgl_SpriteSetCollisionHeight( sp, eh )
+  END SUB
+
+  FUNCTION Exec_TBGL_SpriteGetCollisionType() AS EXT
+    FUNCTION = tbgl_SpriteGetCollisionType( thinBasic_Parse1Number )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteGetCollisionMode() AS EXT
+    FUNCTION = tbgl_SpriteGetCollisionMode( thinBasic_Parse1Number )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteGetCollisionRadius() AS EXT
+    FUNCTION = tbgl_SpriteGetCollisionRadius( thinBasic_Parse1Number )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteGetCollisionWidth() AS EXT
+    FUNCTION = tbgl_SpriteGetCollisionWidth( thinBasic_Parse1Number )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteGetCollisionHeight() AS EXT
+    FUNCTION = tbgl_SpriteGetCollisionHeight( thinBasic_Parse1Number )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteGetCollisionGroup() AS EXT
+    FUNCTION = tbgl_SpriteGetCollisionGroup( thinBasic_Parse1Number )
+  END FUNCTION
+
+  SUB Exec_TBGL_SpriteSetActive()
+    LOCAL sp, ea AS EXT
+
+    thinBasic_Parse2Numbers(sp, ea)
+    tbgl_SpriteSetActive( sp, ea )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetVisible()
+    LOCAL sp, ev AS EXT
+
+    thinBasic_Parse2Numbers(sp, ev)
+    tbgl_SpriteSetVisible( sp, ev )
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetFriction()
+    LOCAL sp, eFriction AS EXT
+
+    thinBasic_Parse2Numbers(sp, eFriction)
+    tbgl_SpriteSetFriction( sp, eFriction )
+  END SUB
+
+  FUNCTION Exec_TBGL_SpriteGetActive() AS EXT
+    FUNCTION = tbgl_SpriteGetActive( thinBasic_Parse1Number )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteGetVisible() AS EXT
+    FUNCTION = tbgl_SpriteGetVisible( thinBasic_Parse1Number )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteGetAngle() AS EXT
+    FUNCTION = tbgl_SpriteGetAngle( thinBasic_Parse1Number )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteGetAlpha() AS EXT
+    FUNCTION = tbgl_SpriteGetAlpha( thinBasic_Parse1Number )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteGetFriction() AS EXT
+    FUNCTION = tbgl_SpriteGetFriction( thinBasic_Parse1Number )
+  END FUNCTION
+
+  ' -- ( sprite, wVariable, hVariable )
+  SUB Exec_TBGL_SpriteGetBaseSize()
+    LOCAL sp AS EXT
+    LOCAL w, h AS LONG
+    LOCAL lVariablePtr1, lVariableAbsPos1 AS LONG
+    LOCAL lVariablePtr2, lVariableAbsPos2 AS LONG
+
+    IF thinBasic_CheckOpenParens_Mandatory THEN
+      thinBasic_ParseNumber sp
+      IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+        thinBasic_VariableParse(lVariablePtr1, lVariableAbsPos1)
+        IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+          thinBasic_VariableParse(lVariablePtr2, lVariableAbsPos2)
+          IF thinBasic_CheckCloseParens_Mandatory THEN
+            tbgl_SpriteGetBaseSize( sp, w, h )
+            thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, w)
+            thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, h)
+          END IF
+        END IF
+      END IF
+    END IF
+  END SUB
+
+  ' -- ( sprite, distance, angle, xVariable, yVariable )
+  SUB Exec_TBGL_SpriteGetVector()
+    LOCAL sp, espeed, eangle AS EXT
+    LOCAL x, y AS SINGLE
+
+    LOCAL lVariablePtr1     AS LONG
+    LOCAL lVariableAbsPos1  AS LONG
+
+    LOCAL lVariablePtr2     AS LONG
+    LOCAL lVariableAbsPos2  AS LONG
+
+    IF thinBasic_CheckOpenParens_Mandatory THEN
+      thinBasic_ParseNumber sp
+      IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+          thinBasic_ParseNumber espeed
+          IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+              thinBasic_ParseNumber eangle
+              IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+                thinBasic_VariableParse(lVariablePtr1, lVariableAbsPos1)
+                IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+                    thinBasic_VariableParse(lVariablePtr2, lVariableAbsPos2)
+                    IF thinBasic_CheckCloseParens_Mandatory THEN
+                        tbgl_SpriteGetVector( sp, espeed, eangle, x, y )
+
+                        thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, x)
+                        thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, y)
+                    END IF
+                END IF
+              END IF
+          END IF
+      END IF
+    END IF
+  END SUB
+
+  ' -- ( sprite, xVariable, yVariable )
+  SUB Exec_TBGL_SpriteGetOldPos()
+    LOCAL sp AS EXT
+    LOCAL x, y AS SINGLE
+    LOCAL lVariablePtr1, lVariableAbsPos1 AS LONG
+    LOCAL lVariablePtr2, lVariableAbsPos2 AS LONG
+
+    IF thinBasic_CheckOpenParens_Mandatory THEN
+      thinBasic_ParseNumber sp
+      IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+        thinBasic_VariableParse(lVariablePtr1, lVariableAbsPos1)
+        IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+          thinBasic_VariableParse(lVariablePtr2, lVariableAbsPos2)
+          IF thinBasic_CheckCloseParens_Mandatory THEN
+            tbgl_SpriteGetOldPos( sp, x, y )
+            thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, x)
+            thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, y)
+          END IF
+        END IF
+      END IF
+    END IF
+  END SUB
+
+  ' -- ( sprite, xVariable, yVariable, zVariable (last one optional) )
+  SUB Exec_TBGL_SpriteGetPos()
+    LOCAL sp AS EXT
+    LOCAL x, y, z AS SINGLE
+    LOCAL lVariablePtr1, lVariableAbsPos1 AS LONG
+    LOCAL lVariablePtr2, lVariableAbsPos2 AS LONG
+    LOCAL lVariablePtr3, lVariableAbsPos3 AS LONG
+
+    IF thinBasic_CheckOpenParens_Mandatory THEN
+      thinBasic_ParseNumber sp
+      IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+        thinBasic_VariableParse(lVariablePtr1, lVariableAbsPos1)
+        IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+          thinBasic_VariableParse(lVariablePtr2, lVariableAbsPos2)
+          IF thinBasic_CheckCloseParens_Optional THEN
+            tbgl_SpriteGetPos( sp, x, y, z )
+            thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, x)
+            thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, y)
+          ELSE
+            IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+              thinBasic_VariableParse(lVariablePtr3, lVariableAbsPos3)
+              tbgl_SpriteGetPos( sp, x, y, z )
+              thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, x)
+              thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, y)
+              thinBasic_ChangeVariableNumberDirect (lVariablePtr3, lVariableAbsPos3, z)
+            END IF
+            thinBasic_CheckCloseParens_Mandatory
+          END IF
+        END IF
+      END IF
+    END IF
+  END SUB
+
+  ' -- ( sprite, xVariable, yVariable, spinVariable (last one optional) )
+  SUB Exec_TBGL_SpriteGetSpeedXY()
+    LOCAL sp AS EXT
+    LOCAL x, y, spin AS SINGLE
+    LOCAL lVariablePtr1, lVariableAbsPos1 AS LONG
+    LOCAL lVariablePtr2, lVariableAbsPos2 AS LONG
+    LOCAL lVariablePtr3, lVariableAbsPos3 AS LONG
+
+    IF thinBasic_CheckOpenParens_Mandatory THEN
+      thinBasic_ParseNumber sp
+      IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+        thinBasic_VariableParse(lVariablePtr1, lVariableAbsPos1)
+        IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+          thinBasic_VariableParse(lVariablePtr2, lVariableAbsPos2)
+          IF thinBasic_CheckCloseParens_Optional THEN
+            tbgl_SpriteGetSpeedXY( sp, x, y, spin )
+            thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, x)
+            thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, y)
+          ELSE
+            IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+              thinBasic_VariableParse(lVariablePtr3, lVariableAbsPos3)
+              tbgl_SpriteGetSpeedXY( sp, x, y, spin )
+              thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, x)
+              thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, y)
+              thinBasic_ChangeVariableNumberDirect (lVariablePtr3, lVariableAbsPos3, spin)
+            END IF
+            thinBasic_CheckCloseParens_Mandatory
+          END IF
+        END IF
+      END IF
+    END IF
+  END SUB
+
+  SUB Exec_TBGL_SpriteSetOrder()
+    LOCAL sp, eo AS EXT
+
+    thinBasic_Parse2Numbers(sp, eo)
+    tbgl_SpriteSetOrder( sp, eo )
+  END SUB
+
+  FUNCTION Exec_TBGL_SpriteGetOrder() AS EXT
+    FUNCTION = tbgl_SpriteGetOrder( thinBasic_Parse1Number )
+  END FUNCTION
+
+  SUB Exec_TBGL_SpriteDraw()
+    tbgl_SpriteDraw( thinBasic_Parse1Number )
+  END SUB
+
+  ' -- ( sprite, x, y [, layer] )
+  SUB Exec_TBGL_SpriteDrawAt()
+    LOCAL ex, ey, elayer, sp AS EXT
+
+    IF thinBasic_ParseXNumbers(3,4, sp, ex, ey, elayer) = 4 THEN
+        tbgl_SpriteDrawAtLayer( sp, ex, ey, elayer )
+    ELSE
+        tbgl_SpriteDrawAt( sp, ex, ey )
+    END IF
+  END SUB
+
+  ' -- ( sprite, eventID, "functionName" )
+  SUB Exec_TBGL_SpriteSetEvent()
+    LOCAL eid, sp AS EXT
+    LOCAL funcname AS STRING
+
+    IF thinBasic_CheckOpenParens THEN
+      thinBasic_ParseNumber sp
+      IF thinBasic_CheckComma THEN
+          thinBasic_ParseNumber eid
+          IF thinBasic_CheckComma THEN
+            thinBasic_ParseStr funcname
+            IF thinBasic_CheckCloseParens THEN
+                tbgl_SpriteSetEvent( sp, eid, thinBasic_FunctionGetPtr(funcname) )
+            END IF
+          END IF
+      END IF
+    END IF
+
+  END SUB
+
+  ' -- ( sprite [, virtualKeyOfButton] )
+  FUNCTION Exec_TBGL_SpriteCheckMouse() AS EXT
+    LOCAL sp, ebutton AS EXT
+
+    thinBasic_ParseXNumbers(1,2, sp, ebutton)
+    FUNCTION = tbgl_SpriteCheckMouse( sp, ebutton )
+  END FUNCTION
+
+  ' -- ( [virtualKeyOfButton] )
+  FUNCTION Exec_TBGL_SpritesCheckMouseAll() AS EXT
+    LOCAL ebutton AS EXT
+
+    thinBasic_ParseXNumbers(0,1, ebutton)
+    FUNCTION = tbgl_SpritesCheckMouseAll( ebutton )
+  END FUNCTION
+
+  ' -- ( sprite [, sprite2] )
+  FUNCTION Exec_TBGL_SpriteCollided() AS EXT
+    LOCAL sp,sp2 AS EXT
+
+    IF thinBasic_ParseXNumbers(1,2, sp, sp2) = 2 THEN
+        FUNCTION = tbgl_SpriteCollidedWith( sp, sp2 )
+    ELSE
+        FUNCTION = tbgl_SpriteCollided( sp )
+    END IF
+  END FUNCTION
+
+  ' -- ( sprite, variable ), dynamic strings are stored as they are, other types as memory copy
+  SUB Exec_TBGL_SpriteSetUserData()
+
+    LOCAL sp AS EXT
+    LOCAL VariablePtr   AS LONG
+    LOCAL MainType      AS LONG
+    LOCAL SubType       AS LONG
+    LOCAL ElementsAreFixed AS LONG
+    LOCAL TotElements   AS LONG
+    LOCAL ElementSize   AS LONG
+    LOCAL DataPtr       AS LONG
+    LOCAL AbsPos        AS LONG
+    LOCAL p AS STRING PTR
+
+    IF thinBasic_CheckOpenParens THEN
+      thinBasic_ParseNumber sp
+      IF thinBasic_CheckComma_Mandatory THEN
+
+        thinBasic_ParseVariableInfo( VariablePtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, DataPtr, AbsPos )
+        IF thinBasic_CheckCloseParens_Mandatory THEN
+
+          ' -- We mark STRINGs differentely for STRPTR/VARPTR purposes
+          IF ElementsAreFixed = %FALSE AND MainType = %VarMainType_IsString THEN
+            p = DataPtr
+            tbgl_SpriteSetUserDataString( sp, @p )
+          ELSE
+            tbgl_SpriteSetUserData( sp, DataPtr, ElementSize )
+          END IF
+
+        END IF
+      END IF
+    END IF
+
+  END SUB
+
+  FUNCTION Exec_TBGL_SpriteGetUserDataPointer() AS EXT
+    FUNCTION = tbgl_SpriteGetUserDataPointer( thinBasic_Parse1Number )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteGetUserDataID() AS EXT
+    FUNCTION = tbgl_SpriteGetUserDataID( thinBasic_Parse1Number )
+  END FUNCTION
+
+  FUNCTION Exec_TBGL_SpriteExists() AS EXT
+    FUNCTION = tbgl_SpriteExists( thinBasic_Parse1Number )
+  END FUNCTION
+
+#ENDIF
