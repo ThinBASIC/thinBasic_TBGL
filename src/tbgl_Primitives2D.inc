@@ -7,180 +7,238 @@
 ' =============================================================================
 
   '*****************************************************************
-  SUB Exec_TBGL_Rect()
+  SUB tbgl_Rect ALIAS "tbgl_Rect" ( BYVAL a AS SINGLE, BYVAL b AS SINGLE, BYVAL c AS SINGLE, BYVAL d AS SINGLE ) EXPORT
   '*****************************************************************
-    LOCAL nParsed AS LONG
-    LOCAL a, b, c, d, e, f, planeAligned  AS EXT
-    LOCAL x1, y1, z1, x2, y2, z2 AS SINGLE
+    LOCAL x1, y1, x2, y2 AS SINGLE
 
-    nParsed = thinBasic_ParseXNumbers(4,7, a, b, c, d, e, f, planeAligned)
+    x1 = a
+    y1 = b
+    x2 = c
+    y2 = d
+
+    if g_renderMatrix2d.pixelPerfect then
+      ' -- Ensuring pixel row/column, when needed
+      local xdir, ydir as single
+      xdir = iif(x1 < x2, 1, -1)
+      ydir = iif(y1 < y2, 1, -1)
+      if g_renderMatrix2d.pixelOffsetX*xdir > 0 then x2 += g_renderMatrix2d.pixelOffsetX else x1 += g_renderMatrix2d.pixelOffsetX
+      if g_renderMatrix2d.pixelOffsetY*ydir > 0 then y2 += g_renderMatrix2d.pixelOffsetY else y1 += g_renderMatrix2d.pixelOffsetY
+    end if
 
     glBegin %GL_QUADS
-      SELECT CASE AS LONG nParsed
-        CASE 4
-          x1 = a
-          y1 = b
-          x2 = c
-          y2 = d
+      glVertex2f x1, y2
+      glVertex2f x2, y2
+      glVertex2f x2, y1
+      glVertex2f x1, y1
+    glEnd
 
-          if g_renderMatrix2d.pixelPerfect then
-            ' -- Ensuring pixel row/column, when needed
-            local xdir, ydir as single
-            xdir = iif(x1 < x2, 1, -1)
-            ydir = iif(y1 < y2, 1, -1)
-            if g_renderMatrix2d.pixelOffsetX*xdir > 0 then x2 += g_renderMatrix2d.pixelOffsetX else x1 += g_renderMatrix2d.pixelOffsetX
-            if g_renderMatrix2d.pixelOffsetY*ydir > 0 then y2 += g_renderMatrix2d.pixelOffsetY else y1 += g_renderMatrix2d.pixelOffsetY
-          end if
+  END SUB
 
-          glVertex2f x1, y2
-          glVertex2f x2, y2
-          glVertex2f x2, y1
-          glVertex2f x1, y1
-        CASE 6, 7
-          x1 = a
-          y1 = b
-          z1 = c
-          x2 = d
-          y2 = e
-          z2 = f
 
-          IF nParsed = 6 OR planeAligned = 0 THEN
+  '*****************************************************************
+  SUB tbgl_Rect3D ALIAS "tbgl_Rect3D" ( _
+      BYVAL a AS SINGLE _
+    , BYVAL b AS SINGLE _
+    , BYVAL c AS SINGLE _
+    , BYVAL d AS SINGLE _
+    , BYVAL e AS SINGLE _
+    , BYVAL f AS SINGLE _
+    , BYVAL planeAligned AS LONG _
+    ) EXPORT
+  '*****************************************************************
+    LOCAL x1, y1, z1, x2, y2, z2 AS SINGLE
+
+    x1 = a
+    y1 = b
+    z1 = c
+    x2 = d
+    y2 = e
+    z2 = f
+
+    glBegin %GL_QUADS
+      IF planeAligned = 0 THEN
+        glVertex3f x1, y2, z1
+        glVertex3f x2, y2, z2
+        glVertex3f x2, y1, z2
+        glVertex3f x1, y1, z1
+      ELSE
+        IF x1=x2 THEN ' in yz plane
+
+            glVertex3f x1,y1,z1
+            glVertex3f x1,y2,z1
+            glVertex3f x1,y2,z2
+            glVertex3f x1,y1,z2
+
+        ELSEIF y1=y2 THEN ' in zx plane
+
+            glVertex3f x1,y1,z1
+            glVertex3f x1,y1,z2
+            glVertex3f x2,y1,z2
+            glVertex3f x2,y1,z1
+
+        ELSEIF z1=z2 THEN ' in xy plane
+
+            glVertex3f x1,y1,z1
+            glVertex3f x2,y1,z1
+            glVertex3f x2,y2,z1
+            glVertex3f x1,y2,z1
+
+        ELSE
             glVertex3f x1, y2, z1
             glVertex3f x2, y2, z2
             glVertex3f x2, y1, z2
             glVertex3f x1, y1, z1
-          ELSE
-            IF x1=x2 THEN ' in yz plane
-
-                glVertex3f x1,y1,z1
-                glVertex3f x1,y2,z1
-                glVertex3f x1,y2,z2
-                glVertex3f x1,y1,z2
-
-            ELSEIF y1=y2 THEN ' in zx plane
-
-                glVertex3f x1,y1,z1
-                glVertex3f x1,y1,z2
-                glVertex3f x2,y1,z2
-                glVertex3f x2,y1,z1
-
-            ELSEIF z1=z2 THEN ' in xy plane
-
-                glVertex3f x1,y1,z1
-                glVertex3f x2,y1,z1
-                glVertex3f x2,y2,z1
-                glVertex3f x1,y2,z1
-
-            ELSE
-                glVertex3f x1, y2, z1
-                glVertex3f x2, y2, z2
-                glVertex3f x2, y1, z2
-                glVertex3f x1, y1, z1
-            END IF
-          END IF
-      END SELECT
+        END IF
+      END IF
     glEnd
 
   END SUB
 
 
   '*****************************************************************
-  SUB Exec_TBGL_Line()
+  SUB tbgl_Line ALIAS "tbgl_Line" ( BYVAL a AS SINGLE, BYVAL b AS SINGLE, BYVAL c AS SINGLE, BYVAL d AS SINGLE ) EXPORT
   '*****************************************************************
-    LOCAL nParsed       AS LONG
-    LOCAL a, b, c, d, e, f  AS EXT
 
-    nParsed = thinBasic_ParseXNumbers(4,6, a, b, c, d, e, f)
-
-    IF nParsed < 6 THEN
-
-      if g_Win.RenderMatrixMode = %TBGL_2D and g_renderMatrix2d.pixelPerfect then
-        ' -- Ensure the start and end of the line is visible
-        glBegin %GL_POINTS
-          glVertex2f  a, b
-          glVertex2f  c, d
-        glEnd
-      end if
-
-      glBegin %GL_LINES
+    if g_Win.RenderMatrixMode = %TBGL_2D and g_renderMatrix2d.pixelPerfect then
+      ' -- Ensure the start and end of the line is visible
+      glBegin %GL_POINTS
         glVertex2f  a, b
         glVertex2f  c, d
       glEnd
-    ELSE
-      glBegin %GL_LINES
-        glVertex3f  a, b, c
-        glVertex3f  d, e, f
-      glEnd
-    END IF
+    end if
 
-  END SUB
-
-
-  '*****************************************************************
-  SUB Exec_TBGL_Point()
-  '*****************************************************************
-    LOCAL nParsed       AS LONG
-    LOCAL x, y, z       AS EXT
-
-    nParsed = thinBasic_ParseXNumbers(2,3, x, y, z)
-
-    glBegin %GL_Points
-    IF nParsed = 2 THEN
-        glVertex2f x, y
-    ELSE
-        glVertex3f x, y, z
-    END IF
+    glBegin %GL_LINES
+      glVertex2f  a, b
+      glVertex2f  c, d
     glEnd
 
   END SUB
 
 
   '*****************************************************************
-  SUB Exec_TBGL_NGon()
+  SUB tbgl_Line3D ALIAS "tbgl_Line3D" ( BYVAL a AS SINGLE, BYVAL b AS SINGLE, BYVAL c AS SINGLE, BYVAL d AS SINGLE, BYVAL e AS SINGLE, BYVAL f AS SINGLE ) EXPORT
   '*****************************************************************
-    LOCAL nParsed       AS LONG
-    'LOCAL x, y, ex, ey, radius, divider     AS EXT
-    LOCAL x, y, z, ex, ey, c, d, e ,f     AS EXT
-    LOCAL i,de             AS LONG
+
+    glBegin %GL_LINES
+      glVertex3f  a, b, c
+      glVertex3f  d, e, f
+    glEnd
+
+  END SUB
+
+
+  '*****************************************************************
+  SUB tbgl_Point ALIAS "tbgl_Point" ( BYVAL x AS SINGLE, BYVAL y AS SINGLE ) EXPORT
+  '*****************************************************************
+
+    glBegin %GL_Points
+      glVertex2f x, y
+    glEnd
+
+  END SUB
+
+
+  '*****************************************************************
+  SUB tbgl_Point3D ALIAS "tbgl_Point3D" ( BYVAL x AS SINGLE, BYVAL y AS SINGLE, BYVAL z AS SINGLE ) EXPORT
+  '*****************************************************************
+
+    glBegin %GL_Points
+      glVertex3f x, y, z
+    glEnd
+
+  END SUB
+
+
+  '*****************************************************************
+  SUB tbgl_NGon ALIAS "tbgl_NGon" ( BYVAL ex AS SINGLE, BYVAL ey AS SINGLE, BYVAL radius AS SINGLE, BYVAL sides AS LONG ) EXPORT
+  '*****************************************************************
+    LOCAL x, y          AS DOUBLE
+    LOCAL i             AS LONG
     LOCAL angle,da      AS DOUBLE
 
-    'nParsed = thinBasic_ParseXNumbers(3,4, ex, ey, radius, divider)
-    nParsed = thinBasic_ParseXNumbers(4,6, ex, ey, c, d, e,f)
+    da = 2 * 3.14159/sides
+    glBegin %GL_POLYGON
+        FOR i = 1 TO sides
+            angle = i * da
+            x = ex+(COS(angle)*radius)
+            y = ey+(SIN(angle)*radius)
+            glVertex2f x,y
+        NEXT
+    glEnd
 
-    IF nPArsed = 4 THEN
-        da = 2 * 3.14159/d
-        de = d
-        glBegin %GL_POLYGON
-            FOR i = 1 TO de
-                angle = i * da
-                x = ex+(COS(angle)*c)
-                y = ey+(SIN(angle)*c)
-                glVertex2f x,y
-            NEXT
-        glEnd
-    ELSEIF nParsed = 6 THEN
-        da = 2 * 3.14159/e
-        z = c
-        de = e
-        glBegin %GL_POLYGON
-            FOR i = 1 TO de
-                angle = i * da + f* 0.0174532925
-                x = ex+(COS(angle)*d)
-                y = ey+(SIN(angle)*d)
-                glVertex3f x,y,z
-            NEXT
-        glEnd
-    ELSE
-        da = 2 * 3.14159/e
-        z = c
-        de = e
-        glBegin %GL_POLYGON
-            FOR i = 1 TO de
-                angle = i * da
-                x = ex+(COS(angle)*d)
-                y = ey+(SIN(angle)*d)
-                glVertex3f x,y,z
-            NEXT
-        glEnd
-    END IF
   END SUB
+
+
+  '*****************************************************************
+  SUB tbgl_NGon3D ALIAS "tbgl_NGon3D" ( BYVAL ex AS SINGLE, BYVAL ey AS SINGLE, BYVAL z AS SINGLE, BYVAL radius AS SINGLE, BYVAL sides AS LONG, BYVAL angleDeg AS SINGLE ) EXPORT
+  '*****************************************************************
+    LOCAL x, y          AS DOUBLE
+    LOCAL i             AS LONG
+    LOCAL angle,da      AS DOUBLE
+
+    da = 2 * 3.14159/sides
+    glBegin %GL_POLYGON
+        FOR i = 1 TO sides
+            angle = i * da + angleDeg * 0.0174532925
+            x = ex+(COS(angle)*radius)
+            y = ey+(SIN(angle)*radius)
+            glVertex3f x,y,z
+        NEXT
+    glEnd
+
+  END SUB
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+  ' -- 4 params: 2D rect, 6 params: 3D rect, 7th param: plane aligned
+  SUB Exec_TBGL_Rect()
+    LOCAL a, b, c, d, e, f, planeAligned  AS EXT
+
+    IF thinBasic_ParseXNumbers(4,7, a, b, c, d, e, f, planeAligned) = 4 THEN
+      tbgl_Rect(a, b, c, d)
+    ELSE
+      tbgl_Rect3D(a, b, c, d, e, f, planeAligned)
+    END IF
+
+  END SUB
+
+  ' -- 4 or 5 params: 2D line, 6 params: 3D line
+  SUB Exec_TBGL_Line()
+    LOCAL a, b, c, d, e, f  AS EXT
+
+    IF thinBasic_ParseXNumbers(4,6, a, b, c, d, e, f) < 6 THEN
+      tbgl_Line(a, b, c, d)
+    ELSE
+      tbgl_Line3D(a, b, c, d, e, f)
+    END IF
+
+  END SUB
+
+  ' -- 2 params: 2D point, 3 params: 3D point
+  SUB Exec_TBGL_Point()
+    LOCAL x, y, z       AS EXT
+
+    IF thinBasic_ParseXNumbers(2,3, x, y, z) = 2 THEN
+      tbgl_Point(x, y)
+    ELSE
+      tbgl_Point3D(x, y, z)
+    END IF
+
+  END SUB
+
+  ' -- 4 params: x, y, radius, sides; 5-6 params: x, y, z, radius, sides [, angle]
+  SUB Exec_TBGL_NGon()
+    LOCAL ex, ey, c, d, e ,f     AS EXT
+
+    IF thinBasic_ParseXNumbers(4,6, ex, ey, c, d, e,f) = 4 THEN
+      tbgl_NGon(ex, ey, c, d)
+    ELSE
+      tbgl_NGon3D(ex, ey, c, d, e, f)
+    END IF
+
+  END SUB
+
+#ENDIF

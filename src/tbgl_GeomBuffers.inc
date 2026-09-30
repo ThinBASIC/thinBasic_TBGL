@@ -155,6 +155,8 @@ SUB resource_GBuffers_Release(OPTIONAL BYVAL specific AS TBGL_HANDLE) ' -- IF TB
 END SUB
 ' <RESOURCES - RESOURCES - RESOURCES - RESOURCES - RESOURCES - RESOURCES - RESOURCES
 
+' -- thinBasic registration of GBuffer related keywords, UDTs and equates
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
 SUB declare_GBuffers()
 
   thinBasic_AddUDT( _
@@ -242,16 +244,14 @@ SUB declare_GBuffers()
   thinBasic_AddEquate   "%TBGL_Static"                          , "" , %TBGL_Static
 
 END SUB
+#ENDIF
 
 ' ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 
-FUNCTION Exec_TBGL_GBufferCreate() AS LONG
+' -- Creates new GBuffer, gType is primitive type (%TBGL_Triangles, ...), gDims is %TBGL_2D or %TBGL_3D
+FUNCTION tbgl_GBufferCreate ALIAS "tbgl_GBufferCreate" ( BYVAL gType AS LONG, BYVAL gDims AS LONG ) EXPORT AS LONG
 
   LOCAL gbHandle AS TBGL_HANDLE
-
-  LOCAL eType, eDims AS EXT
-
-  thinBasic_Parse2Numbers(eType, eDims)
 
   gbHandle = Mem_Alloc(SIZEOF(TBGL_tGBuffer))
 
@@ -259,14 +259,14 @@ FUNCTION Exec_TBGL_GBufferCreate() AS LONG
 
   DIM gBuffer(0) AS TBGL_tGBuffer AT gbHandle
 
-  gBuffer(0).gType        = eType
-  gBuffer(0).gDims        = eDims
+  gBuffer(0).gType        = gType
+  gBuffer(0).gDims        = gDims
   gBuffer(0).gKind        = 0
 
   gBuffer(0).items        = 0 ' -- Filled once data are passed
 
   gBuffer(0).vertexInfo.pData           = 0
-  gBuffer(0).vertexInfo.nComponents     = IIF(eDims = %TBGL_2D, 2, 3)
+  gBuffer(0).vertexInfo.nComponents     = IIF(gDims = %TBGL_2D, 2, 3)
   gBuffer(0).vertexInfo.componentType   = %GL_FLOAT
 
   gBuffer(0).colorInfo.pData            = 0
@@ -297,11 +297,7 @@ FUNCTION Exec_TBGL_GBufferCreate() AS LONG
 
 END FUNCTION
 
-FUNCTION Exec_TBGL_GBufferDestroy() AS LONG
-
-  LOCAL gbHandle AS TBGL_HANDLE
-
-  gbHandle = thinbasic_Parse1Number()
+FUNCTION tbgl_GBufferDestroy ALIAS "tbgl_GBufferDestroy" ( BYVAL gbHandle AS LONG ) EXPORT AS LONG
 
   resource_GBuffers_Release(gbHandle)
 
@@ -309,141 +305,82 @@ END FUNCTION
 
 ' ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 
-FUNCTION Exec_TBGL_GBufferDefineFromArray() AS LONG
+' -- Points GBuffer data description to data (kind %TBGL_Dynamic) or copies it (%TBGL_Static)
+SUB internal_GBufferAssignData( gBuffer AS TBGL_tGBuffer, info AS TBGL_tDataDescriptor, BYVAL pSource AS DWORD, BYVAL items AS LONG, BYVAL elementSize AS LONG )
 
-  LOCAL gbHandle AS TBGL_HANDLE
-  LOCAL i AS LONG
-
-  LOCAL eHandle, eKind, eItems AS EXT
-  LOCAL lArrayCellPtr AS LONG
-  LOCAL lArrayCellAbsPos AS LONG
-  LOCAL howManyLists AS EXT
-  LOCAL VariablePtrOdd, MainType, SubType, ElementsAreFixed, TotElements, ElementSize AS LONG
-  LOCAL helpBuffer AS STRING
-
-
-  IF thinBasic_CheckOpenParens_Mandatory THEN
-    thinBasic_ParseNumber eHandle
-    gbHandle = eHandle
-
-    resource_GBuffer_ReleaseSingle(gbHandle, 1)
-    DIM gBuffer(0) AS TBGL_tGBuffer AT gbHandle
-
-    IF thinBasic_CheckComma( ) AND thinBasic_ErrorFree THEN
-      thinBasic_ParseNumber eKind
-      gBuffer(0).gKind = eKind
-      IF thinBasic_CheckComma( ) AND thinBasic_ErrorFree THEN
-        thinBasic_ParseNumber eItems
-        gBuffer(0).items = eItems
-
-        ' -- VERTEX
-        IF thinBasic_CheckComma( ) AND thinBasic_ErrorFree THEN
-          thinBasic_ParseVariableInfo(lArrayCellPtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, VariablePtrOdd, lArrayCellAbsPos)
-
-          if eItems > TotElements then
-              ReportError "tbgl_gBufferDefineFromArray, VertexArray() parameter", _
-                          "Passed number of items ("+format$(eItems)+") is higher than number of items in passed array ("+format$(TotElements)+")"
-          end if
-
-          VariablePtrOdd = VariablePtrOdd + (lArrayCellAbsPos-1)*ElementSize
-          IF gBuffer(0).gKind = %TBGL_DYNAMIC THEN
-            gBuffer(0).vertexInfo.pData = VariablePtrOdd
-          ELSE
-            gBuffer(0).vertexInfo.pData = Mem_Alloc(eItems*ElementSize)
-            Mem_Copy(VariablePtrOdd, gBuffer(0).vertexInfo.pData, eItems*ElementSize)
-          END IF
-
-          ' -- COLOR
-          IF thinBasic_CheckComma_Optional( ) AND thinBasic_ErrorFree THEN
-            thinBasic_ParseVariableInfo(lArrayCellPtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, VariablePtrOdd, lArrayCellAbsPos)
-
-            if eItems > TotElements then
-                ReportError "tbgl_gBufferDefineFromArray, ColorArray() parameter", _
-                            "Passed number of items ("+format$(eItems)+") is higher than number of items in passed array ("+format$(TotElements)+")"
-            end if
-
-            VariablePtrOdd = VariablePtrOdd + (lArrayCellAbsPos-1)*ElementSize
-            IF gBuffer(0).gKind = %TBGL_DYNAMIC THEN
-              gBuffer(0).colorInfo.pData       = VariablePtrOdd
-            ELSE
-              gBuffer(0).colorInfo.pData = Mem_Alloc(eItems*ElementSize)
-              Mem_Copy(VariablePtrOdd, gBuffer(0).colorInfo.pData, eItems*ElementSize)
-            END IF
-
-            select case as long ElementSize
-              case sizeOf(TBGL_tRGB)
-                gBuffer(0).colorInfo.nComponents   = 3
-                gBuffer(0).colorInfo.componentType = %GL_UNSIGNED_BYTE
-
-              case sizeOf(TBGL_tRGBA)
-                gBuffer(0).colorInfo.nComponents   = 4
-                gBuffer(0).colorInfo.componentType = %GL_UNSIGNED_BYTE
-
-              case sizeOf(TBGL_tRGB_f32)
-                gBuffer(0).colorInfo.nComponents   = 3
-                gBuffer(0).colorInfo.componentType = %GL_FLOAT
-
-              case sizeOf(TBGL_tRGBA_f32)
-                gBuffer(0).colorInfo.nComponents   = 4
-                gBuffer(0).colorInfo.componentType = %GL_FLOAT
-            end select
-
-            ' -- NORMAL
-            IF thinBasic_CheckComma_Optional( ) AND thinBasic_ErrorFree THEN
-              thinBasic_ParseVariableInfo(lArrayCellPtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, VariablePtrOdd, lArrayCellAbsPos)
-
-              if eItems > TotElements then
-                  ReportError "tbgl_gBufferDefineFromArray, NormalArray() parameter", _
-                              "Passed number of items ("+format$(eItems)+") is higher than number of items in passed array ("+format$(TotElements)+")"
-              end if
-
-              VariablePtrOdd = VariablePtrOdd + (lArrayCellAbsPos-1)*ElementSize
-              IF gBuffer(0).gKind = %TBGL_DYNAMIC THEN
-                gBuffer(0).normalInfo.pData = VariablePtrOdd
-              ELSE
-                gBuffer(0).normalInfo.pData = Mem_Alloc(eItems*ElementSize)
-                Mem_Copy(VariablePtrOdd, gBuffer(0).normalInfo.pData, eItems*ElementSize)
-              END IF
-
-              ' -- TEXCOORD
-              FOR i = 1 TO 4
-                IF thinBasic_CheckComma_Optional( ) AND thinBasic_ErrorFree THEN
-                  thinBasic_ParseVariableInfo(lArrayCellPtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, VariablePtrOdd, lArrayCellAbsPos)
-
-                  if eItems > TotElements then
-                      ReportError "tbgl_gBufferDefineFromArray, TexCoordArray() parameter", _
-                                  "Passed number of items ("+format$(eItems)+") is higher than number of items in passed array ("+format$(TotElements)+")"
-                  end if
-
-                  VariablePtrOdd = VariablePtrOdd + (lArrayCellAbsPos-1)*ElementSize
-                  IF gBuffer(0).gKind = %TBGL_DYNAMIC THEN
-                    gBuffer(0).coordInfo(i).pData = VariablePtrOdd
-                  ELSE
-                    gBuffer(0).coordInfo(i).pData = Mem_Alloc(eItems*ElementSize)
-                    Mem_Copy(VariablePtrOdd, gBuffer(0).coordInfo(i).pData, eItems*ElementSize)
-                  END IF
-                ELSE
-                  EXIT FOR
-                END IF
-              NEXT
-            END IF
-          END IF
-        END IF
-      END IF
-    END IF
+  IF gBuffer.gKind = %TBGL_DYNAMIC THEN
+    info.pData = pSource
+  ELSE
+    info.pData = Mem_Alloc(items*elementSize)
+    Mem_Copy(pSource, info.pData, items*elementSize)
   END IF
 
-  thinBasic_CheckCloseParens_Mandatory()
+END SUB
+
+' -- Defines GBuffer data from arrays of items elements, 0 pointer means the array is not passed
+' -- Vertices are TBGL_tVector2F / TBGL_tVector3F (according to gDims), normals TBGL_tVector3F, texture coordinates TBGL_tVector2F
+' -- Colors are TBGL_tRGB, TBGL_tRGBA, TBGL_tRGB_f32 or TBGL_tRGBA_f32, recognized by colorElementSize
+FUNCTION tbgl_GBufferDefineFromArray ALIAS "tbgl_GBufferDefineFromArray" ( BYVAL gbHandle AS LONG, BYVAL gKind AS LONG, BYVAL items AS LONG, _
+                                                                           BYVAL pVertices AS DWORD, _
+                                                                           BYVAL pColors AS DWORD, BYVAL colorElementSize AS LONG, _
+                                                                           BYVAL pNormals AS DWORD, _
+                                                                           BYVAL pTexCoords1 AS DWORD, BYVAL pTexCoords2 AS DWORD, BYVAL pTexCoords3 AS DWORD, BYVAL pTexCoords4 AS DWORD ) EXPORT AS LONG
+
+  LOCAL i AS LONG
+
+  resource_GBuffer_ReleaseSingle(gbHandle, 1)
+  DIM gBuffer(0) AS TBGL_tGBuffer AT gbHandle
+
+  gBuffer(0).gKind = gKind
+  gBuffer(0).items = items
+
+  ' -- VERTEX
+  IF pVertices THEN
+    internal_GBufferAssignData( gBuffer(0), gBuffer(0).vertexInfo, pVertices, items, gBuffer(0).vertexInfo.nComponents * 4 )    ' -- 4 = size of SINGLE component
+  END IF
+
+  ' -- COLOR
+  IF pColors THEN
+    internal_GBufferAssignData( gBuffer(0), gBuffer(0).colorInfo, pColors, items, colorElementSize )
+
+    select case as long colorElementSize
+      case sizeOf(TBGL_tRGB)
+        gBuffer(0).colorInfo.nComponents   = 3
+        gBuffer(0).colorInfo.componentType = %GL_UNSIGNED_BYTE
+
+      case sizeOf(TBGL_tRGBA)
+        gBuffer(0).colorInfo.nComponents   = 4
+        gBuffer(0).colorInfo.componentType = %GL_UNSIGNED_BYTE
+
+      case sizeOf(TBGL_tRGB_f32)
+        gBuffer(0).colorInfo.nComponents   = 3
+        gBuffer(0).colorInfo.componentType = %GL_FLOAT
+
+      case sizeOf(TBGL_tRGBA_f32)
+        gBuffer(0).colorInfo.nComponents   = 4
+        gBuffer(0).colorInfo.componentType = %GL_FLOAT
+    end select
+  END IF
+
+  ' -- NORMAL
+  IF pNormals THEN
+    internal_GBufferAssignData( gBuffer(0), gBuffer(0).normalInfo, pNormals, items, SIZEOF(TBGL_tVector3F) )
+  END IF
+
+  ' -- TEXCOORD
+  DIM pTexCoords(1 TO 4) AS DWORD
+  ARRAY ASSIGN pTexCoords() = pTexCoords1, pTexCoords2, pTexCoords3, pTexCoords4
+  FOR i = 1 TO 4
+    IF pTexCoords(i) THEN
+      internal_GBufferAssignData( gBuffer(0), gBuffer(0).coordInfo(i), pTexCoords(i), items, SIZEOF(TBGL_tVector2F) )
+    END IF
+  NEXT
 
 END FUNCTION
 
 ' ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 
-FUNCTION Exec_TBGL_GBufferRender() AS LONG
-
-  LOCAL gbHandle AS TBGL_HANDLE
-
-  gbHandle = thinbasic_Parse1Number()
+FUNCTION tbgl_GBufferRender ALIAS "tbgl_GBufferRender" ( BYVAL gbHandle AS LONG ) EXPORT AS LONG
 
   DIM gBuffer(0) AS TBGL_tGBuffer AT gbHandle
 
@@ -479,3 +416,97 @@ FUNCTION Exec_TBGL_GBufferRender() AS LONG
   IF gBuffer(0).colorInfo.pData    THEN glDisableClientState(%GL_COLOR_ARRAY)
   IF gBuffer(0).normalInfo.pData   THEN glDisableClientState(%GL_NORMAL_ARRAY)
 END FUNCTION
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+FUNCTION Exec_TBGL_GBufferCreate() AS LONG
+  LOCAL eType, eDims AS EXT
+
+  thinBasic_Parse2Numbers(eType, eDims)
+  FUNCTION = tbgl_GBufferCreate( eType, eDims )
+
+END FUNCTION
+
+FUNCTION Exec_TBGL_GBufferDestroy() AS LONG
+  FUNCTION = tbgl_GBufferDestroy( thinbasic_Parse1Number() )
+END FUNCTION
+
+' ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+
+' -- Parses array argument, returns pointer to its first used element and its element size, reports too small arrays
+FUNCTION internal_GBufferParseArray( BYVAL items AS LONG, BYVAL parameterName AS STRING, elementSize AS LONG ) AS DWORD
+  LOCAL lArrayCellPtr AS LONG
+  LOCAL lArrayCellAbsPos AS LONG
+  LOCAL VariablePtrOdd, MainType, SubType, ElementsAreFixed, TotElements AS LONG
+
+  thinBasic_ParseVariableInfo(lArrayCellPtr, MainType, SubType, ElementsAreFixed, TotElements, elementSize, VariablePtrOdd, lArrayCellAbsPos)
+
+  if items > TotElements then
+      ReportError "tbgl_gBufferDefineFromArray, " + parameterName + " parameter", _
+                  "Passed number of items ("+format$(items)+") is higher than number of items in passed array ("+format$(TotElements)+")"
+  end if
+
+  FUNCTION = VariablePtrOdd + (lArrayCellAbsPos-1)*elementSize
+
+END FUNCTION
+
+' -- ( gbHandle, kind, items, VertexArray() [, ColorArray() [, NormalArray() [, TexCoordArray1() .. TexCoordArray4() ]]] )
+FUNCTION Exec_TBGL_GBufferDefineFromArray() AS LONG
+
+  LOCAL i AS LONG
+  LOCAL eHandle, eKind, eItems AS EXT
+  LOCAL elementSize, colorElementSize AS LONG
+  LOCAL pVertices, pColors, pNormals AS DWORD
+  DIM pTexCoords(1 TO 4) AS DWORD
+
+  IF thinBasic_CheckOpenParens_Mandatory THEN
+    thinBasic_ParseNumber eHandle
+
+    IF thinBasic_CheckComma( ) AND thinBasic_ErrorFree THEN
+      thinBasic_ParseNumber eKind
+      IF thinBasic_CheckComma( ) AND thinBasic_ErrorFree THEN
+        thinBasic_ParseNumber eItems
+
+        ' -- VERTEX
+        IF thinBasic_CheckComma( ) AND thinBasic_ErrorFree THEN
+          pVertices = internal_GBufferParseArray( eItems, "VertexArray()", elementSize )
+
+          ' -- COLOR
+          IF thinBasic_CheckComma_Optional( ) AND thinBasic_ErrorFree THEN
+            pColors = internal_GBufferParseArray( eItems, "ColorArray()", colorElementSize )
+
+            ' -- NORMAL
+            IF thinBasic_CheckComma_Optional( ) AND thinBasic_ErrorFree THEN
+              pNormals = internal_GBufferParseArray( eItems, "NormalArray()", elementSize )
+
+              ' -- TEXCOORD
+              FOR i = 1 TO 4
+                IF thinBasic_CheckComma_Optional( ) AND thinBasic_ErrorFree THEN
+                  pTexCoords(i) = internal_GBufferParseArray( eItems, "TexCoordArray()", elementSize )
+                ELSE
+                  EXIT FOR
+                END IF
+              NEXT
+            END IF
+          END IF
+        END IF
+      END IF
+    END IF
+  END IF
+
+  thinBasic_CheckCloseParens_Mandatory()
+
+  tbgl_GBufferDefineFromArray( eHandle, eKind, eItems, pVertices, pColors, colorElementSize, pNormals, pTexCoords(1), pTexCoords(2), pTexCoords(3), pTexCoords(4) )
+
+END FUNCTION
+
+' ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+
+FUNCTION Exec_TBGL_GBufferRender() AS LONG
+  FUNCTION = tbgl_GBufferRender( thinbasic_Parse1Number() )
+END FUNCTION
+
+#ENDIF

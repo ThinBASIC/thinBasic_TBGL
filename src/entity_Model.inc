@@ -36,14 +36,7 @@ MACRO macro_t_Entity_Model_FillData(ptrTo_t_EntityInfo, nSlot)
 END MACRO
 
 ' -- Creates entity
-SUB Exec_TBGL_EntityCreateModelSlot()
-
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL Param AS EXT
-  LOCAL PARENT AS EXT
-
-  thinBASIC_Parse4Numbers(ScriptSceneID, EntityID, PARENT, Param )
+SUB tbgl_EntityCreateModelSlot ALIAS "tbgl_EntityCreateModelSlot" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL PARENT AS LONG, BYVAL modelSlot AS LONG ) EXPORT
 
   internal_EntityRedimArrayIfNeeded(ScriptSceneID, EntityID)
 
@@ -59,10 +52,28 @@ SUB Exec_TBGL_EntityCreateModelSlot()
 
   '---Now point the object info pointer to point to the initial of the specific object data.
     dummy_PtrTo_t_Entity_Model = macro_t_Entity_Model_MemPos(TBGLSceneEntities(EntityID))
-    macro_t_Entity_Model_FillData(dummy_PtrTo_t_Entity_Model, Param )
+    macro_t_Entity_Model_FillData(dummy_PtrTo_t_Entity_Model, modelSlot )
 
   ' -- Now reset name
   internal_SetEntityOverlayNames(ScriptSceneID)
   TBGLSceneEntitiesNames(EntityID) = ""
 
 END SUB
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+SUB Exec_TBGL_EntityCreateModelSlot()
+  LOCAL ScriptSceneID AS EXT
+  LOCAL EntityID AS EXT
+  LOCAL Param AS EXT
+  LOCAL PARENT AS EXT
+
+  thinBASIC_Parse4Numbers(ScriptSceneID, EntityID, PARENT, Param )
+  tbgl_EntityCreateModelSlot(ScriptSceneID, EntityID, PARENT, Param)
+
+END SUB
+
+#ENDIF

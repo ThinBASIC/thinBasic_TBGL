@@ -52,15 +52,7 @@ MACRO macro_t_Entity_Light_FillData(ptrTo_t_EntityInfo, nType)
 
 END MACRO
 
-SUB Exec_TBGL_EntityCreateLight()
-
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL Param AS EXT
-  LOCAL PARENT AS EXT
-
-  Param = %TBGL_LIGHTTYPE_POINT
-  thinBASIC_ParseXNumbers( 2, 4, ScriptSceneID, EntityID, PARENT, Param )
+SUB tbgl_EntityCreateLight ALIAS "tbgl_EntityCreateLight" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL PARENT AS LONG, BYVAL lightType AS LONG ) EXPORT
 
   internal_EntityRedimArrayIfNeeded(ScriptSceneID, EntityID)
 
@@ -75,7 +67,7 @@ SUB Exec_TBGL_EntityCreateLight()
 
   '---Now point the object info pointer to point to the initial of the specific object data.
     dummy_PtrTo_t_Entity_Light = macro_t_Entity_Light_MemPos(TBGLSceneEntities(EntityID))
-    macro_t_Entity_Light_FillData(dummy_PtrTo_t_Entity_Light, Param )
+    macro_t_Entity_Light_FillData(dummy_PtrTo_t_Entity_Light, lightType )
 
   ' -- Now reset name
   internal_SetEntityOverlayNames(ScriptSceneID)
@@ -84,14 +76,8 @@ SUB Exec_TBGL_EntityCreateLight()
 END SUB
 
 ' -- Sets cutoff angle
-SUB Exec_TBGL_EntitySetCutoff()
-  REGISTER i AS LONG
+SUB tbgl_EntitySetCutoff ALIAS "tbgl_EntitySetCutoff" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL cutoff AS SINGLE ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL cutoff AS EXT
-
-  thinBASIC_Parse3Numbers(ScriptSceneID, EntityID, cutoff)
   internal_SetEntityOverlay(ScriptSceneID)
 
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
@@ -105,14 +91,8 @@ SUB Exec_TBGL_EntitySetCutoff()
 END SUB
 
 ' -- Specifies how much light fades towards borders
-SUB Exec_TBGL_EntitySetBorderFade()
-  REGISTER i AS LONG
+SUB tbgl_EntitySetBorderFade ALIAS "tbgl_EntitySetBorderFade" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL exponent AS SINGLE ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL exponent AS EXT
-
-  thinBASIC_Parse3Numbers(ScriptSceneID, EntityID, exponent)
   internal_SetEntityOverlay(ScriptSceneID)
 
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
@@ -127,37 +107,23 @@ SUB Exec_TBGL_EntitySetBorderFade()
 END SUB
 
 ' -- Ambient light color
-SUB Exec_TBGL_EntitySetAmbient()
-  REGISTER i AS LONG
+SUB tbgl_EntitySetAmbient ALIAS "tbgl_EntitySetAmbient" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL r AS BYTE, BYVAL g AS BYTE, BYVAL b AS BYTE ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL r,g,b AS EXT
-
-  thinBASIC_Parse5Numbers(ScriptSceneID, EntityID, r, g, b)
-  internal_SetEntityOverlay(ScriptSceneID)
-
-  dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
-
-  IF @dummy_PtrTo_t_EntityInfo.EntType = %TBGL_ENTITY_LIGHT THEN
-      dummy_PtrTo_t_Entity_LIGHT = macro_t_Entity_Light_MemPos(TBGLSceneEntities(EntityID))
-
-      @dummy_PtrTo_t_Entity_LIGHT.ambient(0) = r/255
-      @dummy_PtrTo_t_Entity_LIGHT.ambient(1) = g/255
-      @dummy_PtrTo_t_Entity_LIGHT.ambient(2) = b/255
-  END IF
+  internal_EntitySetLightColorF( ScriptSceneID, EntityID, %FALSE, r / 255, g / 255, b / 255 )
 
 END SUB
 
 ' -- Specular light color
-SUB Exec_TBGL_EntitySetSpecular()
-  REGISTER i AS LONG
+SUB tbgl_EntitySetSpecular ALIAS "tbgl_EntitySetSpecular" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL r AS BYTE, BYVAL g AS BYTE, BYVAL b AS BYTE ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL r,g,b AS EXT
+  internal_EntitySetLightColorF( ScriptSceneID, EntityID, %TRUE, r / 255, g / 255, b / 255 )
 
-  thinBASIC_Parse5Numbers(ScriptSceneID, EntityID, r, g, b)
+END SUB
+
+' -- Ambient (specular = %FALSE) or specular light color, components in 0..1, not clamped
+' -- (thinBasic keywords pass script values / 255 unrounded)
+SUB internal_EntitySetLightColorF( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL specular AS LONG, BYVAL r AS SINGLE, BYVAL g AS SINGLE, BYVAL b AS SINGLE )
+
   internal_SetEntityOverlay(ScriptSceneID)
 
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
@@ -165,9 +131,74 @@ SUB Exec_TBGL_EntitySetSpecular()
   IF @dummy_PtrTo_t_EntityInfo.EntType = %TBGL_ENTITY_LIGHT THEN
       dummy_PtrTo_t_Entity_LIGHT = macro_t_Entity_Light_MemPos(TBGLSceneEntities(EntityID))
 
-      @dummy_PtrTo_t_Entity_LIGHT.specular(0) = r/255
-      @dummy_PtrTo_t_Entity_LIGHT.specular(1) = g/255
-      @dummy_PtrTo_t_Entity_LIGHT.specular(2) = b/255
+      IF specular THEN
+        @dummy_PtrTo_t_Entity_LIGHT.specular(0) = r
+        @dummy_PtrTo_t_Entity_LIGHT.specular(1) = g
+        @dummy_PtrTo_t_Entity_LIGHT.specular(2) = b
+      ELSE
+        @dummy_PtrTo_t_Entity_LIGHT.ambient(0) = r
+        @dummy_PtrTo_t_Entity_LIGHT.ambient(1) = g
+        @dummy_PtrTo_t_Entity_LIGHT.ambient(2) = b
+      END IF
   END IF
 
 END SUB
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+SUB Exec_TBGL_EntityCreateLight()
+  LOCAL ScriptSceneID AS EXT
+  LOCAL EntityID AS EXT
+  LOCAL Param AS EXT
+  LOCAL PARENT AS EXT
+
+  Param = %TBGL_LIGHTTYPE_POINT
+  thinBASIC_ParseXNumbers( 2, 4, ScriptSceneID, EntityID, PARENT, Param )
+  tbgl_EntityCreateLight( ScriptSceneID, EntityID, PARENT, Param )
+
+END SUB
+
+SUB Exec_TBGL_EntitySetCutoff()
+  LOCAL ScriptSceneID AS EXT
+  LOCAL EntityID AS EXT
+  LOCAL cutoff AS EXT
+
+  thinBASIC_Parse3Numbers(ScriptSceneID, EntityID, cutoff)
+  tbgl_EntitySetCutoff(ScriptSceneID, EntityID, cutoff)
+
+END SUB
+
+SUB Exec_TBGL_EntitySetBorderFade()
+  LOCAL ScriptSceneID AS EXT
+  LOCAL EntityID AS EXT
+  LOCAL exponent AS EXT
+
+  thinBASIC_Parse3Numbers(ScriptSceneID, EntityID, exponent)
+  tbgl_EntitySetBorderFade(ScriptSceneID, EntityID, exponent)
+
+END SUB
+
+SUB Exec_TBGL_EntitySetAmbient()
+  LOCAL ScriptSceneID AS EXT
+  LOCAL EntityID AS EXT
+  LOCAL r,g,b AS EXT
+
+  thinBASIC_Parse5Numbers(ScriptSceneID, EntityID, r, g, b)
+  internal_EntitySetLightColorF(ScriptSceneID, EntityID, %FALSE, r / 255, g / 255, b / 255)
+
+END SUB
+
+SUB Exec_TBGL_EntitySetSpecular()
+  LOCAL ScriptSceneID AS EXT
+  LOCAL EntityID AS EXT
+  LOCAL r,g,b AS EXT
+
+  thinBASIC_Parse5Numbers(ScriptSceneID, EntityID, r, g, b)
+  internal_EntitySetLightColorF(ScriptSceneID, EntityID, %TRUE, r / 255, g / 255, b / 255)
+
+END SUB
+
+#ENDIF

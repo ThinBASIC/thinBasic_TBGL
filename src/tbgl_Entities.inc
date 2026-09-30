@@ -240,11 +240,8 @@ END MACRO
 ' -----------------------------------------------------------------------------
 
 ' -- Creates new scene space, please not destroying scene is done via creating new one!
-SUB Exec_TBGL_SceneCreate()
+SUB tbgl_SceneCreate ALIAS "tbgl_SceneCreate" ( BYVAL ScriptSceneID AS LONG ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-
-  ScriptSceneID = thinBASIC_Parse1Number
   IF ScriptSceneID < 1 THEN EXIT SUB
 
   IF ScriptSceneID > UBOUND(MyArrayOf_TBGLScene) THEN
@@ -271,13 +268,10 @@ SUB Exec_TBGL_SceneCreate()
 END SUB
 
 ' -- Renders scene
-SUB Exec_TBGL_SceneRender()
+SUB tbgl_SceneRender ALIAS "tbgl_SceneRender" ( BYVAL ScriptSceneID AS LONG ) EXPORT
 
   REGISTER i AS LONG
 
-  LOCAL ScriptSceneID AS EXT
-
-  ScriptSceneID = thinBASIC_Parse1Number
   internal_SetEntityOverlay(ScriptSceneID)
 
   ' -- First pass cameras
@@ -555,7 +549,7 @@ SUB Exec_TBGL_SceneRender()
               gCallingEntity.scene = ScriptSceneID
               gCallingEntity.entity= i
 
-              thinBasic_FunctionSimpleCall_ByPtr(@dummy_PtrTo_t_Entity_FuncSlot.fPTR)
+              internal_InvokeCallback(@dummy_PtrTo_t_Entity_FuncSlot.fPTR)
 
             IF @dummy_PtrTo_t_Entity_FuncSlot.ForceR >= 0 THEN glColor3UB 255,255,255
         glPopMatrix
@@ -596,16 +590,13 @@ SUB Exec_TBGL_SceneRender()
 END SUB
 
 ' -- Scene collide
-SUB Exec_TBGL_SceneCollide()
+SUB tbgl_SceneCollide ALIAS "tbgl_SceneCollide" ( BYVAL ScriptSceneID AS LONG ) EXPORT
 
   REGISTER i AS LONG, j AS LONG
-
-  LOCAL ScriptSceneID AS EXT
 
   LOCAL p, o, az, ay AS TBGL_tVector3D
   LOCAL maxEntities AS LONG
 
-  ScriptSceneID = thinBASIC_Parse1Number
   internal_SetEntityOverlay(ScriptSceneID)
 
   maxEntities = MyArrayOf_TBGLScene_EntityMaxID(ScriptSceneID)
@@ -717,7 +708,7 @@ SUB Exec_TBGL_SceneCollide()
               g_CollisionInfo.entity2 = collideEntities(j)
 
               ' -- Call our handler
-              thinBasic_FunctionSimpleCall_ByPtr(@dummy_PtrTo_t_Entity_BoundingSphere.fPTR)
+              internal_InvokeCallback(@dummy_PtrTo_t_Entity_BoundingSphere.fPTR)
 
           END IF
 
@@ -728,83 +719,49 @@ SUB Exec_TBGL_SceneCollide()
 
 END SUB
 
-' -- Passes all entities matching the criteria to array
-FUNCTION Exec_TBGL_EntityEnumByDataSignature() AS EXT
+' -- Stores IDs of entities whose user data start with LONG ElementSignature to entityIDs array (up to maxCount items)
+' -- Returns number of all matching entities (can be higher than maxCount)
+FUNCTION tbgl_EntityEnumByDataSignature ALIAS "tbgl_EntityEnumByDataSignature" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL ElementSignature AS LONG _
+  , BYVAL entityIDs AS LONG PTR _
+  , BYVAL maxCount AS LONG _
+  ) EXPORT AS LONG
 
   REGISTER EntityID AS LONG, Index AS LONG
   LOCAL maxEntities AS LONG
-  LOCAL ScriptSceneID AS EXT
-  LOCAL ElementSignature AS EXT
-  LOCAL lArrayCellPtr AS LONG
-  LOCAL lArrayCellAbsPos AS LONG
-  LOCAL VariablePtrOdd, MainType, SubType, ElementsAreFixed, TotElements, ElementSize AS LONG
-  LOCAL AbsolutePosition AS LONG
+  LOCAL Signature AS LONG
 
+  maxEntities = MyArrayOf_TBGLScene_EntityMaxID(ScriptSceneID)
+  internal_SetEntityOverlay(ScriptSceneID)
+  internal_SetEntityOverlayUserData(ScriptSceneID)
 
-  IF thinBasic_CheckOpenParens_Mandatory() THEN
-    thinBasic_ParseNumber(ScriptSceneID)
-    maxEntities = MyArrayOf_TBGLScene_EntityMaxID(ScriptSceneID)
-    internal_SetEntityOverlay(ScriptSceneID)
-    internal_SetEntityOverlayUserData(ScriptSceneID)
+  FOR EntityID = 1 TO maxEntities
 
-    IF thinBasic_CheckComma_Mandatory() THEN
+    ' -- Is there some kind of interesting data
+    IF TBGLSceneEntitiesUserData(EntityID) <> "" THEN
 
-      thinBasic_ParseVariableInfo(lArrayCellPtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, VariablePtrOdd, lArrayCellAbsPos)
+      ' -- Get its signature
+      Signature = CVL(TBGLSceneEntitiesUserData(EntityID))
 
-      ' -- First dimensioning is to max elements possible
-      thinBasic_VariableRedim(lArrayCellPtr, %FALSE, maxEntities, 0, 0)
-      TotElements = maxEntities
-
-      IF thinBasic_CheckComma_Mandatory() THEN
-        thinBasic_ParseNumber(ElementSignature)
-
-        IF thinBasic_CheckCloseParens_Mandatory() THEN
-          FOR EntityID = 1 TO maxEntities
-
-            ' -- What entity is here?
-            dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
-
-            ' -- Is there some kind of interesting data
-            IF TBGLSceneEntitiesUserData(EntityID) <> "" THEN
-
-              ' -- Get its signature
-              DIM Signature AS LONG
-              Signature = CVL(TBGLSceneEntitiesUserData(EntityID))
-
-
-              ' -- Does it match what we seek
-              IF Signature = ElementSignature THEN
-                ' -- Yes, so lets write the entity ID to target array
-                INCR Index
-
-                AbsolutePosition = lArrayCellAbsPos+(Index-1)
-                IF AbsolutePosition > TotElements THEN EXIT FOR
-
-                ' -- Write entity ID if suitable
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, AbsolutePosition, EntityID )
-              END IF
-            END IF
-          NEXT
-
-          ' -- Redim the array to match closely the number of found items
-          thinBasic_VariableRedim(lArrayCellPtr, %TRUE, MAX(Index, 1), 0, 0)
-
-          FUNCTION = Index
-        END IF
+      ' -- Does it match what we seek
+      IF Signature = ElementSignature THEN
+        ' -- Yes, so lets write the entity ID to target array
+        INCR Index
+        IF Index <= maxCount THEN @entityIDs[Index-1] = EntityID
       END IF
     END IF
-  END IF
+  NEXT
+
+  FUNCTION = Index
 
 END FUNCTION
 
 ' -----------------------------------------------------------------------------
 ' -- GENERAL PURPOSE ENTITY FUNCTIONS, THOSE ENTITY SPECIFIC ARE STICKED IN THEIR INCLUDES
 ' -----------------------------------------------------------------------------
-SUB Exec_TBGL_EntityDestroy()
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
+SUB tbgl_EntityDestroy ALIAS "tbgl_EntityDestroy" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG ) EXPORT
 
-  thinBASIC_Parse2Numbers(ScriptSceneID, EntityID)
   internal_SetEntityOverlay(ScriptSceneID)
 
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
@@ -816,9 +773,8 @@ SUB Exec_TBGL_EntityDestroy()
 END SUB
 
 ' -- Entity attach
-SUB Exec_TBGL_EntityAttach()
-  LOCAL sceneID, entityID, parentEntityID, MODE AS EXT
-  thinBASIC_Parse4Numbers(sceneID, entityID, parentEntityID, MODE)
+' -- MODE is %TBGL_DEFAULT (keep position) or %TBGL_RESET (reset position and rotation)
+SUB tbgl_EntityAttach ALIAS "tbgl_EntityAttach" ( BYVAL sceneID AS LONG, BYVAL entityID AS LONG, BYVAL parentEntityID AS LONG, BYVAL MODE AS LONG ) EXPORT
 
   IF parentEntityID THEN
     internal_SetEntityOverlay(sceneID)
@@ -846,9 +802,8 @@ SUB Exec_TBGL_EntityAttach()
 END SUB
 
 ' -- Entity detach
-SUB Exec_TBGL_EntityDetach()
-  LOCAL sceneID, entityID, MODE AS EXT
-  thinBASIC_Parse3Numbers(sceneID, entityID, MODE)
+' -- MODE is %TBGL_DEFAULT, %TBGL_RESET or %TBGL_PRESERVE (keep global position and orientation)
+SUB tbgl_EntityDetach ALIAS "tbgl_EntityDetach" ( BYVAL sceneID AS LONG, BYVAL entityID AS LONG, BYVAL MODE AS LONG ) EXPORT
 
   internal_SetEntityOverlay(sceneID)
 
@@ -896,9 +851,7 @@ SUB Exec_TBGL_EntityDetach()
 
 END SUB
 
-SUB Exec_TBGL_EntitySetParent()
-  LOCAL sceneID, entityID, parentEntityID AS EXT
-  thinBASIC_Parse3Numbers(sceneID, entityID, parentEntityID)
+SUB tbgl_EntitySetParent ALIAS "tbgl_EntitySetParent" ( BYVAL sceneID AS LONG, BYVAL entityID AS LONG, BYVAL parentEntityID AS LONG ) EXPORT
 
   internal_SetEntityOverlay(sceneID)
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(entityID))
@@ -906,9 +859,7 @@ SUB Exec_TBGL_EntitySetParent()
   @dummy_PtrTo_t_EntityInfo.entParent = parentEntityID
 END SUB
 
-FUNCTION Exec_TBGL_EntityGetParent() AS EXT
-  LOCAL sceneID, entityID AS EXT
-  thinBASIC_Parse2Numbers(sceneID, entityID)
+FUNCTION tbgl_EntityGetParent ALIAS "tbgl_EntityGetParent" ( BYVAL sceneID AS LONG, BYVAL entityID AS LONG ) EXPORT AS LONG
 
   internal_SetEntityOverlay(sceneID)
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(entityID))
@@ -918,13 +869,7 @@ END FUNCTION
 
 
 ' -- Entity user defined pointer
-SUB Exec_TBGL_EntitySetUserPointer()
-
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL uPointer AS EXT
-
-  thinBASIC_Parse3Numbers(ScriptSceneID, EntityID, uPointer)
+SUB tbgl_EntitySetUserPointer ALIAS "tbgl_EntitySetUserPointer" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL uPointer AS LONG ) EXPORT
   internal_SetEntityOverlay(ScriptSceneID)
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
 
@@ -932,12 +877,7 @@ SUB Exec_TBGL_EntitySetUserPointer()
 
 END SUB
 
-FUNCTION Exec_TBGL_EntityGetUserPointer() AS EXT
-
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-
-  thinBASIC_Parse2Numbers(ScriptSceneID, EntityID)
+FUNCTION tbgl_EntityGetUserPointer ALIAS "tbgl_EntityGetUserPointer" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG ) EXPORT AS LONG
   internal_SetEntityOverlay(ScriptSceneID)
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
 
@@ -946,57 +886,27 @@ FUNCTION Exec_TBGL_EntityGetUserPointer() AS EXT
 END FUNCTION
 
 ' -- Entity user defined data are stored locally, generally more useful
-SUB Exec_TBGL_EntitySetUserData()
+' -- Stores copy of dataSize bytes from pData as entity user data
+SUB tbgl_EntitySetUserData ALIAS "tbgl_EntitySetUserData" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL pData AS DWORD, BYVAL dataSize AS LONG ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL VariablePtr   AS LONG
-  LOCAL MainType      AS LONG
-  LOCAL SubType       AS LONG
-  LOCAL ElementsAreFixed AS LONG
-  LOCAL TotElements   AS LONG
-  LOCAL ElementSize   AS LONG
-  LOCAL DataPtr       AS LONG
-  LOCAL AbsPos        AS LONG
-  '
-  LOCAL sBuffer AS STRING
+  internal_SetEntityOverlayUserData(ScriptSceneID)
 
-  IF thinBasic_CheckOpenParens_Mandatory THEN
-    thinBasic_ParseNumber ScriptSceneID
-    IF thinBasic_CheckComma_Mandatory THEN
-      thinBasic_ParseNumber EntityID
-      IF thinBasic_CheckComma_Mandatory THEN
-
-        thinBasic_ParseVariableInfo( VariablePtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, DataPtr, AbsPos )
-        IF thinBasic_CheckCloseParens_Mandatory THEN
-
-          ' -- We mark STRINGs differentely for STRPTR/VARPTR purposes
-          IF ElementsAreFixed = %FALSE AND MainType = %VarMainType_IsString THEN
-            LOCAL p AS STRING PTR
-            p = DataPtr
-            sBuffer = LEFT$(@p, LEN(@p))
-          ELSE
-            ' -- 1234 is magic number which helps to differentiate STRING for numbers and ASCIIZ
-            sBuffer = PEEK$( DataPtr, ElementSize )+MKL$(1234)
-          END IF
-
-          internal_SetEntityOverlayUserData(ScriptSceneID)
-
-          TBGLSceneEntitiesUserData(EntityID) = sBuffer
-
-        END IF
-      END IF
-    END IF
-  END IF
+  ' -- 1234 is magic number which helps to differentiate STRING for numbers and ASCIIZ
+  TBGLSceneEntitiesUserData(EntityID) = PEEK$( pData, dataSize )+MKL$(1234)
 
 END SUB
 
-FUNCTION Exec_TBGL_EntityGetUserDataPointer() AS EXT
+' -- Stores copy of string as entity user data, it is marked differently for STRPTR/VARPTR purposes
+SUB tbgl_EntitySetUserDataString ALIAS "tbgl_EntitySetUserDataString" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL sData AS STRING ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
+  internal_SetEntityOverlayUserData(ScriptSceneID)
 
-  thinBasic_Parse2Numbers(ScriptSceneID, EntityID)
+  TBGLSceneEntitiesUserData(EntityID) = sData
+
+END SUB
+
+' -- Pointer to user data (for string data pointer to the string handle)
+FUNCTION tbgl_EntityGetUserDataPointer ALIAS "tbgl_EntityGetUserDataPointer" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG ) EXPORT AS DWORD
 
   internal_SetEntityOverlayUserData(ScriptSceneID)
 
@@ -1010,36 +920,14 @@ FUNCTION Exec_TBGL_EntityGetUserDataPointer() AS EXT
 END FUNCTION
 
 ' -- Names are stored separately
-SUB Exec_TBGL_EntitySetName()
+SUB tbgl_EntitySetName ALIAS "tbgl_EntitySetName" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL sName AS STRING ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL sName AS STRING
-
-  IF thinBasic_CheckOpenParens_Mandatory THEN
-    thinBasic_ParseNumber ScriptSceneID
-    IF thinBasic_CheckComma_Mandatory THEN
-      thinBasic_ParseNumber EntityID
-      IF thinBasic_CheckComma_Mandatory THEN
-        thinBasic_ParseString sName
-        IF thinBasic_CheckCloseParens_Mandatory THEN
-
-          internal_SetEntityOverlayNames(ScriptSceneID)
-          TBGLSceneEntitiesNames(EntityID) = sName
-
-        END IF
-      END IF
-    END IF
-  END IF
+  internal_SetEntityOverlayNames(ScriptSceneID)
+  TBGLSceneEntitiesNames(EntityID) = sName
 
 END SUB
 
-FUNCTION Exec_TBGL_EntityGetName() AS STRING
-
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-
-  thinBasic_Parse2Numbers(ScriptSceneID, EntityID)
+FUNCTION tbgl_EntityGetName ALIAS "tbgl_EntityGetName" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG ) EXPORT AS STRING
 
   internal_SetEntityOverlayNames(ScriptSceneID)
   FUNCTION = TBGLSceneEntitiesNames(EntityID)
@@ -1048,13 +936,10 @@ END FUNCTION
 
 ' -- Retrieving free slots
 ' -- Seeks for empty entity
-FUNCTION Exec_TBGL_EntityGetFreeID() AS EXT
+' -- Seeks for empty entity, starting at EntityFrom
+FUNCTION tbgl_EntityGetFreeID ALIAS "tbgl_EntityGetFreeID" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityFrom AS LONG ) EXPORT AS LONG
   REGISTER i AS LONG
-  LOCAL ScriptSceneID AS EXT, EntityFrom AS EXT
   LOCAL maxEntities AS LONG
-
-  EntityFrom = 1
-  thinBASIC_ParseXNumbers(1,2, ScriptSceneID, EntityFrom )
 
   internal_SetEntityOverlay(ScriptSceneID)
 
@@ -1084,13 +969,8 @@ END FUNCTION
 
 
 ' -- Use flag
-SUB Exec_TBGL_EntitySetUse()
+SUB tbgl_EntitySetUse ALIAS "tbgl_EntitySetUse" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL Use AS LONG ) EXPORT
   REGISTER i AS LONG
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL Use AS EXT
-
-  thinBASIC_Parse3Numbers(ScriptSceneID, EntityID, Use)
   internal_SetEntityOverlay(ScriptSceneID)
 
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
@@ -1112,12 +992,8 @@ SUB Exec_TBGL_EntitySetUse()
 
 END SUB
 
-FUNCTION Exec_TBGL_EntityGetUse() AS EXT
+FUNCTION tbgl_EntityGetUse ALIAS "tbgl_EntityGetUse" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG ) EXPORT AS LONG
   REGISTER i AS LONG
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-
-  thinBASIC_Parse2Numbers(ScriptSceneID, EntityID)
   internal_SetEntityOverlay(ScriptSceneID)
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
 
@@ -1126,14 +1002,11 @@ FUNCTION Exec_TBGL_EntityGetUse() AS EXT
 END FUNCTION
 
 ' -- Copies entity to another entity slot
-SUB Exec_TBGL_EntityCopyTo()
+' -- Copies entity EntityID to slot EntityID2, PARENT = 0 keeps original parent
+SUB tbgl_EntityCopyTo ALIAS "tbgl_EntityCopyTo" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL EntityID2 AS LONG, BYVAL PARENT AS LONG ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID, EntityID2, PARENT AS EXT
   LOCAL lEntityType, Param, Param2, Param3, Param4, Param5 AS LONG
   LOCAL dummy_PtrTo_t_EntityInfoCopyFrom AS t_EntityInfo PTR
-
-  thinBASIC_ParseXNumbers(3,4,ScriptSceneID, EntityID, EntityID2, PARENT)
 
   IF entityID2 > MyArrayOf_TBGLScene_EntityMaxID(ScriptSceneID) THEN
     ' -- A LONG (4 bytes) can store a string
@@ -1339,13 +1212,8 @@ END SUB
 
 
 ' -- Entity Position Related
-SUB Exec_TBGL_EntitySetPos()
+SUB tbgl_EntitySetPos ALIAS "tbgl_EntitySetPos" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL x AS DOUBLE, BYVAL y AS DOUBLE, BYVAL z AS DOUBLE ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL x, y, z AS EXT
-
-  thinBasic_ParseXNumbers(4, 5, ScriptSceneID, EntityID, x, y, z)
   internal_SetEntityOverlay(ScriptSceneID)
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
 
@@ -1355,84 +1223,40 @@ SUB Exec_TBGL_EntitySetPos()
 
 END SUB
 
-SUB Exec_TBGL_EntityGetPos()
+' -- Retrieves entity position, relative to parent or global (GlobalPosition <> 0)
+SUB tbgl_EntityGetPos ALIAS "tbgl_EntityGetPos" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityID AS LONG _
+  , BYREF x AS DOUBLE _
+  , BYREF y AS DOUBLE _
+  , BYREF z AS DOUBLE _
+  , BYVAL GlobalPosition AS LONG _
+  ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL GlobalPosition AS EXT
+  ' -- Overlay memory
+  internal_SetEntityOverlay(ScriptSceneID)
 
-  IF thinBasic_CheckOpenParens_Mandatory THEN
-    thinBasic_ParseNumber ScriptSceneID
-    IF thinBasic_CheckComma_Mandatory THEN
-      thinBasic_ParseNumber EntityID
+  dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
 
-      ' -- Overlay memory
-      internal_SetEntityOverlay(ScriptSceneID)
+  IF GlobalPosition <> 0 THEN
+    LOCAL p AS TBGL_tVector3D
 
-      dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
+    internal_TRACKPOS(dummy_PtrTo_t_EntityInfo, p)        ' -- BUG ?
 
-      LOCAL lVariablePtr1     AS LONG
-      LOCAL lVariableAbsPos1  AS LONG
+    x = p.x
+    y = p.y
+    z = p.z
 
-      LOCAL lVariablePtr2     AS LONG
-      LOCAL lVariableAbsPos2  AS LONG
+  ELSE
 
-      LOCAL lVariablePtr3     AS LONG
-      LOCAL lVariableAbsPos3  AS LONG
-
-      ' -- Get variables
-      IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-        thinBasic_VariableParse(lVariablePtr1, lVariableAbsPos1)
-        IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-          thinBasic_VariableParse(lVariablePtr2, lVariableAbsPos2)
-          IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-            thinBasic_VariableParse(lVariablePtr3, lVariableAbsPos3)
-            IF thinBasic_CheckCloseParens_Optional THEN
-
-              '---Now assign values to referenced variables
-              thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, @dummy_PtrTo_t_EntityInfo.x)
-              thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, @dummy_PtrTo_t_EntityInfo.y)
-              thinBasic_ChangeVariableNumberDirect (lVariablePtr3, lVariableAbsPos3, @dummy_PtrTo_t_EntityInfo.z)
-
-            ELSE
-              IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-                thinBASIC_ParseNumber GlobalPosition
-
-                IF GlobalPosition <> 0 THEN
-                  LOCAL p AS TBGL_tVector3D
-
-                  internal_TRACKPOS(dummy_PtrTo_t_EntityInfo, p)        ' -- BUG ?
-
-                  '---Now assign values to referenced variables
-                  thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, p.x)
-                  thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, p.y)
-                  thinBasic_ChangeVariableNumberDirect (lVariablePtr3, lVariableAbsPos3, p.z)
-
-                ELSE
-
-                  '---Now assign values to referenced variables
-                  thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, @dummy_PtrTo_t_EntityInfo.x)
-                  thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, @dummy_PtrTo_t_EntityInfo.y)
-                  thinBasic_ChangeVariableNumberDirect (lVariablePtr3, lVariableAbsPos3, @dummy_PtrTo_t_EntityInfo.z)
-                END IF
-                thinBasic_CheckCloseParens_Mandatory
-              END IF
-            END IF
-          END IF
-        END IF
-      END IF
-    END IF
+    x = @dummy_PtrTo_t_EntityInfo.x
+    y = @dummy_PtrTo_t_EntityInfo.y
+    z = @dummy_PtrTo_t_EntityInfo.z
   END IF
 
 END SUB
 
-SUB Exec_TBGL_EntityMove()
-
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL dx, dy, dz AS EXT
-
-  thinBasic_ParseXNumbers(4, 5, ScriptSceneID, EntityID, dx, dy, dz)
+SUB tbgl_EntityMove ALIAS "tbgl_EntityMove" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL dx AS DOUBLE, BYVAL dy AS DOUBLE, BYVAL dz AS DOUBLE ) EXPORT
   internal_SetEntityOverlay(ScriptSceneID)
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
   @dummy_PtrTo_t_EntityInfo.x += dx
@@ -1441,13 +1265,8 @@ SUB Exec_TBGL_EntityMove()
 
 END SUB
 
-SUB Exec_TBGL_EntityPush()
-
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL dx, dy, dz AS EXT
-
-  thinBasic_ParseXNumbers(4, 5, ScriptSceneID, EntityID, dx, dy, dz)
+' -- Moves entity along its local axes
+SUB tbgl_EntityPush ALIAS "tbgl_EntityPush" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL dx AS DOUBLE, BYVAL dy AS DOUBLE, BYVAL dz AS DOUBLE ) EXPORT
   internal_SetEntityOverlay(ScriptSceneID)
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
 
@@ -1458,69 +1277,46 @@ SUB Exec_TBGL_EntityPush()
 
 END SUB
 
-SUB Exec_TBGL_EntityTrackPos()
+' -- Converts point x, y, z in entity local coordinates to global coordinates
+SUB tbgl_EntityTrackPos ALIAS "tbgl_EntityTrackPos" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityID AS LONG _
+  , BYVAL x AS DOUBLE _
+  , BYVAL y AS DOUBLE _
+  , BYVAL z AS DOUBLE _
+  , BYREF trackedX AS DOUBLE _
+  , BYREF trackedY AS DOUBLE _
+  , BYREF trackedZ AS DOUBLE _
+  ) EXPORT
 
-  LOCAL ScriptSceneID, EntityID, x, y, z AS EXT
-  LOCAL o, p, xAxis, yAxis, zAxis, tracked AS TBGL_tVector3D
+  LOCAL o, p, xAxis, yAxis, zAxis AS TBGL_tVector3D
 
-  IF thinBasic_CheckOpenParens_Mandatory THEN
-    thinBasic_ParseNumber ScriptSceneID
-    IF thinBasic_CheckComma_Mandatory THEN
-      thinBasic_ParseNumber EntityID
-      IF thinBasic_CheckComma_Mandatory THEN
-        thinBasic_ParseNumber x
-        IF thinBasic_CheckComma_Mandatory THEN
-          thinBasic_ParseNumber y
-          IF thinBasic_CheckComma_Mandatory THEN
-            thinBasic_ParseNumber z
+  internal_SetEntityOverlay(ScriptSceneID)
+  dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
 
-              internal_SetEntityOverlay(ScriptSceneID)
-              dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
+  internal_TRACKPOS(dummy_PtrTo_t_EntityInfo, p, o, zAxis, yAxis)
+  VectorCross(xAxis,yAxis,zAxis)
 
-              internal_TRACKPOS(dummy_PtrTo_t_EntityInfo, p, o, zAxis, yAxis)
-              VectorCross(xAxis,yAxis,zAxis)
-
-              tracked.x = p.x + xAxis.x * x + yAxis.x * y + zAxis.x * z
-              tracked.y = p.y + xAxis.y * x + yAxis.y * y + zAxis.y * z
-              tracked.z = p.z + xAxis.z * x + yAxis.z * y + zAxis.z * z
-
-              internal_Parse3Byref (tracked.x, tracked.y, tracked.z)
-'              msgbox STR$(xAxis.x)+STR$(xAxis.y)+STR$(xAxis.z)+$CRLF+ _
-'                     STR$(yAxis.x)+STR$(yAxis.y)+STR$(yAxis.z)+$CRLF+ _
-'                     STR$(zAxis.x)+STR$(zAxis.y)+STR$(zAxis.z)+$CRLF+ _
-'                     STR$(p.x)+STR$(p.y)+STR$(p.z)+$CRLF+ _
-'                     STR$(x)+STR$(y)+STR$(z)+$CRLF+ _
-'                     STR$(tracked.x)+STR$(tracked.y)+STR$(tracked.z)+$CRLF
-
-'            o.x = x
-'            o.y = y
-'            o.z = z
-'            internal_SetEntityOverlay(ScriptSceneID)
-'
-'            dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
-'
-'            internal_TRACKPOS(dummy_PtrTo_t_EntityInfo, p, o)
-'
-'            internal_Parse3Byref (p.x,p.y,p.z)
-
-
-          END IF
-        END IF
-      END IF
-    END IF
-  END IF
+  trackedX = p.x + xAxis.x * x + yAxis.x * y + zAxis.x * z
+  trackedY = p.y + xAxis.y * x + yAxis.y * y + zAxis.y * z
+  trackedZ = p.z + xAxis.z * x + yAxis.z * y + zAxis.z * z
 
 END SUB
 
-FUNCTION EXEC_TBGL_EntityFindNearestByPos() AS EXT
+' -- Returns nearest used entity of EntityType within range around x, y, z, 0 if none
+FUNCTION tbgl_EntityFindNearestByPos ALIAS "tbgl_EntityFindNearestByPos" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityType AS LONG _
+  , BYVAL x AS DOUBLE _
+  , BYVAL y AS DOUBLE _
+  , BYVAL z AS DOUBLE _
+  , BYVAL rangeX AS DOUBLE _
+  , BYVAL rangeY AS DOUBLE _
+  , BYVAL rangeZ AS DOUBLE _
+  , BYVAL GlobalCoordinates AS LONG _
+  ) EXPORT AS LONG
 
   REGISTER EntityID AS LONG
-
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityType, x, y, z, rangeX, rangeY, rangeZ, GlobalCoordinates AS EXT
-  LOCAL parsed AS LONG
-
-  parsed = thinBasic_ParseXNumbers(8, 9, ScriptSceneID, EntityType, x, y, z, rangeX, rangeY, rangeZ, GlobalCoordinates )
 
   internal_SetEntityOverlayUserData(ScriptSceneID)
 
@@ -1591,16 +1387,17 @@ FUNCTION EXEC_TBGL_EntityFindNearestByPos() AS EXT
 
 END FUNCTION
 
-FUNCTION EXEC_TBGL_EntityFindByPos() AS EXT
+' -- Returns first entity of EntityType placed exactly at x, y, z, 0 if none
+FUNCTION tbgl_EntityFindByPos ALIAS "tbgl_EntityFindByPos" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityType AS LONG _
+  , BYVAL x AS DOUBLE _
+  , BYVAL y AS DOUBLE _
+  , BYVAL z AS DOUBLE _
+  , BYVAL GlobalCoordinates AS LONG _
+  ) EXPORT AS LONG
 
   REGISTER EntityID AS LONG
-
-  LOCAL ScriptSceneID AS EXT
-
-  LOCAL EntityType, x, y, z, GlobalCoordinates AS EXT
-  LOCAL parsed AS LONG
-
-  parsed = thinBasic_ParseXNumbers(5, 6, ScriptSceneID, EntityType, x, y, z, GlobalCoordinates )
 
   internal_SetEntityOverlayUserData(ScriptSceneID)
 
@@ -1645,18 +1442,23 @@ END FUNCTION
 
 ' --
 
-FUNCTION EXEC_TBGL_EntityFindNearest() AS EXT
+' -- Returns nearest used entity of EntityType within range around entity EntityFrom, 0 if none
+FUNCTION tbgl_EntityFindNearest ALIAS "tbgl_EntityFindNearest" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityType AS LONG _
+  , BYVAL EntityFrom AS LONG _
+  , BYVAL rangeX AS DOUBLE _
+  , BYVAL rangeY AS DOUBLE _
+  , BYVAL rangeZ AS DOUBLE _
+  , BYVAL GlobalCoordinates AS LONG _
+  ) EXPORT AS LONG
 
   REGISTER EntityID AS LONG
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityType, EntityFrom, rangeX, rangeY, rangeZ, GlobalCoordinates AS EXT
-  LOCAL parsed AS LONG, x, y, z AS DOUBLE
+  LOCAL x, y, z AS DOUBLE
   LOCAL MaxEntities, result AS LONG
   LOCAL maxx, minx, maxy, miny, maxz, minz, dist, mindist AS DOUBLE
   LOCAL p AS TBGL_tVector3D
-
-  parsed = thinBasic_ParseXNumbers(6, 7, ScriptSceneID, EntityType, EntityFrom, rangeX, rangeY, rangeZ, GlobalCoordinates )
 
   internal_SetEntityOverlayUserData(ScriptSceneID)
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityFrom))
@@ -1739,18 +1541,13 @@ FUNCTION EXEC_TBGL_EntityFindNearest() AS EXT
 END FUNCTION
 
 ' -- Distance between entities
-FUNCTION EXEC_TBGL_EntityGetDistance() AS EXT
+' -- Distance between global positions of two entities
+FUNCTION tbgl_EntityGetDistance ALIAS "tbgl_EntityGetDistance" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityFrom AS LONG, BYVAL EntityTo AS LONG ) EXPORT AS DOUBLE
 
-  REGISTER EntityID AS LONG
-
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityFrom, EntityTo AS EXT
   LOCAL x1, y1, z1 AS DOUBLE
   LOCAL x2, y2, z2 AS DOUBLE
   LOCAL xd, yd, zd AS DOUBLE
   LOCAL p AS TBGL_tVector3D
-
-  thinBasic_Parse3Numbers(ScriptSceneID, EntityFrom, EntityTo)
 
   internal_SetEntityOverlayUserData(ScriptSceneID)
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityFrom))
@@ -1774,18 +1571,18 @@ FUNCTION EXEC_TBGL_EntityGetDistance() AS EXT
 END FUNCTION
 
 ' -- Distance to point
-FUNCTION EXEC_TBGL_EntityGetDistancePos() AS EXT
+' -- Distance between global position of entity and point x2, y2, z2
+FUNCTION tbgl_EntityGetDistancePos ALIAS "tbgl_EntityGetDistancePos" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityFrom AS LONG _
+  , BYVAL x2 AS DOUBLE _
+  , BYVAL y2 AS DOUBLE _
+  , BYVAL z2 AS DOUBLE _
+  ) EXPORT AS DOUBLE
 
-  REGISTER EntityID AS LONG
-
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityFrom AS EXT
   LOCAL x1, y1, z1 AS DOUBLE
-  LOCAL x2, y2, z2 AS EXT
   LOCAL xd, yd, zd AS DOUBLE
   LOCAL p AS TBGL_tVector3D
-
-  thinBasic_Parse5Numbers(ScriptSceneID, EntityFrom, x2, y2, z2)
 
   internal_SetEntityOverlayUserData(ScriptSceneID)
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityFrom))
@@ -1804,93 +1601,35 @@ END FUNCTION
 
 
 ' -- Scaling
-SUB Exec_TBGL_EntitySetScale()
+SUB tbgl_EntitySetScale ALIAS "tbgl_EntitySetScale" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL sx AS DOUBLE, BYVAL sy AS DOUBLE, BYVAL sz AS DOUBLE ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL x, y, z AS EXT
-  LOCAL nParsed AS EXT
-
-  nParsed = thinBasic_ParseXNumbers( 3, 5, ScriptSceneID, EntityID, x, y, z)
-  ''thinBASIC_Parse5Numbers(ScriptSceneID, EntityID, x, y, z)
   internal_SetEntityOverlay(ScriptSceneID)
 
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
-  SELECT CASE AS LONG nParsed
-    CASE 3
-      @dummy_PtrTo_t_EntityInfo.sx = x
-      @dummy_PtrTo_t_EntityInfo.sy = x
-      @dummy_PtrTo_t_EntityInfo.sz = x
 
-    CASE 4
-      @dummy_PtrTo_t_EntityInfo.sx = x
-      @dummy_PtrTo_t_EntityInfo.sy = y
-      @dummy_PtrTo_t_EntityInfo.sz = 1
-
-    CASE ELSE
-      @dummy_PtrTo_t_EntityInfo.sx = x
-      @dummy_PtrTo_t_EntityInfo.sy = y
-      @dummy_PtrTo_t_EntityInfo.sz = z
-
-  END SELECT
+  @dummy_PtrTo_t_EntityInfo.sx = sx
+  @dummy_PtrTo_t_EntityInfo.sy = sy
+  @dummy_PtrTo_t_EntityInfo.sz = sz
 
 END SUB
 
-SUB Exec_TBGL_EntityGetScale()
+SUB tbgl_EntityGetScale ALIAS "tbgl_EntityGetScale" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYREF sx AS DOUBLE, BYREF sy AS DOUBLE, BYREF sz AS DOUBLE ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
+  ' -- Overlay memory
+  internal_SetEntityOverlay(ScriptSceneID)
 
-  IF thinBasic_CheckOpenParens_Mandatory THEN
-    thinBasic_ParseNumber ScriptSceneID
-    IF thinBasic_CheckComma_Mandatory THEN
-      thinBasic_ParseNumber EntityID
+  dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
 
-      ' -- Overlay memory
-      internal_SetEntityOverlay(ScriptSceneID)
-
-      dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
-
-      LOCAL lVariablePtr1     AS LONG
-      LOCAL lVariableAbsPos1  AS LONG
-
-      LOCAL lVariablePtr2     AS LONG
-      LOCAL lVariableAbsPos2  AS LONG
-
-      LOCAL lVariablePtr3     AS LONG
-      LOCAL lVariableAbsPos3  AS LONG
-
-      ' -- Get variables
-      IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-        thinBasic_VariableParse(lVariablePtr1, lVariableAbsPos1)
-        IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-          thinBasic_VariableParse(lVariablePtr2, lVariableAbsPos2)
-          IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-            thinBasic_VariableParse(lVariablePtr3, lVariableAbsPos3)
-            IF thinBasic_CheckCloseParens_Mandatory THEN
-
-              '---Now assign values to referenced variables
-              thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, @dummy_PtrTo_t_EntityInfo.sx)
-              thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, @dummy_PtrTo_t_EntityInfo.sy)
-              thinBasic_ChangeVariableNumberDirect (lVariablePtr3, lVariableAbsPos3, @dummy_PtrTo_t_EntityInfo.sz)
-
-            END IF
-          END IF
-        END IF
-      END IF
-    END IF
-  END IF
+  sx = @dummy_PtrTo_t_EntityInfo.sx
+  sy = @dummy_PtrTo_t_EntityInfo.sy
+  sz = @dummy_PtrTo_t_EntityInfo.sz
 
 END SUB
 
 ' -- Entitity Angle orientation
-SUB Exec_TBGL_EntitySetRot()
+' -- Sets absolute rotation in degrees, 2D rotation = rotation around Z axis
+SUB tbgl_EntitySetRot ALIAS "tbgl_EntitySetRot" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL x AS DOUBLE, BYVAL y AS DOUBLE, BYVAL z AS DOUBLE ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL x, y, z AS EXT
-  LOCAL n AS LONG
-  n = thinBASIC_ParseXNumbers(3, 5, ScriptSceneID, EntityID, x, y, z)
   internal_SetEntityOverlay(ScriptSceneID)
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
 
@@ -1898,44 +1637,37 @@ SUB Exec_TBGL_EntitySetRot()
   F3DVector( @dummy_PtrTo_t_EntityInfo.LocalAxisY, DefaultAxisY_X, DefaultAxisY_Y, DefaultAxisY_Z )
   F3DVector( @dummy_PtrTo_t_EntityInfo.LocalAxisX, DefaultAxisX_X, DefaultAxisX_Y, DefaultAxisX_Z )
 
-  IF n = 3 THEN
-    Vectors_RotateZ(x, @dummy_PtrTo_t_EntityInfo)
-  ELSE
-    Vectors_RotateZ(z, @dummy_PtrTo_t_EntityInfo)
-    Vectors_RotateY(-y, @dummy_PtrTo_t_EntityInfo)
-    Vectors_RotateX(-x, @dummy_PtrTo_t_EntityInfo)
-  END IF
+  Vectors_RotateZ(z, @dummy_PtrTo_t_EntityInfo)
+  Vectors_RotateY(-y, @dummy_PtrTo_t_EntityInfo)
+  Vectors_RotateX(-x, @dummy_PtrTo_t_EntityInfo)
 
 END SUB
 
 
-SUB Exec_TBGL_EntityTurn()
+' -- Relative rotation in degrees, 2D turn = turn around Z axis
+SUB tbgl_EntityTurn ALIAS "tbgl_EntityTurn" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL dx AS DOUBLE, BYVAL dy AS DOUBLE, BYVAL dz AS DOUBLE ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL dx, dy, dz AS EXT
-  LOCAL n AS LONG
-
-  n = thinBASIC_ParseXNumbers(3, 5, ScriptSceneID, EntityID, dx, dy, dz)
   internal_SetEntityOverlay(ScriptSceneID)
 
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
 
-  IF n = 3 THEN
-    IF dx THEN Vectors_RotateZ(dx, @dummy_PtrTo_t_EntityInfo) ' 2D case
-  ELSE
-    IF dx THEN Vectors_RotateX(-dx, @dummy_PtrTo_t_EntityInfo)
-    IF dy THEN Vectors_RotateY(-dy, @dummy_PtrTo_t_EntityInfo)
-    IF dz THEN Vectors_RotateZ(dz, @dummy_PtrTo_t_EntityInfo)
-  END IF
+  IF dx THEN Vectors_RotateX(-dx, @dummy_PtrTo_t_EntityInfo)
+  IF dy THEN Vectors_RotateY(-dy, @dummy_PtrTo_t_EntityInfo)
+  IF dz THEN Vectors_RotateZ(dz, @dummy_PtrTo_t_EntityInfo)
 END SUB
 
-SUB Exec_TBGL_EntitySetTarget()
+' -- Orients entity so its Z axis points to entity TargetEntityID
+SUB tbgl_EntitySetTarget ALIAS "tbgl_EntitySetTarget" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL TargetEntityID AS LONG ) EXPORT
+
+  tbgl_EntitySetTargetRange(ScriptSceneID, EntityID, EntityID, TargetEntityID)
+
+END SUB
+
+' -- Orients entities EntityID..LastParam so their Z axis points to entity EntityID2
+SUB tbgl_EntitySetTargetRange ALIAS "tbgl_EntitySetTargetRange" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL LastParam AS LONG, BYVAL EntityID2 AS LONG ) EXPORT
 
   REGISTER i AS LONG
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID, EntityID2, LastParam AS EXT
   LOCAL target_dummy_PtrTo_t_EntityInfo AS t_EntityInfo PTR
 
   LOCAL e AS TBGL_tVector3D
@@ -1943,14 +1675,6 @@ SUB Exec_TBGL_EntitySetTarget()
 
   LOCAL vx,vy,vz, vl AS DOUBLE
     LOCAL ranglex, rangley, ranglez AS DOUBLE
-
-  thinBASIC_ParseXNumbers(3, 4,ScriptSceneID, EntityID, EntityID2, LastParam)
-
-  IF LastParam <> 0 THEN
-    SWAP EntityID2, LastParam
-  ELSE
-    LastParam = EntityID
-  END IF
 
   internal_SetEntityOverlay(ScriptSceneID)
   target_dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID2))
@@ -2002,14 +1726,10 @@ SUB Exec_TBGL_EntitySetTarget()
 
 END SUB
 
-SUB Exec_TBGL_EntitySetTargetPos()
-
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL x,y,z AS EXT
+' -- Orients entity so its Z axis points to x, y, z
+SUB tbgl_EntitySetTargetPos ALIAS "tbgl_EntitySetTargetPos" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL x AS DOUBLE, BYVAL y AS DOUBLE, BYVAL z AS DOUBLE ) EXPORT
 
   LOCAL vx,vy,vz, vl AS DOUBLE
-  thinBASIC_Parse5Numbers(ScriptSceneID, EntityID, x, y, z)
 
   internal_SetEntityOverlay(ScriptSceneID)
 
@@ -2066,312 +1786,267 @@ SUB Exec_TBGL_EntitySetTargetPos()
 
 END SUB
 
-SUB Exec_TBGL_EntityGetZAxis()
+' -- Global direction of entity axes
+SUB tbgl_EntityGetZAxis ALIAS "tbgl_EntityGetZAxis" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYREF x AS DOUBLE, BYREF y AS DOUBLE, BYREF z AS DOUBLE ) EXPORT
 
-  LOCAL ScriptSceneID, EntityID AS EXT
   LOCAL o, p, v AS TBGL_tVector3D
 
-  IF thinBasic_CheckOpenParens_Mandatory THEN
-    thinBasic_ParseNumber ScriptSceneID
-    IF thinBasic_CheckComma_Mandatory THEN
-      thinBasic_ParseNumber EntityID
+  internal_SetEntityOverlay(ScriptSceneID)
+  dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
 
-      internal_SetEntityOverlay(ScriptSceneID)
-      dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
+  internal_TRACKPOS(dummy_PtrTo_t_EntityInfo, p, o, v)
 
-      internal_TRACKPOS(dummy_PtrTo_t_EntityInfo, p, o, v)
-
-      internal_Parse3Byref (v.x, v.y, v.z)
-
-
-    END IF
-  END IF
+  x = v.x
+  y = v.y
+  z = v.z
 
 END SUB
 
-SUB Exec_TBGL_EntityGetYAxis()
+SUB tbgl_EntityGetYAxis ALIAS "tbgl_EntityGetYAxis" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYREF x AS DOUBLE, BYREF y AS DOUBLE, BYREF z AS DOUBLE ) EXPORT
 
-  LOCAL ScriptSceneID, EntityID AS EXT
   LOCAL o, p, v, u AS TBGL_tVector3D
 
-  IF thinBasic_CheckOpenParens_Mandatory THEN
-    thinBasic_ParseNumber ScriptSceneID
-    IF thinBasic_CheckComma_Mandatory THEN
-      thinBasic_ParseNumber EntityID
+  internal_SetEntityOverlay(ScriptSceneID)
+  dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
 
-      internal_SetEntityOverlay(ScriptSceneID)
-      dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
+  internal_TRACKPOS(dummy_PtrTo_t_EntityInfo, p, o, v, u)
 
-      internal_TRACKPOS(dummy_PtrTo_t_EntityInfo, p, o, v, u)
-
-      internal_Parse3Byref (u.x, u.y, u.z)
-
-    END IF
-  END IF
+  x = u.x
+  y = u.y
+  z = u.z
 
 END SUB
 
-SUB Exec_TBGL_EntityGetXAxis()
+SUB tbgl_EntityGetXAxis ALIAS "tbgl_EntityGetXAxis" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYREF x AS DOUBLE, BYREF y AS DOUBLE, BYREF z AS DOUBLE ) EXPORT
 
-  LOCAL ScriptSceneID, EntityID AS EXT
   LOCAL o, p, v, u, r AS TBGL_tVector3D
 
-  IF thinBasic_CheckOpenParens_Mandatory THEN
-    thinBasic_ParseNumber ScriptSceneID
-    IF thinBasic_CheckComma_Mandatory THEN
-      thinBasic_ParseNumber EntityID
+  internal_SetEntityOverlay(ScriptSceneID)
+  dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
 
-      internal_SetEntityOverlay(ScriptSceneID)
-      dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
+  internal_TRACKPOS(dummy_PtrTo_t_EntityInfo, p, o, v, u)
 
-      internal_TRACKPOS(dummy_PtrTo_t_EntityInfo, p, o, v, u)
+  VectorCross(r,u,v)
 
-      VectorCross(r,u,v)
-      internal_Parse3Byref (r.x, r.y, r.z)
-
-    END IF
-  END IF
+  x = r.x
+  y = r.y
+  z = r.z
 
 END SUB
 ' --
 
-SUB Exec_TBGL_EntityGetMatrix()
-  REGISTER i AS LONG
-  LOCAL ScriptSceneID, EntityID, matrixType AS EXT
-  LOCAL lArrayCellPtr AS LONG
-  LOCAL lArrayCellAbsPos AS LONG
-  LOCAL VariablePtrOdd, MainType, SubType, ElementsAreFixed, TotElements, ElementSize AS LONG
+' -- Fills matrix (elementCount = 9 for 3x3 rotation, 16 for 4x4 incl. position) with global entity transformation
+' -- matrixType is %TBGL_ColumnRow or %TBGL_RowColumn
+SUB tbgl_EntityGetMatrix ALIAS "tbgl_EntityGetMatrix" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityID AS LONG _
+  , BYVAL matrix AS DOUBLE PTR _
+  , BYVAL elementCount AS LONG _
+  , BYVAL matrixType AS LONG _
+  ) EXPORT
 
   LOCAL o, p, v, u, r AS TBGL_tVector3D
 
-  IF thinBasic_CheckOpenParens_Mandatory THEN
-    thinBasic_ParseNumber ScriptSceneID
-    IF thinBasic_CheckComma_Mandatory THEN
-      thinBasic_ParseNumber EntityID
-      IF thinBasic_CheckComma_Mandatory THEN
-        ' -- Parse the array
-        thinBasic_ParseVariableInfo(lArrayCellPtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, VariablePtrOdd, lArrayCellAbsPos)
+  ' -- Calculate vectors
+  internal_SetEntityOverlay(ScriptSceneID)
+  dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
 
-        IF thinBasic_CheckComma_Optional THEN
-          thinBasic_ParseNumber matrixType
-        END IF
+  internal_TRACKPOS(dummy_PtrTo_t_EntityInfo, p, o, v, u)
+  ' r = x
+  ' u = y
+  ' v = z
+  VectorCross(r,u,v)
 
-        IF thinBasic_CheckCloseParens_Mandatory THEN
-
-          ' -- Calculate vectors
-          internal_SetEntityOverlay(ScriptSceneID)
-          dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
-
-          internal_TRACKPOS(dummy_PtrTo_t_EntityInfo, p, o, v, u)
-          ' r = x
-          ' u = y
-          ' v = z
-          VectorCross(r,u,v)
-
-          IF @dummy_PtrTo_t_EntityInfo.sx <> 1 THEN
-            r.x *= @dummy_PtrTo_t_EntityInfo.sx
-            r.y *= @dummy_PtrTo_t_EntityInfo.sx
-            r.z *= @dummy_PtrTo_t_EntityInfo.sx
-          END IF
-
-          IF @dummy_PtrTo_t_EntityInfo.sy <> 1 THEN
-            u.x *= @dummy_PtrTo_t_EntityInfo.sy
-            u.y *= @dummy_PtrTo_t_EntityInfo.sy
-            u.z *= @dummy_PtrTo_t_EntityInfo.sy
-          END IF
-
-          IF @dummy_PtrTo_t_EntityInfo.sz <> 1 THEN
-            v.x *= @dummy_PtrTo_t_EntityInfo.sz
-            v.y *= @dummy_PtrTo_t_EntityInfo.sz
-            v.z *= @dummy_PtrTo_t_EntityInfo.sz
-          END IF
-          SELECT CASE AS LONG TotElements
-            CASE 16
-              IF matrixType = %TBGL_ColumnRow THEN
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  1, r.x )   ' (1, 1)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  2, r.y )   ' (2, 1)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  3, r.z )   ' (3, 1)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  4, 0.0 )   ' (4, 1)
-
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  5, u.x )   ' (1, 2)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  6, u.y )   ' (2, 2)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  7, u.z )   ' (3, 2)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  8, 0.0 )   ' (4, 2)
-
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  9, v.x )   ' (1, 3)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, 10, v.y )   ' (2, 3)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, 11, v.z )   ' (3, 3)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, 12, 0.0 )   ' (4, 3)
-
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, 13, p.x )   ' (1, 4)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, 14, p.y )   ' (2, 4)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, 15, p.z )   ' (3, 4)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, 16, 1.0 )   ' (4, 4)
-              ELSE
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  1, r.x )   ' (1, 1)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  5, r.y )   ' (1, 2)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  9, r.z )   ' (1, 3)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, 13, 0.0 )   ' (1, 4)
-
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  2, u.x )   ' (2, 1)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  6, u.y )   ' (2, 2)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, 10, u.z )   ' (2, 3)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, 14, 0.0 )   ' (2, 4)
-
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  3, v.x )   ' (3, 1)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  7, v.y )   ' (3, 2)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, 11, v.z )   ' (3, 3)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, 15, 0.0 )   ' (3, 4)
-
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  4, p.x )   ' (4, 1)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  8, p.y )   ' (4, 2)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, 12, p.z )   ' (4, 3)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, 16, 1.0 )   ' (4, 4)
-              END IF
-
-            CASE 9
-              IF matrixType = %TBGL_ColumnRow THEN
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  1, r.x )   ' (1, 1)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  2, r.y )   ' (2, 1)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  3, r.z )   ' (3, 1)
-
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  4, u.x )   ' (1, 2)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  5, u.y )   ' (2, 2)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  6, u.z )   ' (3, 2)
-
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  7, v.x )   ' (1, 3)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  8, v.y )   ' (2, 3)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  9, v.z )   ' (3, 3)
-              ELSE
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  1, r.x )   ' (1, 1)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  4, r.y )   ' (1, 2)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  7, r.z )   ' (1, 3)
-
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  2, u.x )   ' (2, 1)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  5, u.y )   ' (2, 2)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  8, u.z )   ' (2, 3)
-
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  3, v.x )   ' (3, 1)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  6, v.y )   ' (3, 2)
-                thinBasic_ChangeVariableNumberDirect( lArrayCellPtr,  9, v.z )   ' (3, 3)
-              END IF
-
-            CASE ELSE
-              tbglerror("Invalid matrix size for TBGL_EntityGetMatrix, matrix must have 9 or 16 elements")
-          END SELECT
-        END IF
-      END IF
-    END IF
+  IF @dummy_PtrTo_t_EntityInfo.sx <> 1 THEN
+    r.x *= @dummy_PtrTo_t_EntityInfo.sx
+    r.y *= @dummy_PtrTo_t_EntityInfo.sx
+    r.z *= @dummy_PtrTo_t_EntityInfo.sx
   END IF
+
+  IF @dummy_PtrTo_t_EntityInfo.sy <> 1 THEN
+    u.x *= @dummy_PtrTo_t_EntityInfo.sy
+    u.y *= @dummy_PtrTo_t_EntityInfo.sy
+    u.z *= @dummy_PtrTo_t_EntityInfo.sy
+  END IF
+
+  IF @dummy_PtrTo_t_EntityInfo.sz <> 1 THEN
+    v.x *= @dummy_PtrTo_t_EntityInfo.sz
+    v.y *= @dummy_PtrTo_t_EntityInfo.sz
+    v.z *= @dummy_PtrTo_t_EntityInfo.sz
+  END IF
+  SELECT CASE AS LONG elementCount
+    CASE 16
+      IF matrixType = %TBGL_ColumnRow THEN
+        @matrix[0] = r.x   ' (1, 1)
+        @matrix[1] = r.y   ' (2, 1)
+        @matrix[2] = r.z   ' (3, 1)
+        @matrix[3] = 0.0   ' (4, 1)
+
+        @matrix[4] = u.x   ' (1, 2)
+        @matrix[5] = u.y   ' (2, 2)
+        @matrix[6] = u.z   ' (3, 2)
+        @matrix[7] = 0.0   ' (4, 2)
+
+        @matrix[8] = v.x   ' (1, 3)
+        @matrix[9] = v.y   ' (2, 3)
+        @matrix[10] = v.z   ' (3, 3)
+        @matrix[11] = 0.0   ' (4, 3)
+
+        @matrix[12] = p.x   ' (1, 4)
+        @matrix[13] = p.y   ' (2, 4)
+        @matrix[14] = p.z   ' (3, 4)
+        @matrix[15] = 1.0   ' (4, 4)
+      ELSE
+        @matrix[0] = r.x   ' (1, 1)
+        @matrix[4] = r.y   ' (1, 2)
+        @matrix[8] = r.z   ' (1, 3)
+        @matrix[12] = 0.0   ' (1, 4)
+
+        @matrix[1] = u.x   ' (2, 1)
+        @matrix[5] = u.y   ' (2, 2)
+        @matrix[9] = u.z   ' (2, 3)
+        @matrix[13] = 0.0   ' (2, 4)
+
+        @matrix[2] = v.x   ' (3, 1)
+        @matrix[6] = v.y   ' (3, 2)
+        @matrix[10] = v.z   ' (3, 3)
+        @matrix[14] = 0.0   ' (3, 4)
+
+        @matrix[3] = p.x   ' (4, 1)
+        @matrix[7] = p.y   ' (4, 2)
+        @matrix[11] = p.z   ' (4, 3)
+        @matrix[15] = 1.0   ' (4, 4)
+      END IF
+
+    CASE 9
+      IF matrixType = %TBGL_ColumnRow THEN
+        @matrix[0] = r.x   ' (1, 1)
+        @matrix[1] = r.y   ' (2, 1)
+        @matrix[2] = r.z   ' (3, 1)
+
+        @matrix[3] = u.x   ' (1, 2)
+        @matrix[4] = u.y   ' (2, 2)
+        @matrix[5] = u.z   ' (3, 2)
+
+        @matrix[6] = v.x   ' (1, 3)
+        @matrix[7] = v.y   ' (2, 3)
+        @matrix[8] = v.z   ' (3, 3)
+      ELSE
+        @matrix[0] = r.x   ' (1, 1)
+        @matrix[3] = r.y   ' (1, 2)
+        @matrix[6] = r.z   ' (1, 3)
+
+        @matrix[1] = u.x   ' (2, 1)
+        @matrix[4] = u.y   ' (2, 2)
+        @matrix[7] = u.z   ' (2, 3)
+
+        @matrix[2] = v.x   ' (3, 1)
+        @matrix[5] = v.y   ' (3, 2)
+        @matrix[8] = v.z   ' (3, 3)
+      END IF
+
+    CASE ELSE
+      tbglerror("Invalid matrix size for TBGL_EntityGetMatrix, matrix must have 9 or 16 elements")
+  END SELECT
 
 END SUB
 
-SUB Exec_TBGL_EntitySetMatrix()
-  REGISTER i AS LONG
-  LOCAL ScriptSceneID, EntityID, matrixType AS EXT
-  LOCAL lArrayCellPtr AS LONG
-  LOCAL lArrayCellAbsPos AS LONG
-  LOCAL VariablePtrOdd, MainType, SubType, ElementsAreFixed, TotElements, ElementSize AS LONG
+' -- Sets entity orientation (elementCount = 9) or orientation and position (elementCount = 16) from matrix
+' -- matrixType is %TBGL_ColumnRow or %TBGL_RowColumn
+SUB tbgl_EntitySetMatrix ALIAS "tbgl_EntitySetMatrix" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityID AS LONG _
+  , BYVAL matrix AS DOUBLE PTR _
+  , BYVAL elementCount AS LONG _
+  , BYVAL matrixType AS LONG _
+  ) EXPORT
 
-  IF thinBasic_CheckOpenParens_Mandatory THEN
-    thinBasic_ParseNumber ScriptSceneID
-    IF thinBasic_CheckComma_Mandatory THEN
-      thinBasic_ParseNumber EntityID
-      IF thinBasic_CheckComma_Mandatory THEN
-        ' -- Parse the array
-        thinBasic_ParseVariableInfo(lArrayCellPtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, VariablePtrOdd, lArrayCellAbsPos)
+  internal_SetEntityOverlay(ScriptSceneID)
+  dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
+  SELECT CASE AS LONG elementCount
+    CASE 16
+      IF matrixType = %TBGL_ColumnRow THEN
+        @dummy_PtrTo_t_EntityInfo.LocalAxisX.x = @matrix[0]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisX.y = @matrix[1]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisX.z = @matrix[2]
 
-        IF thinBasic_CheckComma_Optional THEN
-          thinBasic_ParseNumber matrixType
-        END IF
+        @dummy_PtrTo_t_EntityInfo.LocalAxisY.x = @matrix[4]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisY.y = @matrix[5]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisY.z = @matrix[6]
 
-        IF thinBasic_CheckCloseParens_Mandatory THEN
-          ' -- Calculate vectors
-          internal_SetEntityOverlay(ScriptSceneID)
-          dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
-          SELECT CASE AS LONG TotElements
-            CASE 16
-              IF matrixType = %TBGL_ColumnRow THEN
-                @dummy_PtrTo_t_EntityInfo.LocalAxisX.x = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  1)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisX.y = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  2)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisX.z = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  3)
+        @dummy_PtrTo_t_EntityInfo.LocalAxisZ.x = @matrix[8]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisZ.y = @matrix[9]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisZ.z = @matrix[10]
 
-                @dummy_PtrTo_t_EntityInfo.LocalAxisY.x = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  5)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisY.y = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  6)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisY.z = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  7)
+        @dummy_PtrTo_t_EntityInfo.x            = @matrix[12]
+        @dummy_PtrTo_t_EntityInfo.y            = @matrix[13]
+        @dummy_PtrTo_t_EntityInfo.z            = @matrix[14]
+      ELSE
+        @dummy_PtrTo_t_EntityInfo.LocalAxisX.x = @matrix[0]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisX.y = @matrix[4]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisX.z = @matrix[8]
 
-                @dummy_PtrTo_t_EntityInfo.LocalAxisZ.x = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  9)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisZ.y = thinBasic_GetVariableNumberDirect(lArrayCellPtr, 10)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisZ.z = thinBasic_GetVariableNumberDirect(lArrayCellPtr, 11)
+        @dummy_PtrTo_t_EntityInfo.LocalAxisY.x = @matrix[1]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisY.y = @matrix[5]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisY.z = @matrix[9]
 
-                @dummy_PtrTo_t_EntityInfo.x            = thinBasic_GetVariableNumberDirect(lArrayCellPtr, 13)
-                @dummy_PtrTo_t_EntityInfo.y            = thinBasic_GetVariableNumberDirect(lArrayCellPtr, 14)
-                @dummy_PtrTo_t_EntityInfo.z            = thinBasic_GetVariableNumberDirect(lArrayCellPtr, 15)
-              ELSE
-                @dummy_PtrTo_t_EntityInfo.LocalAxisX.x = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  1)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisX.y = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  5)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisX.z = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  9)
+        @dummy_PtrTo_t_EntityInfo.LocalAxisZ.x = @matrix[2]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisZ.y = @matrix[6]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisZ.z = @matrix[10]
 
-                @dummy_PtrTo_t_EntityInfo.LocalAxisY.x = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  2)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisY.y = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  6)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisY.z = thinBasic_GetVariableNumberDirect(lArrayCellPtr, 10)
-
-                @dummy_PtrTo_t_EntityInfo.LocalAxisZ.x = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  3)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisZ.y = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  7)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisZ.z = thinBasic_GetVariableNumberDirect(lArrayCellPtr, 11)
-
-                @dummy_PtrTo_t_EntityInfo.x            = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  4)
-                @dummy_PtrTo_t_EntityInfo.y            = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  8)
-                @dummy_PtrTo_t_EntityInfo.z            = thinBasic_GetVariableNumberDirect(lArrayCellPtr, 12)
-              END IF
-
-            CASE 9
-              IF matrixType = %TBGL_ColumnRow THEN
-                @dummy_PtrTo_t_EntityInfo.LocalAxisX.x = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  1)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisX.y = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  2)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisX.z = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  3)
-
-                @dummy_PtrTo_t_EntityInfo.LocalAxisY.x = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  4)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisY.y = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  5)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisY.z = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  6)
-
-                @dummy_PtrTo_t_EntityInfo.LocalAxisZ.x = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  7)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisZ.y = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  8)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisZ.z = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  9)
-              ELSE
-                @dummy_PtrTo_t_EntityInfo.LocalAxisX.x = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  1)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisX.y = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  4)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisX.z = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  7)
-
-                @dummy_PtrTo_t_EntityInfo.LocalAxisY.x = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  2)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisY.y = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  5)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisY.z = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  8)
-
-                @dummy_PtrTo_t_EntityInfo.LocalAxisZ.x = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  3)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisZ.y = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  6)
-                @dummy_PtrTo_t_EntityInfo.LocalAxisZ.z = thinBasic_GetVariableNumberDirect(lArrayCellPtr,  9)
-              END IF
-
-            CASE ELSE
-              tbglerror("Invalid matrix size for TBGL_EntitySetMatrix, matrix must have 9 or 16 elements")
-          END SELECT
-        END IF
+        @dummy_PtrTo_t_EntityInfo.x            = @matrix[3]
+        @dummy_PtrTo_t_EntityInfo.y            = @matrix[7]
+        @dummy_PtrTo_t_EntityInfo.z            = @matrix[11]
       END IF
-    END IF
-  END IF
+
+    CASE 9
+      IF matrixType = %TBGL_ColumnRow THEN
+        @dummy_PtrTo_t_EntityInfo.LocalAxisX.x = @matrix[0]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisX.y = @matrix[1]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisX.z = @matrix[2]
+
+        @dummy_PtrTo_t_EntityInfo.LocalAxisY.x = @matrix[3]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisY.y = @matrix[4]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisY.z = @matrix[5]
+
+        @dummy_PtrTo_t_EntityInfo.LocalAxisZ.x = @matrix[6]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisZ.y = @matrix[7]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisZ.z = @matrix[8]
+      ELSE
+        @dummy_PtrTo_t_EntityInfo.LocalAxisX.x = @matrix[0]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisX.y = @matrix[3]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisX.z = @matrix[6]
+
+        @dummy_PtrTo_t_EntityInfo.LocalAxisY.x = @matrix[1]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisY.y = @matrix[4]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisY.z = @matrix[7]
+
+        @dummy_PtrTo_t_EntityInfo.LocalAxisZ.x = @matrix[2]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisZ.y = @matrix[5]
+        @dummy_PtrTo_t_EntityInfo.LocalAxisZ.z = @matrix[8]
+      END IF
+
+    CASE ELSE
+      tbglerror("Invalid matrix size for TBGL_EntitySetMatrix, matrix must have 9 or 16 elements")
+  END SELECT
 
 END SUB
 
 ' --
-SUB Exec_TBGL_EntitySetXYAxis()
+' -- Sets entity X and Y axis, Z axis is calculated
+SUB tbgl_EntitySetXYAxis ALIAS "tbgl_EntitySetXYAxis" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityID AS LONG _
+  , BYVAL xX AS DOUBLE _
+  , BYVAL xY AS DOUBLE _
+  , BYVAL xZ AS DOUBLE _
+  , BYVAL yX AS DOUBLE _
+  , BYVAL yY AS DOUBLE _
+  , BYVAL yZ AS DOUBLE _
+  ) EXPORT
 
   LOCAL v, u, r AS TBGL_tVector3D
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL xX, xY, xZ, yX, yY, yZ AS EXT
-
-  thinBASIC_ParseXNumbers(8,8,ScriptSceneID, EntityID, xX, xY, xZ, yX, yY, yZ )
   internal_SetEntityOverlay(ScriptSceneID)
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
 
@@ -2399,15 +2074,20 @@ SUB Exec_TBGL_EntitySetXYAxis()
 
 END SUB
 
-SUB Exec_TBGL_EntitySetXZAxis()
+' -- Sets entity X and Z axis, Y axis is calculated
+SUB tbgl_EntitySetXZAxis ALIAS "tbgl_EntitySetXZAxis" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityID AS LONG _
+  , BYVAL xX AS DOUBLE _
+  , BYVAL xY AS DOUBLE _
+  , BYVAL xZ AS DOUBLE _
+  , BYVAL zX AS DOUBLE _
+  , BYVAL zY AS DOUBLE _
+  , BYVAL zZ AS DOUBLE _
+  ) EXPORT
 
   LOCAL v, u, r AS TBGL_tVector3D
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL xX, xY, xZ, zX, zY, zZ AS EXT
-
-  thinBASIC_ParseXNumbers(8,8,ScriptSceneID, EntityID, xX, xY, xZ, zX, zY, zZ )
   internal_SetEntityOverlay(ScriptSceneID)
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
 
@@ -2435,15 +2115,20 @@ SUB Exec_TBGL_EntitySetXZAxis()
 
 END SUB
 
-SUB Exec_TBGL_EntitySetYZAxis()
+' -- Sets entity Y and Z axis, X axis is calculated
+SUB tbgl_EntitySetYZAxis ALIAS "tbgl_EntitySetYZAxis" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityID AS LONG _
+  , BYVAL yX AS DOUBLE _
+  , BYVAL yY AS DOUBLE _
+  , BYVAL yZ AS DOUBLE _
+  , BYVAL zX AS DOUBLE _
+  , BYVAL zY AS DOUBLE _
+  , BYVAL zZ AS DOUBLE _
+  ) EXPORT
 
   LOCAL v, u, r AS TBGL_tVector3D
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL yX, yY, yZ, zX, zY, zZ AS EXT
-
-  thinBASIC_ParseXNumbers(8,8,ScriptSceneID, EntityID, yX, yY, yZ, zX, zY, zZ )
   internal_SetEntityOverlay(ScriptSceneID)
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
 
@@ -2471,16 +2156,13 @@ SUB Exec_TBGL_EntitySetYZAxis()
 
 END SUB
 
-SUB Exec_TBGL_EntitySyncAxes()
+' -- Copies axes of entity EntityID2 to entity EntityID, GlobalCoordinates = %TRUE uses global orientation of EntityID2
+SUB tbgl_EntitySyncAxes ALIAS "tbgl_EntitySyncAxes" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL EntityID2 AS LONG, BYVAL GlobalCoordinates AS LONG ) EXPORT
 
   LOCAL o, p, v, u, r AS TBGL_tVector3D
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID, EntityID2 AS EXT
-  LOCAL GlobalCoordinates AS EXT
   LOCAL local_dummy_PtrTo_t_EntityInfo AS t_EntityInfo PTR
 
-  thinBASIC_ParseXNumbers(3,4,ScriptSceneID, EntityID, EntityID2, GlobalCoordinates )
   internal_SetEntityOverlay(ScriptSceneID)
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
   local_dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID2))
@@ -2516,7 +2198,13 @@ SUB Exec_TBGL_EntitySyncAxes()
 
 END SUB
 
-FUNCTION Exec_TBGL_EntityGetAngleXZ() AS EXT
+' -- Angle in XZ plane between entity EntityAxis and direction to entity EntityTargetID, %TBGL_UNDEFINED if it cannot be determined
+FUNCTION tbgl_EntityGetAngleXZ ALIAS "tbgl_EntityGetAngleXZ" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityID AS LONG _
+  , BYVAL EntityTargetID AS LONG _
+  , BYVAL EntityAxis AS LONG _
+  ) EXPORT AS DOUBLE
 
   LOCAL x1, y1, z1 AS DOUBLE
   LOCAL x1x, y1y, z1z AS DOUBLE
@@ -2524,16 +2212,10 @@ FUNCTION Exec_TBGL_EntityGetAngleXZ() AS EXT
 
   LOCAL Angle AS DOUBLE
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL EntityTargetID AS EXT
-  LOCAL EntityAxis AS EXT
-
   LOCAL o, p, v AS TBGL_tVector3D
 
   LOCAL AngleBonus  AS LONG
 
-  thinBasic_Parse4Numbers(ScriptSceneID, EntityID, EntityTargetID, EntityAxis)
   AngleBonus = IIF(EntityAxis = %TBGL_Z, 0, -90)
 
 
@@ -2579,7 +2261,13 @@ FUNCTION Exec_TBGL_EntityGetAngleXZ() AS EXT
 
 END FUNCTION
 
-FUNCTION Exec_TBGL_EntityGetAngleXY() AS EXT
+' -- Angle in XY plane between entity EntityAxis and direction to entity EntityTargetID, %TBGL_UNDEFINED if it cannot be determined
+FUNCTION tbgl_EntityGetAngleXY ALIAS "tbgl_EntityGetAngleXY" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityID AS LONG _
+  , BYVAL EntityTargetID AS LONG _
+  , BYVAL EntityAxis AS LONG _
+  ) EXPORT AS DOUBLE
 
   LOCAL x1, y1, z1 AS DOUBLE
   LOCAL x1x, y1y, z1z AS DOUBLE
@@ -2587,16 +2275,10 @@ FUNCTION Exec_TBGL_EntityGetAngleXY() AS EXT
 
   LOCAL Angle AS DOUBLE
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL EntityTargetID AS EXT
-  LOCAL EntityAxis AS EXT
-
   LOCAL o, p, v, u, r AS TBGL_tVector3D
 
   LOCAL AngleBonus  AS LONG
 
-  thinBasic_Parse4Numbers(ScriptSceneID, EntityID, EntityTargetID, EntityAxis)
 
   AngleBonus = IIF(EntityAxis = %TBGL_X, 0, -90)
   ' -- Overlay memory
@@ -2646,7 +2328,13 @@ FUNCTION Exec_TBGL_EntityGetAngleXY() AS EXT
 
 END FUNCTION
 
-FUNCTION Exec_TBGL_EntityGetAngleYZ() AS EXT
+' -- Angle in YZ plane between entity EntityAxis and direction to entity EntityTargetID, %TBGL_UNDEFINED if it cannot be determined
+FUNCTION tbgl_EntityGetAngleYZ ALIAS "tbgl_EntityGetAngleYZ" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityID AS LONG _
+  , BYVAL EntityTargetID AS LONG _
+  , BYVAL EntityAxis AS LONG _
+  ) EXPORT AS DOUBLE
 
   LOCAL x1, y1, z1 AS DOUBLE
   LOCAL x1x, y1y, z1z AS DOUBLE
@@ -2654,16 +2342,10 @@ FUNCTION Exec_TBGL_EntityGetAngleYZ() AS EXT
 
   LOCAL Angle AS DOUBLE
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL EntityTargetID AS EXT
-  LOCAL EntityAxis AS EXT
-
   LOCAL o, p, v, u AS TBGL_tVector3D
 
   LOCAL AngleBonus  AS LONG
 
-  thinBasic_Parse4Numbers(ScriptSceneID, EntityID, EntityTargetID, EntityAxis)
   AngleBonus = IIF(EntityAxis = %TBGL_Y, 0, -90)
 
   ' -- Overlay memory
@@ -2712,13 +2394,9 @@ END FUNCTION
 
 
 ' -- Texture override
-SUB Exec_TBGL_EntitySetTexture()
+' -- Overrides entity texture, slot 0 = no texture
+SUB tbgl_EntitySetTexture ALIAS "tbgl_EntitySetTexture" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL slot AS LONG ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL slot AS EXT
-
-  thinBASIC_Parse3Numbers(ScriptSceneID, EntityID, slot)
   IF slot = 0 THEN slot = -1
   internal_SetEntityOverlay(ScriptSceneID)
 
@@ -2756,14 +2434,10 @@ SUB Exec_TBGL_EntitySetTexture()
   END SELECT
 END SUB
 
-FUNCTION Exec_TBGL_EntityGetTexture() AS LONG
-
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
+FUNCTION tbgl_EntityGetTexture ALIAS "tbgl_EntityGetTexture" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG ) EXPORT AS LONG
 
   LOCAL slot AS LONG
 
-  thinBASIC_Parse2Numbers(ScriptSceneID, EntityID)
 
   internal_SetEntityOverlay(ScriptSceneID)
 
@@ -2810,14 +2484,38 @@ FUNCTION Exec_TBGL_EntityGetTexture() AS LONG
 END FUNCTION
 
 ' -- Colors
-SUB Exec_TBGL_EntitySetColor()
-  REGISTER i AS LONG
+' -- Removes forced color of model, display list and function slot entities
+SUB tbgl_EntityResetColor ALIAS "tbgl_EntityResetColor" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL r,g,b AS EXT
+  internal_SetEntityOverlay(ScriptSceneID)
 
-  thinBASIC_Parse5Numbers(ScriptSceneID, EntityID, r, g, b)
+  dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
+
+  SELECT CASE AS LONG @dummy_PtrTo_t_EntityInfo.EntType
+    CASE %TBGL_ENTITY_MODEL
+      dummy_PtrTo_t_Entity_Model = macro_t_Entity_Model_MemPos(TBGLSceneEntities(EntityID))
+      @dummy_PtrTo_t_Entity_Model.ForceR = -1
+      @dummy_PtrTo_t_Entity_Model.ForceG = -1
+      @dummy_PtrTo_t_Entity_Model.ForceB = -1
+
+    CASE %TBGL_ENTITY_DISPLAYLIST
+      dummy_PtrTo_t_Entity_DisplayList = macro_t_Entity_DisplayList_MemPos(TBGLSceneEntities(EntityID))
+      @dummy_PtrTo_t_Entity_DisplayList.ForceR = -1
+      @dummy_PtrTo_t_Entity_DisplayList.ForceG = -1
+      @dummy_PtrTo_t_Entity_DisplayList.ForceB = -1
+
+    CASE %TBGL_ENTITY_FUNCSLOT
+      dummy_PtrTo_t_Entity_FuncSlot = macro_t_Entity_FuncSlot_MemPos(TBGLSceneEntities(EntityID))
+      @dummy_PtrTo_t_Entity_FuncSlot.ForceR = -1
+      @dummy_PtrTo_t_Entity_FuncSlot.ForceG = -1
+      @dummy_PtrTo_t_Entity_FuncSlot.ForceB = -1
+
+  END SELECT
+
+END SUB
+
+SUB tbgl_EntitySetColor ALIAS "tbgl_EntitySetColor" ( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL r AS BYTE, BYVAL g AS BYTE, BYVAL b AS BYTE ) EXPORT
+
   internal_SetEntityOverlay(ScriptSceneID)
 
   dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
@@ -2878,6 +2576,631 @@ SUB Exec_TBGL_EntitySetColor()
 
 END SUB
 
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+' -- Scene
+SUB Exec_TBGL_SceneCreate()
+  tbgl_SceneCreate( thinBASIC_Parse1Number )
+END SUB
+
+SUB Exec_TBGL_SceneRender()
+  tbgl_SceneRender( thinBASIC_Parse1Number )
+END SUB
+
+SUB Exec_TBGL_SceneCollide()
+  tbgl_SceneCollide( thinBASIC_Parse1Number )
+END SUB
+
+' -- ( scene, array(), signature ), array is redimensioned to number of found entities
+FUNCTION Exec_TBGL_EntityEnumByDataSignature() AS EXT
+
+  REGISTER i AS LONG
+  LOCAL ScriptSceneID AS EXT
+  LOCAL ElementSignature AS EXT
+  LOCAL lArrayCellPtr AS LONG
+  LOCAL lArrayCellAbsPos AS LONG
+  LOCAL VariablePtrOdd, MainType, SubType, ElementsAreFixed, TotElements, ElementSize AS LONG
+  LOCAL maxEntities, found AS LONG
+
+  IF thinBasic_CheckOpenParens_Mandatory() THEN
+    thinBasic_ParseNumber(ScriptSceneID)
+    maxEntities = MyArrayOf_TBGLScene_EntityMaxID(ScriptSceneID)
+
+    IF thinBasic_CheckComma_Mandatory() THEN
+
+      thinBasic_ParseVariableInfo(lArrayCellPtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, VariablePtrOdd, lArrayCellAbsPos)
+
+      ' -- First dimensioning is to max elements possible
+      thinBasic_VariableRedim(lArrayCellPtr, %FALSE, maxEntities, 0, 0)
+
+      IF thinBasic_CheckComma_Mandatory() THEN
+        thinBasic_ParseNumber(ElementSignature)
+
+        IF thinBasic_CheckCloseParens_Mandatory() THEN
+          DIM entityIDs(1 TO MAX&(maxEntities, 1)) AS LOCAL LONG
+
+          found = tbgl_EntityEnumByDataSignature( ScriptSceneID, ElementSignature, VARPTR(entityIDs(1)), maxEntities )
+
+          FOR i = 1 TO MIN&(found, maxEntities - lArrayCellAbsPos + 1)
+            thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, lArrayCellAbsPos + i - 1, entityIDs(i) )
+          NEXT
+
+          ' -- Redim the array to match closely the number of found items
+          thinBasic_VariableRedim(lArrayCellPtr, %TRUE, MAX&(found, 1), 0, 0)
+
+          FUNCTION = found
+        END IF
+      END IF
+    END IF
+  END IF
+
+END FUNCTION
+
+' -- General entity functions
+SUB Exec_TBGL_EntityDestroy()
+  LOCAL ScriptSceneID, EntityID AS EXT
+
+  thinBASIC_Parse2Numbers(ScriptSceneID, EntityID)
+  tbgl_EntityDestroy( ScriptSceneID, EntityID )
+END SUB
+
+SUB Exec_TBGL_EntityAttach()
+  LOCAL sceneID, entityID, parentEntityID, MODE AS EXT
+
+  thinBASIC_Parse4Numbers(sceneID, entityID, parentEntityID, MODE)
+  tbgl_EntityAttach( sceneID, entityID, parentEntityID, MODE )
+END SUB
+
+SUB Exec_TBGL_EntityDetach()
+  LOCAL sceneID, entityID, MODE AS EXT
+
+  thinBASIC_Parse3Numbers(sceneID, entityID, MODE)
+  tbgl_EntityDetach( sceneID, entityID, MODE )
+END SUB
+
+SUB Exec_TBGL_EntitySetParent()
+  LOCAL sceneID, entityID, parentEntityID AS EXT
+
+  thinBASIC_Parse3Numbers(sceneID, entityID, parentEntityID)
+  tbgl_EntitySetParent( sceneID, entityID, parentEntityID )
+END SUB
+
+FUNCTION Exec_TBGL_EntityGetParent() AS EXT
+  LOCAL sceneID, entityID AS EXT
+
+  thinBASIC_Parse2Numbers(sceneID, entityID)
+  FUNCTION = tbgl_EntityGetParent( sceneID, entityID )
+END FUNCTION
+
+SUB Exec_TBGL_EntitySetUserPointer()
+  LOCAL ScriptSceneID, EntityID, uPointer AS EXT
+
+  thinBASIC_Parse3Numbers(ScriptSceneID, EntityID, uPointer)
+  tbgl_EntitySetUserPointer( ScriptSceneID, EntityID, uPointer )
+END SUB
+
+FUNCTION Exec_TBGL_EntityGetUserPointer() AS EXT
+  LOCAL ScriptSceneID, EntityID AS EXT
+
+  thinBASIC_Parse2Numbers(ScriptSceneID, EntityID)
+  FUNCTION = tbgl_EntityGetUserPointer( ScriptSceneID, EntityID )
+END FUNCTION
+
+' -- ( scene, entity, variable ), dynamic strings are stored as they are, other types as memory copy
+SUB Exec_TBGL_EntitySetUserData()
+
+  LOCAL ScriptSceneID AS EXT
+  LOCAL EntityID AS EXT
+  LOCAL VariablePtr   AS LONG
+  LOCAL MainType      AS LONG
+  LOCAL SubType       AS LONG
+  LOCAL ElementsAreFixed AS LONG
+  LOCAL TotElements   AS LONG
+  LOCAL ElementSize   AS LONG
+  LOCAL DataPtr       AS LONG
+  LOCAL AbsPos        AS LONG
+  LOCAL p AS STRING PTR
+
+  IF thinBasic_CheckOpenParens_Mandatory THEN
+    thinBasic_ParseNumber ScriptSceneID
+    IF thinBasic_CheckComma_Mandatory THEN
+      thinBasic_ParseNumber EntityID
+      IF thinBasic_CheckComma_Mandatory THEN
+
+        thinBasic_ParseVariableInfo( VariablePtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, DataPtr, AbsPos )
+        IF thinBasic_CheckCloseParens_Mandatory THEN
+
+          ' -- We mark STRINGs differentely for STRPTR/VARPTR purposes
+          IF ElementsAreFixed = %FALSE AND MainType = %VarMainType_IsString THEN
+            p = DataPtr
+            tbgl_EntitySetUserDataString( ScriptSceneID, EntityID, @p )
+          ELSE
+            tbgl_EntitySetUserData( ScriptSceneID, EntityID, DataPtr, ElementSize )
+          END IF
+
+        END IF
+      END IF
+    END IF
+  END IF
+
+END SUB
+
+FUNCTION Exec_TBGL_EntityGetUserDataPointer() AS EXT
+  LOCAL ScriptSceneID, EntityID AS EXT
+
+  thinBasic_Parse2Numbers(ScriptSceneID, EntityID)
+  FUNCTION = tbgl_EntityGetUserDataPointer( ScriptSceneID, EntityID )
+END FUNCTION
+
+SUB Exec_TBGL_EntitySetName()
+
+  LOCAL ScriptSceneID AS EXT
+  LOCAL EntityID AS EXT
+  LOCAL sName AS STRING
+
+  IF thinBasic_CheckOpenParens_Mandatory THEN
+    thinBasic_ParseNumber ScriptSceneID
+    IF thinBasic_CheckComma_Mandatory THEN
+      thinBasic_ParseNumber EntityID
+      IF thinBasic_CheckComma_Mandatory THEN
+        thinBasic_ParseString sName
+        IF thinBasic_CheckCloseParens_Mandatory THEN
+          tbgl_EntitySetName( ScriptSceneID, EntityID, sName )
+        END IF
+      END IF
+    END IF
+  END IF
+
+END SUB
+
+FUNCTION Exec_TBGL_EntityGetName() AS STRING
+  LOCAL ScriptSceneID, EntityID AS EXT
+
+  thinBasic_Parse2Numbers(ScriptSceneID, EntityID)
+  FUNCTION = tbgl_EntityGetName( ScriptSceneID, EntityID )
+END FUNCTION
+
+' -- ( scene [, entityFrom] )
+FUNCTION Exec_TBGL_EntityGetFreeID() AS EXT
+  LOCAL ScriptSceneID, EntityFrom AS EXT
+
+  EntityFrom = 1
+  thinBASIC_ParseXNumbers(1,2, ScriptSceneID, EntityFrom )
+  FUNCTION = tbgl_EntityGetFreeID( ScriptSceneID, EntityFrom )
+END FUNCTION
+
+SUB Exec_TBGL_EntitySetUse()
+  LOCAL ScriptSceneID, EntityID, Use AS EXT
+
+  thinBASIC_Parse3Numbers(ScriptSceneID, EntityID, Use)
+  tbgl_EntitySetUse( ScriptSceneID, EntityID, Use )
+END SUB
+
+FUNCTION Exec_TBGL_EntityGetUse() AS EXT
+  LOCAL ScriptSceneID, EntityID AS EXT
+
+  thinBASIC_Parse2Numbers(ScriptSceneID, EntityID)
+  FUNCTION = tbgl_EntityGetUse( ScriptSceneID, EntityID )
+END FUNCTION
+
+' -- ( scene, entity, entityTo [, parent] )
+SUB Exec_TBGL_EntityCopyTo()
+  LOCAL ScriptSceneID, EntityID, EntityID2, PARENT AS EXT
+
+  thinBASIC_ParseXNumbers(3,4,ScriptSceneID, EntityID, EntityID2, PARENT)
+  tbgl_EntityCopyTo( ScriptSceneID, EntityID, EntityID2, PARENT )
+END SUB
+
+' -- Position
+' -- ( scene, entity, x, y [, z] )
+SUB Exec_TBGL_EntitySetPos()
+  LOCAL ScriptSceneID, EntityID, x, y, z AS EXT
+
+  thinBasic_ParseXNumbers(4, 5, ScriptSceneID, EntityID, x, y, z)
+  tbgl_EntitySetPos( ScriptSceneID, EntityID, x, y, z )
+END SUB
+
+' -- ( scene, entity, xVariable, yVariable, zVariable [, globalPosition] )
+SUB Exec_TBGL_EntityGetPos()
+
+  LOCAL ScriptSceneID AS EXT
+  LOCAL EntityID AS EXT
+  LOCAL GlobalPosition AS EXT
+  LOCAL x, y, z AS DOUBLE
+
+  LOCAL lVariablePtr1     AS LONG
+  LOCAL lVariableAbsPos1  AS LONG
+
+  LOCAL lVariablePtr2     AS LONG
+  LOCAL lVariableAbsPos2  AS LONG
+
+  LOCAL lVariablePtr3     AS LONG
+  LOCAL lVariableAbsPos3  AS LONG
+
+  IF thinBasic_CheckOpenParens_Mandatory THEN
+    thinBasic_ParseNumber ScriptSceneID
+    IF thinBasic_CheckComma_Mandatory THEN
+      thinBasic_ParseNumber EntityID
+
+      ' -- Get variables
+      IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+        thinBasic_VariableParse(lVariablePtr1, lVariableAbsPos1)
+        IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+          thinBasic_VariableParse(lVariablePtr2, lVariableAbsPos2)
+          IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+            thinBasic_VariableParse(lVariablePtr3, lVariableAbsPos3)
+            IF ISFALSE thinBasic_CheckCloseParens_Optional THEN
+              IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+                thinBASIC_ParseNumber GlobalPosition
+                thinBasic_CheckCloseParens_Mandatory
+              END IF
+            END IF
+
+            IF thinBasic_ErrorFree THEN
+              tbgl_EntityGetPos( ScriptSceneID, EntityID, x, y, z, ISTRUE GlobalPosition )
+
+              '---Now assign values to referenced variables
+              thinBasic_ChangeVariableNumberDirect (lVariablePtr1, lVariableAbsPos1, x)
+              thinBasic_ChangeVariableNumberDirect (lVariablePtr2, lVariableAbsPos2, y)
+              thinBasic_ChangeVariableNumberDirect (lVariablePtr3, lVariableAbsPos3, z)
+            END IF
+          END IF
+        END IF
+      END IF
+    END IF
+  END IF
+
+END SUB
+
+' -- ( scene, entity, dx, dy [, dz] )
+SUB Exec_TBGL_EntityMove()
+  LOCAL ScriptSceneID, EntityID, dx, dy, dz AS EXT
+
+  thinBasic_ParseXNumbers(4, 5, ScriptSceneID, EntityID, dx, dy, dz)
+  tbgl_EntityMove( ScriptSceneID, EntityID, dx, dy, dz )
+END SUB
+
+' -- ( scene, entity, dx, dy [, dz] )
+SUB Exec_TBGL_EntityPush()
+  LOCAL ScriptSceneID, EntityID, dx, dy, dz AS EXT
+
+  thinBasic_ParseXNumbers(4, 5, ScriptSceneID, EntityID, dx, dy, dz)
+  tbgl_EntityPush( ScriptSceneID, EntityID, dx, dy, dz )
+END SUB
+
+' -- ( scene, entity, x, y, z, xVariable, yVariable, zVariable )
+SUB Exec_TBGL_EntityTrackPos()
+
+  LOCAL ScriptSceneID, EntityID, x, y, z AS EXT
+  LOCAL trackedX, trackedY, trackedZ AS DOUBLE
+
+  IF thinBasic_CheckOpenParens_Mandatory THEN
+    thinBasic_ParseNumber ScriptSceneID
+    IF thinBasic_CheckComma_Mandatory THEN
+      thinBasic_ParseNumber EntityID
+      IF thinBasic_CheckComma_Mandatory THEN
+        thinBasic_ParseNumber x
+        IF thinBasic_CheckComma_Mandatory THEN
+          thinBasic_ParseNumber y
+          IF thinBasic_CheckComma_Mandatory THEN
+            thinBasic_ParseNumber z
+
+              tbgl_EntityTrackPos( ScriptSceneID, EntityID, x, y, z, trackedX, trackedY, trackedZ )
+              internal_Parse3Byref (trackedX, trackedY, trackedZ)
+
+          END IF
+        END IF
+      END IF
+    END IF
+  END IF
+
+END SUB
+
+' -- ( scene, entityType, x, y, z, rangeX, rangeY, rangeZ [, globalCoordinates] )
+FUNCTION Exec_TBGL_EntityFindNearestByPos() AS EXT
+  LOCAL ScriptSceneID, EntityType, x, y, z, rangeX, rangeY, rangeZ, GlobalCoordinates AS EXT
+
+  thinBasic_ParseXNumbers(8, 9, ScriptSceneID, EntityType, x, y, z, rangeX, rangeY, rangeZ, GlobalCoordinates )
+  FUNCTION = tbgl_EntityFindNearestByPos( ScriptSceneID, EntityType, x, y, z, rangeX, rangeY, rangeZ, ISTRUE GlobalCoordinates )
+END FUNCTION
+
+' -- ( scene, entityType, x, y, z [, globalCoordinates] )
+FUNCTION Exec_TBGL_EntityFindByPos() AS EXT
+  LOCAL ScriptSceneID, EntityType, x, y, z, GlobalCoordinates AS EXT
+
+  thinBasic_ParseXNumbers(5, 6, ScriptSceneID, EntityType, x, y, z, GlobalCoordinates )
+  FUNCTION = tbgl_EntityFindByPos( ScriptSceneID, EntityType, x, y, z, ISTRUE GlobalCoordinates )
+END FUNCTION
+
+' -- ( scene, entityType, entityFrom, rangeX, rangeY, rangeZ [, globalCoordinates] )
+FUNCTION Exec_TBGL_EntityFindNearest() AS EXT
+  LOCAL ScriptSceneID, EntityType, EntityFrom, rangeX, rangeY, rangeZ, GlobalCoordinates AS EXT
+
+  thinBasic_ParseXNumbers(6, 7, ScriptSceneID, EntityType, EntityFrom, rangeX, rangeY, rangeZ, GlobalCoordinates )
+  FUNCTION = tbgl_EntityFindNearest( ScriptSceneID, EntityType, EntityFrom, rangeX, rangeY, rangeZ, ISTRUE GlobalCoordinates )
+END FUNCTION
+
+FUNCTION Exec_TBGL_EntityGetDistance() AS EXT
+  LOCAL ScriptSceneID, EntityFrom, EntityTo AS EXT
+
+  thinBasic_Parse3Numbers(ScriptSceneID, EntityFrom, EntityTo)
+  FUNCTION = tbgl_EntityGetDistance( ScriptSceneID, EntityFrom, EntityTo )
+END FUNCTION
+
+FUNCTION Exec_TBGL_EntityGetDistancePos() AS EXT
+  LOCAL ScriptSceneID, EntityFrom, x2, y2, z2 AS EXT
+
+  thinBasic_Parse5Numbers(ScriptSceneID, EntityFrom, x2, y2, z2)
+  FUNCTION = tbgl_EntityGetDistancePos( ScriptSceneID, EntityFrom, x2, y2, z2 )
+END FUNCTION
+
+' -- Scaling
+' -- ( scene, entity, uniformScale ), ( scene, entity, sx, sy ) or ( scene, entity, sx, sy, sz )
+SUB Exec_TBGL_EntitySetScale()
+  LOCAL ScriptSceneID, EntityID, x, y, z AS EXT
+
+  SELECT CASE AS LONG thinBasic_ParseXNumbers( 3, 5, ScriptSceneID, EntityID, x, y, z)
+    CASE 3
+      tbgl_EntitySetScale( ScriptSceneID, EntityID, x, x, x )
+
+    CASE 4
+      tbgl_EntitySetScale( ScriptSceneID, EntityID, x, y, 1 )
+
+    CASE ELSE
+      tbgl_EntitySetScale( ScriptSceneID, EntityID, x, y, z )
+
+  END SELECT
+END SUB
+
+' -- ( scene, entity, sxVariable, syVariable, szVariable )
+SUB Exec_TBGL_EntityGetScale()
+
+  LOCAL ScriptSceneID, EntityID AS EXT
+  LOCAL sx, sy, sz AS DOUBLE
+
+  IF thinBasic_CheckOpenParens_Mandatory THEN
+    thinBasic_ParseNumber ScriptSceneID
+    IF thinBasic_CheckComma_Mandatory THEN
+      thinBasic_ParseNumber EntityID
+
+      tbgl_EntityGetScale( ScriptSceneID, EntityID, sx, sy, sz )
+      internal_Parse3Byref (sx, sy, sz)
+
+    END IF
+  END IF
+
+END SUB
+
+' -- Orientation
+' -- ( scene, entity, angleZ ) or ( scene, entity, angleX, angleY [, angleZ] )
+SUB Exec_TBGL_EntitySetRot()
+  LOCAL ScriptSceneID, EntityID, x, y, z AS EXT
+
+  IF thinBASIC_ParseXNumbers(3, 5, ScriptSceneID, EntityID, x, y, z) = 3 THEN
+    tbgl_EntitySetRot( ScriptSceneID, EntityID, 0, 0, x )
+  ELSE
+    tbgl_EntitySetRot( ScriptSceneID, EntityID, x, y, z )
+  END IF
+END SUB
+
+' -- ( scene, entity, angleZ ) or ( scene, entity, angleX, angleY [, angleZ] )
+SUB Exec_TBGL_EntityTurn()
+  LOCAL ScriptSceneID, EntityID, dx, dy, dz AS EXT
+
+  IF thinBASIC_ParseXNumbers(3, 5, ScriptSceneID, EntityID, dx, dy, dz) = 3 THEN
+    tbgl_EntityTurn( ScriptSceneID, EntityID, 0, 0, dx )
+  ELSE
+    tbgl_EntityTurn( ScriptSceneID, EntityID, dx, dy, dz )
+  END IF
+END SUB
+
+' -- ( scene, entity, targetEntity ) or ( scene, firstEntity, lastEntity, targetEntity )
+SUB Exec_TBGL_EntitySetTarget()
+  LOCAL ScriptSceneID, EntityID, EntityID2, LastParam AS EXT
+
+  thinBASIC_ParseXNumbers(3, 4,ScriptSceneID, EntityID, EntityID2, LastParam)
+
+  IF LastParam <> 0 THEN
+    tbgl_EntitySetTargetRange( ScriptSceneID, EntityID, EntityID2, LastParam )
+  ELSE
+    tbgl_EntitySetTarget( ScriptSceneID, EntityID, EntityID2 )
+  END IF
+END SUB
+
+SUB Exec_TBGL_EntitySetTargetPos()
+  LOCAL ScriptSceneID, EntityID, x, y, z AS EXT
+
+  thinBASIC_Parse5Numbers(ScriptSceneID, EntityID, x, y, z)
+  tbgl_EntitySetTargetPos( ScriptSceneID, EntityID, x, y, z )
+END SUB
+
+' -- ( scene, entity, xVariable, yVariable, zVariable )
+MACRO macro_ExecEntityGetAxis(coreFunction)
+  LOCAL ScriptSceneID, EntityID AS EXT
+  LOCAL x, y, z AS DOUBLE
+
+  IF thinBasic_CheckOpenParens_Mandatory THEN
+    thinBasic_ParseNumber ScriptSceneID
+    IF thinBasic_CheckComma_Mandatory THEN
+      thinBasic_ParseNumber EntityID
+
+      coreFunction( ScriptSceneID, EntityID, x, y, z )
+      internal_Parse3Byref (x, y, z)
+
+    END IF
+  END IF
+END MACRO
+
+SUB Exec_TBGL_EntityGetZAxis()
+  macro_ExecEntityGetAxis(tbgl_EntityGetZAxis)
+END SUB
+
+SUB Exec_TBGL_EntityGetYAxis()
+  macro_ExecEntityGetAxis(tbgl_EntityGetYAxis)
+END SUB
+
+SUB Exec_TBGL_EntityGetXAxis()
+  macro_ExecEntityGetAxis(tbgl_EntityGetXAxis)
+END SUB
+
+' -- ( scene, entity, matrix() [, matrixType] ), matrix must have 9 or 16 elements
+SUB Exec_TBGL_EntityGetMatrix()
+  REGISTER i AS LONG
+  LOCAL ScriptSceneID, EntityID, matrixType AS EXT
+  LOCAL lArrayCellPtr AS LONG
+  LOCAL lArrayCellAbsPos AS LONG
+  LOCAL VariablePtrOdd, MainType, SubType, ElementsAreFixed, TotElements, ElementSize AS LONG
+  DIM matrix(0 TO 15) AS LOCAL DOUBLE
+
+  IF thinBasic_CheckOpenParens_Mandatory THEN
+    thinBasic_ParseNumber ScriptSceneID
+    IF thinBasic_CheckComma_Mandatory THEN
+      thinBasic_ParseNumber EntityID
+      IF thinBasic_CheckComma_Mandatory THEN
+        ' -- Parse the array
+        thinBasic_ParseVariableInfo(lArrayCellPtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, VariablePtrOdd, lArrayCellAbsPos)
+
+        IF thinBasic_CheckComma_Optional THEN
+          thinBasic_ParseNumber matrixType
+        END IF
+
+        IF thinBasic_CheckCloseParens_Mandatory THEN
+
+          tbgl_EntityGetMatrix( ScriptSceneID, EntityID, VARPTR(matrix(0)), TotElements, matrixType )
+
+          IF TotElements = 9 OR TotElements = 16 THEN
+            FOR i = 1 TO TotElements
+              thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, i, matrix(i-1) )
+            NEXT
+          END IF
+
+        END IF
+      END IF
+    END IF
+  END IF
+
+END SUB
+
+' -- ( scene, entity, matrix() [, matrixType] ), matrix must have 9 or 16 elements
+SUB Exec_TBGL_EntitySetMatrix()
+  REGISTER i AS LONG
+  LOCAL ScriptSceneID, EntityID, matrixType AS EXT
+  LOCAL lArrayCellPtr AS LONG
+  LOCAL lArrayCellAbsPos AS LONG
+  LOCAL VariablePtrOdd, MainType, SubType, ElementsAreFixed, TotElements, ElementSize AS LONG
+  DIM matrix(0 TO 15) AS LOCAL DOUBLE
+
+  IF thinBasic_CheckOpenParens_Mandatory THEN
+    thinBasic_ParseNumber ScriptSceneID
+    IF thinBasic_CheckComma_Mandatory THEN
+      thinBasic_ParseNumber EntityID
+      IF thinBasic_CheckComma_Mandatory THEN
+        ' -- Parse the array
+        thinBasic_ParseVariableInfo(lArrayCellPtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, VariablePtrOdd, lArrayCellAbsPos)
+
+        IF thinBasic_CheckComma_Optional THEN
+          thinBasic_ParseNumber matrixType
+        END IF
+
+        IF thinBasic_CheckCloseParens_Mandatory THEN
+
+          IF TotElements = 9 OR TotElements = 16 THEN
+            FOR i = 1 TO TotElements
+              matrix(i-1) = thinBasic_GetVariableNumberDirect(lArrayCellPtr, i)
+            NEXT
+          END IF
+
+          tbgl_EntitySetMatrix( ScriptSceneID, EntityID, VARPTR(matrix(0)), TotElements, matrixType )
+
+        END IF
+      END IF
+    END IF
+  END IF
+
+END SUB
+
+SUB Exec_TBGL_EntitySetXYAxis()
+  LOCAL ScriptSceneID, EntityID, xX, xY, xZ, yX, yY, yZ AS EXT
+
+  thinBASIC_ParseXNumbers(8,8,ScriptSceneID, EntityID, xX, xY, xZ, yX, yY, yZ )
+  tbgl_EntitySetXYAxis( ScriptSceneID, EntityID, xX, xY, xZ, yX, yY, yZ )
+END SUB
+
+SUB Exec_TBGL_EntitySetXZAxis()
+  LOCAL ScriptSceneID, EntityID, xX, xY, xZ, zX, zY, zZ AS EXT
+
+  thinBASIC_ParseXNumbers(8,8,ScriptSceneID, EntityID, xX, xY, xZ, zX, zY, zZ )
+  tbgl_EntitySetXZAxis( ScriptSceneID, EntityID, xX, xY, xZ, zX, zY, zZ )
+END SUB
+
+SUB Exec_TBGL_EntitySetYZAxis()
+  LOCAL ScriptSceneID, EntityID, yX, yY, yZ, zX, zY, zZ AS EXT
+
+  thinBASIC_ParseXNumbers(8,8,ScriptSceneID, EntityID, yX, yY, yZ, zX, zY, zZ )
+  tbgl_EntitySetYZAxis( ScriptSceneID, EntityID, yX, yY, yZ, zX, zY, zZ )
+END SUB
+
+' -- ( scene, entity, entityFrom [, globalCoordinates] ), only globalCoordinates = %TRUE uses global orientation
+SUB Exec_TBGL_EntitySyncAxes()
+  LOCAL ScriptSceneID, EntityID, EntityID2, GlobalCoordinates AS EXT
+
+  thinBASIC_ParseXNumbers(3,4,ScriptSceneID, EntityID, EntityID2, GlobalCoordinates )
+  tbgl_EntitySyncAxes( ScriptSceneID, EntityID, EntityID2, IIF&(GlobalCoordinates = %TRUE, %TRUE, %FALSE) )
+END SUB
+
+FUNCTION Exec_TBGL_EntityGetAngleXZ() AS EXT
+  LOCAL ScriptSceneID, EntityID, EntityTargetID, EntityAxis AS EXT
+
+  thinBasic_Parse4Numbers(ScriptSceneID, EntityID, EntityTargetID, EntityAxis)
+  FUNCTION = tbgl_EntityGetAngleXZ( ScriptSceneID, EntityID, EntityTargetID, EntityAxis )
+END FUNCTION
+
+FUNCTION Exec_TBGL_EntityGetAngleXY() AS EXT
+  LOCAL ScriptSceneID, EntityID, EntityTargetID, EntityAxis AS EXT
+
+  thinBasic_Parse4Numbers(ScriptSceneID, EntityID, EntityTargetID, EntityAxis)
+  FUNCTION = tbgl_EntityGetAngleXY( ScriptSceneID, EntityID, EntityTargetID, EntityAxis )
+END FUNCTION
+
+FUNCTION Exec_TBGL_EntityGetAngleYZ() AS EXT
+  LOCAL ScriptSceneID, EntityID, EntityTargetID, EntityAxis AS EXT
+
+  thinBasic_Parse4Numbers(ScriptSceneID, EntityID, EntityTargetID, EntityAxis)
+  FUNCTION = tbgl_EntityGetAngleYZ( ScriptSceneID, EntityID, EntityTargetID, EntityAxis )
+END FUNCTION
+
+' -- Texture and color
+SUB Exec_TBGL_EntitySetTexture()
+  LOCAL ScriptSceneID, EntityID, slot AS EXT
+
+  thinBASIC_Parse3Numbers(ScriptSceneID, EntityID, slot)
+  tbgl_EntitySetTexture( ScriptSceneID, EntityID, slot )
+END SUB
+
+FUNCTION Exec_TBGL_EntityGetTexture() AS LONG
+  LOCAL ScriptSceneID, EntityID AS EXT
+
+  thinBASIC_Parse2Numbers(ScriptSceneID, EntityID)
+  FUNCTION = tbgl_EntityGetTexture( ScriptSceneID, EntityID )
+END FUNCTION
+
+' -- ( scene, entity, r, g, b ), negative r removes forced color
+SUB Exec_TBGL_EntitySetColor()
+  LOCAL ScriptSceneID, EntityID, r, g, b AS EXT
+
+  thinBASIC_Parse5Numbers(ScriptSceneID, EntityID, r, g, b)
+  IF r < 0 THEN
+    tbgl_EntityResetColor( ScriptSceneID, EntityID )
+  ELSE
+    tbgl_EntitySetColor( ScriptSceneID, EntityID, r, g, b )
+  END IF
+END SUB
+
+#ENDIF
+
 ' ==============================================================================================
 ' -----------------------------------------------------------------------------
 ' -- INITIALIZATION AND AUXILIARY ROUTINES
@@ -2936,7 +3259,7 @@ SUB internal_SetEntityOverlayNames( BYVAL ScriptSceneID AS LONG )
 END SUB
 
 ' -- When our entity stack grows, we need to allocate more space
-SUB internal_EntityRedimArrayIfNeeded( ScriptSceneID AS EXT, entityID AS EXT )
+SUB internal_EntityRedimArrayIfNeeded( BYVAL ScriptSceneID AS LONG, BYVAL entityID AS LONG )
   IF entityID > MyArrayOf_TBGLScene_EntityMaxID(ScriptSceneID) THEN
 
     ' -- A LONG (4 bytes) can store a string

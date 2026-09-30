@@ -136,89 +136,39 @@ FUNCTION resource_DisplayLists_IsGenerated( BYVAL index AS LONG ) AS LONG
 END FUNCTION
 ' <RESOURCES - RESOURCES - RESOURCES - RESOURCES - RESOURCES - RESOURCES - RESOURCES
 
-SUB Exec_TBGL_NewListSpace()
+' -- Allocates count new display lists and stores their IDs to listIDs array (non-zero IDs present are released first)
+SUB tbgl_NewListSpace ALIAS "tbgl_NewListSpace" ( BYVAL listIDs AS LONG PTR, BYVAL count AS LONG ) EXPORT
   REGISTER i AS LONG
-  LOCAL lArrayCellPtr AS LONG
-  LOCAL lArrayCellAbsPos AS LONG
-  LOCAL howManyLists AS EXT
-  LOCAL VariablePtrOdd, MainType, SubType, ElementsAreFixed, TotElements, ElementSize AS LONG
+  LOCAL StartID, OldID AS TBGL_HANDLE
 
+  StartID = glGenLists(count)
 
-  IF thinBasic_CheckOpenParens_Mandatory() THEN
-    thinBasic_ParseVariableInfo(lArrayCellPtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, VariablePtrOdd, lArrayCellAbsPos)
+  FOR i = 0 TO count - 1
+    ' -- Do we overwrite something which was? Release it please!
+    OldID = @listIDs[i]
+    IF OldID THEN resource_DisplayListSpace_RemoveHandle(OldID)
 
-    howManyLists = TotElements
-
-    IF thinBasic_CheckComma_Optional AND thinBasic_ErrorFree THEN
-      thinBasic_ParseNumber( howManyLists )
-    END IF
-
-    IF thinBasic_CheckCloseParens_Mandatory() THEN
-
-      LOCAL StartID, OldID AS TBGL_HANDLE
-      LOCAL AbsolutePosition AS LONG
-      StartID = glGenLists(howManyLists)
-
-      FOR i = 1 TO howManyLists
-        AbsolutePosition = lArrayCellAbsPos+(i-1)
-        IF AbsolutePosition > TotElements THEN EXIT FOR
-        ' -- Do we overwrite something which was? Release it please!
-        OldID = thinBasic_GetVariableNumberDirect(lArrayCellPtr, AbsolutePosition)
-        IF OldID THEN resource_DisplayListSpace_RemoveHandle(OldID)
-
-        '---Now assign values to referenced variables
-        thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, AbsolutePosition, StartID )
-        resource_DisplayListSpace_AddHandle(StartID)
-        StartID       += 1
-      NEXT
-
-    END IF
-  END IF
+    @listIDs[i] = StartID
+    resource_DisplayListSpace_AddHandle(StartID)
+    StartID       += 1
+  NEXT
 
 END SUB
 
-SUB Exec_TBGL_DeleteListSpace()
-
+' -- Releases count display lists whose IDs are in listIDs array, and zeroes the array items
+SUB tbgl_DeleteListSpace ALIAS "tbgl_DeleteListSpace" ( BYVAL listIDs AS LONG PTR, BYVAL count AS LONG ) EXPORT
   REGISTER i AS LONG
-  LOCAL lArrayCellPtr AS LONG
-  LOCAL lArrayCellAbsPos AS LONG
-  LOCAL howManyLists AS EXT
+  LOCAL StartID AS TBGL_HANDLE
 
-  LOCAL VariablePtrOdd, MainType, SubType, ElementsAreFixed, TotElements, ElementSize AS LONG
-  IF thinBasic_CheckOpenParens_Mandatory() THEN
-
-
-    thinBasic_ParseVariableInfo(lArrayCellPtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, VariablePtrOdd, lArrayCellAbsPos)
-    howManyLists = TotElements
-
-    IF thinBasic_CheckComma_Optional AND thinBasic_ErrorFree THEN
-      thinBasic_ParseNumber( howManyLists )
-    END IF
-
-    IF thinBasic_CheckCloseParens_Mandatory() THEN
-
-      LOCAL StartID AS TBGL_HANDLE
-      LOCAL AbsolutePosition AS LONG
-
-      FOR i = 1 TO howManyLists
-        AbsolutePosition = lArrayCellAbsPos+(i-1)
-        IF AbsolutePosition > TotElements THEN EXIT FOR
-
-        StartID = thinBasic_GetVariableNumberDirect(lArrayCellPtr, AbsolutePosition)
-        resource_DisplayListSpace_RemoveHandle(StartID)
-        thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, AbsolutePosition, 0 )
-      NEXT
-
-    END IF
-  END IF
-
+  FOR i = 0 TO count - 1
+    StartID = @listIDs[i]
+    resource_DisplayListSpace_RemoveHandle(StartID)
+    @listIDs[i] = 0
+  NEXT
 
 END SUB
 
-FUNCTION Exec_TBGL_NewList( ) AS LONG
-  LOCAL list AS EXT
-
-  list = thinBasic_Parse1Number
+FUNCTION tbgl_NewList ALIAS "tbgl_NewList" ( BYVAL list AS LONG ) EXPORT AS LONG
 
   IF resource_DisplayLists_IsGenerated( list ) = 0 THEN
     TBGLError "Statement:" + $TAB + "tbgl_NewList" + $CRLF + "Problem:" + $TAB + $TAB + $ERR_DISPLISTINDEX + $CRLF + $CRLF + "Passed:" + $TAB + FORMAT$( list )
@@ -230,16 +180,13 @@ FUNCTION Exec_TBGL_NewList( ) AS LONG
 
 END FUNCTION
 
-SUB Exec_TBGL_EndList( )
+SUB tbgl_EndList ALIAS "tbgl_EndList" ( ) EXPORT
 
   glEndList()
 
 END SUB
 
-FUNCTION Exec_TBGL_CallList( ) AS LONG
-  LOCAL list AS EXT
-
-  list = thinBasic_Parse1Number
+FUNCTION tbgl_CallList ALIAS "tbgl_CallList" ( BYVAL list AS LONG ) EXPORT AS LONG
 
   IF resource_DisplayLists_IsGenerated( list ) = 0 THEN
     TBGLError "Statement:" + $TAB + "tbgl_CallList" + $CRLF + "Problem:" + $TAB + $TAB + $ERR_DISPLISTINDEX + $CRLF + $CRLF + "Passed:" + $TAB + FORMAT$( list )
@@ -251,11 +198,7 @@ FUNCTION Exec_TBGL_CallList( ) AS LONG
 
 END FUNCTION
 
-SUB Exec_TBGL_DeleteList( )
-
-  LOCAL list AS LONG
-
-  list = thinBasic_Parse1Number
+SUB tbgl_DeleteList ALIAS "tbgl_DeleteList" ( BYVAL list AS LONG ) EXPORT
 
   ' -- Looks odd, but it is safe to do it this way
   ' -- If it is not a list, no need to clear it, as it is allocated, but empty
@@ -265,3 +208,90 @@ SUB Exec_TBGL_DeleteList( )
   END IF
 
 END SUB
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+' -- Parses "( array [, howMany] )", returns number of usable items, loads them into ids()
+FUNCTION internal_ParseListSpaceArray( ids() AS LONG, lArrayCellPtr AS LONG, lArrayCellAbsPos AS LONG ) AS LONG
+  REGISTER i AS LONG
+  LOCAL howManyLists AS EXT
+  LOCAL VariablePtrOdd, MainType, SubType, ElementsAreFixed, TotElements, ElementSize AS LONG
+  LOCAL count AS LONG
+
+  IF thinBasic_CheckOpenParens_Mandatory() THEN
+    thinBasic_ParseVariableInfo(lArrayCellPtr, MainType, SubType, ElementsAreFixed, TotElements, ElementSize, VariablePtrOdd, lArrayCellAbsPos)
+
+    howManyLists = TotElements
+
+    IF thinBasic_CheckComma_Optional AND thinBasic_ErrorFree THEN
+      thinBasic_ParseNumber( howManyLists )
+    END IF
+
+    IF thinBasic_CheckCloseParens_Mandatory() THEN
+      ' -- Only items which fit in the array are processed
+      count = MIN&(howManyLists, TotElements - lArrayCellAbsPos + 1)
+      IF count > 0 THEN
+        REDIM ids(0 TO count - 1)
+        FOR i = 0 TO count - 1
+          ids(i) = thinBasic_GetVariableNumberDirect(lArrayCellPtr, lArrayCellAbsPos + i)
+        NEXT
+        FUNCTION = count
+      END IF
+    END IF
+  END IF
+
+END FUNCTION
+
+SUB internal_StoreListSpaceArray( ids() AS LONG, BYVAL count AS LONG, BYVAL lArrayCellPtr AS LONG, BYVAL lArrayCellAbsPos AS LONG )
+  REGISTER i AS LONG
+
+  FOR i = 0 TO count - 1
+    thinBasic_ChangeVariableNumberDirect( lArrayCellPtr, lArrayCellAbsPos + i, ids(i) )
+  NEXT
+
+END SUB
+
+SUB Exec_TBGL_NewListSpace()
+  LOCAL lArrayCellPtr, lArrayCellAbsPos, count AS LONG
+  DIM ids() AS LONG
+
+  count = internal_ParseListSpaceArray( ids(), lArrayCellPtr, lArrayCellAbsPos )
+  IF count THEN
+    tbgl_NewListSpace( VARPTR(ids(0)), count )
+    internal_StoreListSpaceArray( ids(), count, lArrayCellPtr, lArrayCellAbsPos )
+  END IF
+
+END SUB
+
+SUB Exec_TBGL_DeleteListSpace()
+  LOCAL lArrayCellPtr, lArrayCellAbsPos, count AS LONG
+  DIM ids() AS LONG
+
+  count = internal_ParseListSpaceArray( ids(), lArrayCellPtr, lArrayCellAbsPos )
+  IF count THEN
+    tbgl_DeleteListSpace( VARPTR(ids(0)), count )
+    internal_StoreListSpaceArray( ids(), count, lArrayCellPtr, lArrayCellAbsPos )
+  END IF
+
+END SUB
+
+FUNCTION Exec_TBGL_NewList( ) AS LONG
+  FUNCTION = tbgl_NewList( thinBasic_Parse1Number )
+END FUNCTION
+
+SUB Exec_TBGL_EndList( )
+  tbgl_EndList( )
+END SUB
+
+FUNCTION Exec_TBGL_CallList( ) AS LONG
+  FUNCTION = tbgl_CallList( thinBasic_Parse1Number )
+END FUNCTION
+
+SUB Exec_TBGL_DeleteList( )
+  tbgl_DeleteList( thinBasic_Parse1Number )
+END SUB
+
+#ENDIF

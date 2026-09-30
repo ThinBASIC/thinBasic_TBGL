@@ -26,50 +26,75 @@ GLOBAL auxSphere_UVArray( ) AS SINGLE
 ' -----------------------------------------------------------------------------
 
 ' -- Just assigns g_primitiveQuality in valid range
-SUB Exec_TBGL_SetPrimitiveQuality( )
-  LOCAL x AS EXT
+SUB tbgl_SetPrimitiveQuality ALIAS "tbgl_SetPrimitiveQuality" ( BYVAL quality AS LONG ) EXPORT
 
-  x = thinBasic_Parse1Number
-
-  internal_SetPrimitiveQuality( x )
+  internal_SetPrimitiveQuality( quality )
 
 END SUB
 
 ' -- Renders box
-SUB Exec_TBGL_Box( )
-  LOCAL x, y, z AS EXT
-
-  thinBasic_Parse3Numbers( x, y, z )
+SUB tbgl_Box ALIAS "tbgl_Box" ( BYVAL x AS SINGLE, BYVAL y AS SINGLE, BYVAL z AS SINGLE ) EXPORT
   internal_RenderBox( x, y, z )
 END SUB
 
 ' -- Renders cylinder
-SUB Exec_TBGL_Cylinder( )
-  LOCAL lowR AS EXT, hiR AS EXT, height AS EXT
-  thinBasic_Parse3Numbers( lowR, hiR, height )
+SUB tbgl_Cylinder ALIAS "tbgl_Cylinder" ( BYVAL lowR AS SINGLE, BYVAL hiR AS SINGLE, BYVAL height AS SINGLE ) EXPORT
 
   internal_RenderCylinder( lowR, hiR, height, 0 )
 
 END SUB
 
 ' -- Renders ... sphere
-SUB Exec_TBGL_Sphere( )
-  LOCAL radius AS EXT
-  radius = thinBasic_Parse1Number
+SUB tbgl_Sphere ALIAS "tbgl_Sphere" ( BYVAL radius AS SINGLE ) EXPORT
 
   internal_RenderSphere( radius )
 
 END SUB
 
 ' -- Torus rendering
-SUB Exec_TBGL_Torus( )
-  LOCAL minR, maxR AS EXT
-
-  thinBasic_Parse2Numbers( minR, maxR )
+SUB tbgl_Torus ALIAS "tbgl_Torus" ( BYVAL minR AS SINGLE, BYVAL maxR AS SINGLE ) EXPORT
 
   internal_RenderTorus( minR, maxR )
 
 END SUB
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+SUB Exec_TBGL_SetPrimitiveQuality( )
+  tbgl_SetPrimitiveQuality( thinBasic_Parse1Number )
+END SUB
+
+SUB Exec_TBGL_Box( )
+  LOCAL x, y, z AS EXT
+
+  thinBasic_Parse3Numbers( x, y, z )
+  tbgl_Box( x, y, z )
+END SUB
+
+SUB Exec_TBGL_Cylinder( )
+  LOCAL lowR AS EXT, hiR AS EXT, height AS EXT
+
+  thinBasic_Parse3Numbers( lowR, hiR, height )
+  tbgl_Cylinder( lowR, hiR, height )
+
+END SUB
+
+SUB Exec_TBGL_Sphere( )
+  tbgl_Sphere( thinBasic_Parse1Number )
+END SUB
+
+SUB Exec_TBGL_Torus( )
+  LOCAL minR, maxR AS EXT
+
+  thinBasic_Parse2Numbers( minR, maxR )
+  tbgl_Torus( minR, maxR )
+
+END SUB
+
+#ENDIF
 
 ' =============================================================================
 
@@ -131,7 +156,7 @@ TYPE TBGL_tFaceParameters
 END TYPE
 
 ' -- [!] Renders box via immediate mode, Vertex Array optimization would be nicer/faster
-SUB internal_RenderBox( BYVAL x AS EXT, BYVAL y AS EXT, BYVAL z AS EXT )
+SUB internal_RenderBox( BYVAL x AS SINGLE, BYVAL y AS SINGLE, BYVAL z AS SINGLE )
   x /= 2
   y /= 2
   z /= 2
@@ -264,7 +289,7 @@ SUB internal_RenderBox( BYVAL x AS EXT, BYVAL y AS EXT, BYVAL z AS EXT )
 END SUB
 
 ' -- [!] Renders cylinder via immediate mode, Vertex Array would mean significant boost
-SUB internal_RenderCylinder( BYVAL lowR AS EXT, BYVAL hiR AS EXT, BYVAL height AS EXT, capped AS LONG )
+SUB internal_RenderCylinder( BYVAL lowR AS SINGLE, BYVAL hiR AS SINGLE, BYVAL height AS SINGLE, capped AS LONG )
   REGISTER i AS EXT
   LOCAL n AS LONG, px AS SINGLE, pz AS SINGLE, x AS SINGLE, y AS SINGLE, z AS SINGLE
   LOCAL j AS LONG
@@ -354,7 +379,7 @@ END SUB
 
 %RENDER_SPHERE = 1 ' 1 = faster, 2 = should be faster, it is not :D
 ' -- Rendering sphere via vectorised immediate mode,
-SUB internal_RenderSphere( BYVAL radius AS EXT )
+SUB internal_RenderSphere( BYVAL radius AS SINGLE )
 
   #IF ( %RENDER_SPHERE = 1 )
     REGISTER i AS LONG, j AS LONG
@@ -439,7 +464,7 @@ END SUB
 
 ' -- [!] Torus, again it would deserve optimization, also UVs are little odd now
 
-SUB internal_RenderTorus( BYVAL minR AS EXT, BYVAL maxR AS EXT )
+SUB internal_RenderTorus( BYVAL minR AS SINGLE, BYVAL maxR AS SINGLE )
   REGISTER stacks AS LONG, slices AS LONG
 
   LOCAL wrapFrac, phi, stMod, stMod1, sinphi, cosphi, r AS SINGLE

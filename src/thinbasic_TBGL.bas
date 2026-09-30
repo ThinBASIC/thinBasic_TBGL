@@ -3,26 +3,52 @@
 '
 '  Description : thinBasic module for 3D graphics
 ' =============================================================================
+'  Building profiles:
+'    - %TBGL_THINBASIC_INTERPRETER_INTERFACE = 1    DLL for thinBASIC (default)
+'    - %TBGL_THINBASIC_INTERPRETER_INTERFACE = 0    DLL for BSTR compatible
+'    - %TBGL_EMBEDDED = 1                           To compile within EXE
+' =============================================================================
+
+#IF NOT %DEF(%TBGL_THINBASIC_INTERPRETER_INTERFACE)
+  %TBGL_THINBASIC_INTERPRETER_INTERFACE = 1
+#ENDIF
+#IF NOT %DEF(%TBGL_EMBEDDED)
+  %TBGL_EMBEDDED = 0
+#ENDIF
 
 ' -----------------------------------------------------------------------------
 ' -- RESOURCES
 ' -----------------------------------------------------------------------------
-#RESOURCE ICON, PROGRAM, "TBGL.ICO"
-#RESOURCE VERSIONINFO
-#RESOURCE FILEVERSION 1, 11, 7, 1
-#RESOURCE PRODUCTVERSION 1, 11, 7, 1
+#IF %TBGL_EMBEDDED = 0
+  #RESOURCE ICON, PROGRAM, "TBGL.ICO"
+  #RESOURCE VERSIONINFO
+  #RESOURCE FILEVERSION 2026, 1, 0, 0
+  #RESOURCE PRODUCTVERSION 2026, 1, 0, 0
 
-#RESOURCE STRINGINFO "0409", "04B0"
+  #RESOURCE STRINGINFO "0409", "04B0"
 
-#RESOURCE VERSION$ "CompanyName",      "thinBasic"
-#RESOURCE VERSION$ "FileDescription",  "thinBASIC module for 2D/3D graphics"
-#RESOURCE VERSION$ "FileVersion",      "1.11.7.1"
-#RESOURCE VERSION$ "InternalName",     "TBGL"
-#RESOURCE VERSION$ "OriginalFilename", "ThinBASIC_TBGL.dll"
-#RESOURCE VERSION$ "LegalCopyright",   "Copyright © thinBasic 2020"
-#RESOURCE VERSION$ "ProductName",      "TBGL"
-#RESOURCE VERSION$ "ProductVersion",   "1.11.7.1"
-#RESOURCE VERSION$ "Comments",         "Support site: http://www.thinbasic.com/"
+  #RESOURCE VERSION$ "CompanyName",      "thinBasic"
+
+  #IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+    #RESOURCE VERSION$ "FileDescription",  "thinBASIC module for 2D/3D graphics"
+  #ELSE
+    #RESOURCE VERSION$ "FileDescription",  "TBGL library for 2D/3D graphics"
+  #ENDIF
+
+  #RESOURCE VERSION$ "FileVersion",      "2026.1.0.0"
+  #RESOURCE VERSION$ "InternalName",     "TBGL"
+
+  #IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+    #RESOURCE VERSION$ "OriginalFilename", "thinBASIC_TBGL.dll"
+  #ELSE
+    #RESOURCE VERSION$ "OriginalFilename", "TBGL.dll"
+  #ENDIF
+
+  #RESOURCE VERSION$ "LegalCopyright",   "Copyright (c) thinBasic, 2026"
+  #RESOURCE VERSION$ "ProductName",      "TBGL"
+  #RESOURCE VERSION$ "ProductVersion",   "2026.1.0"
+  #RESOURCE VERSION$ "Comments",         "Support site: http://www.thinbasic.com/"
+#ENDIF
 
 ' -----------------------------------------------------------------------------
 ' -- DIRECTIVES
@@ -31,8 +57,14 @@
 #TOOLS OFF
 '#debug display on
 
-#COMPILE DLL "thinbasic_TBGL.dll"
+#IF %TBGL_EMBEDDED = 0
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+  #COMPILE DLL "thinbasic_TBGL.dll"
+#ELSE
+  #COMPILE DLL "TBGL.dll"
+#ENDIF
 #DIM ALL
+#ENDIF
 
 ' -----------------------------------------------------------------------------
 ' -- INCLUDES /ELEMENTAL
@@ -41,10 +73,12 @@
 #INCLUDE "Windows.INC"
 
 ' -- Every used defined thinBasic module must include this file
-#INCLUDE "thinCore.inc"
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+  #INCLUDE "thinCore.inc"
+#ENDIF
 
-' -- Includes from José Roca
-#INCLUDE "wgl/glext.inc" ' -- Josés headers, include gl.inc and glu.inc
+' -- Includes from Jose Roca
+#INCLUDE "wgl/glext.inc" ' -- Jose's headers, include gl.inc and glu.inc
 #INCLUDE "wgl/glwgl.inc" ' -- Mod of Sublevel 6 headers
 
 ' -----------------------------------------------------------------------------
@@ -131,59 +165,39 @@ FUNCTION Mem_Copy (BYVAL fromAddress AS DWORD, BYVAL toAddress AS DWORD, BYVAL h
 END FUNCTION
 
 
-' -- General purpose macro, which will help to handle TBGL_Use* single parameter commands
-MACRO MACRO_Use1Param(glParameter)
-  LOCAL flag AS EXT
-  flag = thinBasic_Parse1Number
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+  ' -- Used in functions parsing 3 params byref
+  SUB internal_Parse3Byref( BYVAL x AS DOUBLE, BYVAL y AS DOUBLE, BYVAL z AS DOUBLE )
 
-  IF thinBasic_ErrorFree THEN
-    IF flag THEN glEnable glParameter ELSE glDisable glParameter
-  END IF
-END MACRO
+    LOCAL lVariablePtr1 AS LONG
+    LOCAL lVariableAbsPos1 AS LONG
 
-' -- General purpose macro, which will help to handle TBGL_Use* dual parameter commands
-' -- *dual parameter in final keyword, such as TBGL_UseLightSource <Light>, <State>
-MACRO MACRO_Use2Param()
-  LOCAL glstate, flag AS EXT
+    LOCAL lVariablePtr2 AS LONG
+    LOCAL lVariableAbsPos2 AS LONG
 
-  thinBasic_Parse2Numbers( glstate, flag )
+    LOCAL lVariablePtr3 AS LONG
+    LOCAL lVariableAbsPos3 AS LONG
 
-  IF thinBasic_ErrorFree THEN
-    IF flag THEN glEnable glstate ELSE glDisable glstate
-  END IF
-END MACRO
-
-' -- Used in functions parsing 3 params byref
-SUB internal_Parse3Byref( BYVAL x AS DOUBLE, BYVAL y AS DOUBLE, BYVAL z AS DOUBLE )
-
-  LOCAL lVariablePtr1 AS LONG
-  LOCAL lVariableAbsPos1 AS LONG
-
-  LOCAL lVariablePtr2 AS LONG
-  LOCAL lVariableAbsPos2 AS LONG
-
-  LOCAL lVariablePtr3 AS LONG
-  LOCAL lVariableAbsPos3 AS LONG
-
-  IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-    thinBasic_VariableParse( lVariablePtr1, lVariableAbsPos1 )
     IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-      thinBasic_VariableParse( lVariablePtr2, lVariableAbsPos2 )
+      thinBasic_VariableParse( lVariablePtr1, lVariableAbsPos1 )
       IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
-        thinBasic_VariableParse( lVariablePtr3, lVariableAbsPos3 )
-        IF thinBasic_CheckCloseParens_Mandatory THEN
+        thinBasic_VariableParse( lVariablePtr2, lVariableAbsPos2 )
+        IF thinBasic_CheckComma_Mandatory AND thinBasic_ErrorFree THEN
+          thinBasic_VariableParse( lVariablePtr3, lVariableAbsPos3 )
+          IF thinBasic_CheckCloseParens_Mandatory THEN
 
-          '---Now assign values to referenced variables
-          thinBasic_ChangeVariableNumberDirect( lVariablePtr1, lVariableAbsPos1, x )
-          thinBasic_ChangeVariableNumberDirect( lVariablePtr2, lVariableAbsPos2, y )
-          thinBasic_ChangeVariableNumberDirect( lVariablePtr3, lVariableAbsPos3, z )
+            '---Now assign values to referenced variables
+            thinBasic_ChangeVariableNumberDirect( lVariablePtr1, lVariableAbsPos1, x )
+            thinBasic_ChangeVariableNumberDirect( lVariablePtr2, lVariableAbsPos2, y )
+            thinBasic_ChangeVariableNumberDirect( lVariablePtr3, lVariableAbsPos3, z )
 
+          END IF
         END IF
       END IF
     END IF
-  END IF
 
-END SUB
+  END SUB
+#ENDIF
 
 FUNCTION File_Exists(BYVAL FullFileName AS STRING) AS LONG
   FUNCTION = %FALSE
@@ -227,6 +241,8 @@ GLOBAL g_Win AS tWinProperties
 ' -----------------------------------------------------------------------------
 ' -- TBGL INCLUDES
 ' -----------------------------------------------------------------------------
+
+#INCLUDE "tbgl_HostBridge.inc"
 
 #INCLUDE "tbgl_ErrorHandling.inc"
 #INCLUDE "tbgl_LowLevelOpenGL.inc"
@@ -323,17 +339,8 @@ END SUB
 
 '----------------------------------------------------------------------------
 
-FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STRING ) EXPORT AS LONG
-  ' This function is automatically called by thinCore whenever this DLL is loaded.
-  ' This function MUST be present in every external DLL you want to use
-  ' with thinBasic
-  ' Use this function to initialize every variable you need and for loading the
-  ' new symbol (read Keyword) you have created.
-  '----------------------------------------------------------------------------
-
-  ' -----------------------------------------------------------------------------
-  ' -- INITIALIZATION
-  ' -----------------------------------------------------------------------------
+' -- Initialization shared by both build variants
+SUB internal_LibraryInit( )
 
   QueryPerformanceFrequency( freq )               ' -- If succeeds, we can use high precision FrameRate measurement
 
@@ -348,6 +355,57 @@ FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STR
 
 
   DIM keyPressed( 0 TO 256 ) AS BYTE
+
+END SUB
+
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE = 0
+  FUNCTION tbgl_InitializeLibrary ALIAS "tbgl_InitializeLibrary" () EXPORT AS LONG
+    g_ModuleInstance = GetModuleHandle(BYVAL %NULL)
+    internal_LibraryInit()
+
+    FUNCTION = 0  ' Reserved for future use
+
+  END FUNCTION
+#ENDIF
+
+' -- Release shared by both build variants
+SUB internal_LibraryRelease( )
+
+  internal_DeleteAllSprites()
+  Internal_TBGL_Free( )  ' -- In case programmer forgot to destroy window / canvas
+
+END SUB
+
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE = 0
+  ' -- General purpose DLL: releases window, OpenGL context and sprites
+  ' -- Call before unloading the DLL; releasing inside LibMain is not safe for OpenGL/windows
+  FUNCTION tbgl_ReleaseLibrary ALIAS "tbgl_ReleaseLibrary" ( ) EXPORT AS LONG
+
+    internal_LibraryRelease( )
+
+    FUNCTION = 0  ' Reserved for future use
+
+  END FUNCTION
+#ENDIF
+
+'----------------------------------------------------------------------------
+' -- thinBasic module interface
+'----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+FUNCTION LoadLocalSymbols ALIAS "LoadLocalSymbols" ( OPTIONAL BYVAL sPath AS STRING ) EXPORT AS LONG
+  ' This function is automatically called by thinCore whenever this DLL is loaded.
+  ' This function MUST be present in every external DLL you want to use
+  ' with thinBasic
+  ' Use this function to initialize every variable you need and for loading the
+  ' new symbol (read Keyword) you have created.
+  '----------------------------------------------------------------------------
+
+  ' -----------------------------------------------------------------------------
+  ' -- INITIALIZATION
+  ' -----------------------------------------------------------------------------
+
+  internal_LibraryInit( )
 
 
   ' -----------------------------------------------------------------------------
@@ -2119,35 +2177,43 @@ FUNCTION UnLoadLocalSymbols ALIAS "UnLoadLocalSymbols" ( ) EXPORT AS LONG
   ' -----------------------------------------------------------------------------
   ' -- INITIALIZATION
   ' -----------------------------------------------------------------------------
-  internal_DeleteAllSprites()
-  Internal_TBGL_Free( )  ' -- In case programmer forgot to destroy window / canvas
+  internal_LibraryRelease( )
 
   FUNCTION = 0&
 END FUNCTION
 
+#ENDIF
+
 '----------------------------------------------------------------------------
 
-FUNCTION LIBMAIN ALIAS "LibMain" ( BYVAL hInstance AS LONG, BYVAL fwdReason AS LONG, BYVAL lpvReserved AS LONG ) EXPORT AS LONG
+#IF %TBGL_EMBEDDED = 0
 
-  g_ModuleInstance = hInstance
-  SELECT CASE fwdReason
+  FUNCTION LIBMAIN ALIAS "LibMain" ( BYVAL hInstance AS LONG, BYVAL fwdReason AS LONG, BYVAL lpvReserved AS LONG ) EXPORT AS LONG
 
-    CASE %DLL_PROCESS_ATTACH
-      FUNCTION = 1&
-      EXIT FUNCTION
+    g_ModuleInstance = hInstance
+    SELECT CASE fwdReason
 
-    CASE %DLL_PROCESS_DETACH
-      FUNCTION = 1&
-      EXIT FUNCTION
+      CASE %DLL_PROCESS_ATTACH
+        #IF %TBGL_THINBASIC_INTERPRETER_INTERFACE = 0
+          internal_LibraryInit( )
+        #ENDIF
+        FUNCTION = 1&
+        EXIT FUNCTION
 
-    CASE %DLL_THREAD_ATTACH
-      FUNCTION = 1&
-      EXIT FUNCTION
+      CASE %DLL_PROCESS_DETACH
+        FUNCTION = 1&
+        EXIT FUNCTION
 
-    CASE %DLL_THREAD_DETACH
-      FUNCTION = 1&
-      EXIT FUNCTION
+      CASE %DLL_THREAD_ATTACH
+        FUNCTION = 1&
+        EXIT FUNCTION
 
-  END SELECT
+      CASE %DLL_THREAD_DETACH
+        FUNCTION = 1&
+        EXIT FUNCTION
 
-END FUNCTION
+    END SELECT
+
+  END FUNCTION
+
+#ENDIF

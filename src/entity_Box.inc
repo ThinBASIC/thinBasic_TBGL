@@ -35,28 +35,21 @@ MACRO macro_t_Entity_Box_FillData(ptrTo_t_EntityInfo, sizeA, sizeB, sizeC, tex, 
 
 END MACRO
 
-' -- Creates entity
-SUB Exec_TBGL_EntityCreateBox()
+' -- Creates entity, texture 0 means no texture
+SUB tbgl_EntityCreateBox ALIAS "tbgl_EntityCreateBox" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityID AS LONG _
+  , BYVAL parentEntity AS LONG _
+  , BYVAL sizeA AS SINGLE _
+  , BYVAL sizeB AS SINGLE _
+  , BYVAL sizeC AS SINGLE _
+  , BYVAL tex AS LONG _
+  , BYVAL r AS BYTE _
+  , BYVAL g AS BYTE _
+  , BYVAL b AS BYTE _
+  ) EXPORT
 
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL parentEntity AS EXT
-  LOCAL sizeA, sizeB, sizeC,tex,r,g,b AS EXT
-
-  LOCAL n AS LONG
-  n = thinBASIC_ParseXNumbers( 2, 10, ScriptSceneID, EntityID, parentEntity, sizeA, sizeB, sizeC, tex, r, g, b )
-  IF n < 8 THEN
-    r = 255
-    g = 255
-    b = 255
-  END IF
-  IF n < 7 THEN tex = -1
   IF tex    = 0 THEN tex = -1
-  IF n < 4 THEN
-    sizeA = 1
-    sizeB = 1
-    sizeC = 1
-  END IF
 
   internal_EntityRedimArrayIfNeeded(ScriptSceneID, EntityID)
   '---Now we over impose a dummy structure to previously allocated string
@@ -76,3 +69,34 @@ SUB Exec_TBGL_EntityCreateBox()
   TBGLSceneEntitiesNames(EntityID) = ""
 
 END SUB
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+SUB Exec_TBGL_EntityCreateBox()
+  LOCAL ScriptSceneID AS EXT
+  LOCAL EntityID AS EXT
+  LOCAL parentEntity AS EXT
+  LOCAL sizeA, sizeB, sizeC,tex,r,g,b AS EXT
+
+  LOCAL n AS LONG
+  n = thinBASIC_ParseXNumbers( 2, 10, ScriptSceneID, EntityID, parentEntity, sizeA, sizeB, sizeC, tex, r, g, b )
+  IF n < 8 THEN
+    r = 255
+    g = 255
+    b = 255
+  END IF
+  IF n < 7 THEN tex = -1
+  IF n < 4 THEN
+    sizeA = 1
+    sizeB = 1
+    sizeC = 1
+  END IF
+
+  tbgl_EntityCreateBox( ScriptSceneID, EntityID, parentEntity, sizeA, sizeB, sizeC, tex, r, g, b )
+
+END SUB
+
+#ENDIF

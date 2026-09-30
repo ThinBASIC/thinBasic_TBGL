@@ -14,14 +14,14 @@ MACRO macro_t_Entity_Pivot_MemAlloc = STRING$(SIZEOF(t_EntityInfo), 0)
 MACRO macro_t_Entity_Pivot_MemPos(pStart)  = STRPTR(pStart) + SIZEOF(t_EntityInfo)
 
 ' -- Creates entity
-SUB Exec_TBGL_EntityCreatePivot()
-
-  LOCAL ScriptSceneID AS EXT
-  LOCAL EntityID AS EXT
-  LOCAL px, py, pz AS EXT
-  LOCAL PARENT AS EXT
-
-  thinBASIC_ParseXNumbers(2, 6, ScriptSceneID, EntityID, PARENT, px, py, pz)
+SUB tbgl_EntityCreatePivot ALIAS "tbgl_EntityCreatePivot" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityID AS LONG _
+  , BYVAL PARENT AS LONG _
+  , BYVAL px AS DOUBLE _
+  , BYVAL py AS DOUBLE _
+  , BYVAL pz AS DOUBLE _
+  ) EXPORT
 
   internal_EntityRedimArrayIfNeeded(ScriptSceneID, EntityID)
 
@@ -42,3 +42,21 @@ SUB Exec_TBGL_EntityCreatePivot()
   TBGLSceneEntitiesNames(EntityID) = ""
 
 END SUB
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+SUB Exec_TBGL_EntityCreatePivot()
+  LOCAL ScriptSceneID AS EXT
+  LOCAL EntityID AS EXT
+  LOCAL px, py, pz AS EXT
+  LOCAL PARENT AS EXT
+
+  thinBASIC_ParseXNumbers(2, 6, ScriptSceneID, EntityID, PARENT, px, py, pz)
+  tbgl_EntityCreatePivot(ScriptSceneID, EntityID, PARENT, px, py, pz)
+
+END SUB
+
+#ENDIF

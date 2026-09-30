@@ -9,34 +9,25 @@
 
 ' -----------------------------------------------------------------------------
 
-' -- Colors all subsequent primitives
-SUB Exec_TBGL_Color ( )
-  LOCAL r, g, b, a, n AS EXT
-  a = 255
-  n = thinBasic_ParseXNumbers( 3, 4, r, g, b, a )
+' -- Colors all subsequent primitives, fully opaque
+SUB tbgl_Color ALIAS "tbgl_Color" ( BYVAL r AS BYTE, BYVAL g AS BYTE, BYVAL b AS BYTE ) EXPORT
 
-  ' -- Depending on the input value, we go for floating point, or integer based call
-  ' -- [!] Going FP path for all, driver seems to do it this way
-  r /= 255
-  g /= 255
-  b /= 255
-  a /= 255
-  glColor4f(r, g, b, a)
+  tbgl_ColorAlpha( r, g, b, 255 )
 
 END SUB
 
 
 ' -- Colors all subsequent primitives
-SUB Exec_TBGL_ColorAlpha( )
-  LOCAL r, g, b, a AS EXT
+SUB tbgl_ColorAlpha ALIAS "tbgl_ColorAlpha" ( BYVAL r AS BYTE, BYVAL g AS BYTE, BYVAL b AS BYTE, BYVAL a AS BYTE ) EXPORT
 
-  thinBasic_Parse4Numbers( r, g, b, a )
+  internal_ColorAlphaF( r / 255, g / 255, b / 255, a / 255 )
 
-  r /= 255
-  g /= 255
-  b /= 255
-  a /= 255
+END SUB
 
+' -- Components in 0..1, not clamped (thinBasic keywords pass script values / 255 unrounded)
+SUB internal_ColorAlphaF( BYVAL r AS SINGLE, BYVAL g AS SINGLE, BYVAL b AS SINGLE, BYVAL a AS SINGLE )
+
+  ' -- [!] Going FP path for all, driver seems to do it this way
   glColor4f (r, g, b, a)
 '  glColor4ub r, g, b, a
 
@@ -44,36 +35,30 @@ END SUB
 
 
 ' -- Sets background color for rendering
-SUB Exec_TBGL_BackColor ( )
-  LOCAL r, g, b, a AS EXT
+SUB tbgl_BackColor ALIAS "tbgl_BackColor" ( BYVAL r AS BYTE, BYVAL g AS BYTE, BYVAL b AS BYTE, BYVAL a AS BYTE ) EXPORT
 
-  thinBASIC_ParseXNumbers( 3, 4, r, g, b, a )
+  internal_BackColorF( r / 255, g / 255, b / 255, a / 255 )
 
-  r /= 255
-  g /= 255
-  b /= 255
-  a /= 255
+END SUB
+
+' -- Components in 0..1, not clamped
+SUB internal_BackColorF( BYVAL r AS SINGLE, BYVAL g AS SINGLE, BYVAL b AS SINGLE, BYVAL a AS SINGLE )
 
   glClearColor r, g, b, a
 
 END SUB
 
 ' -- Sets alpha testing on or off
-SUB Exec_TBGL_UseAlphaTest()
+SUB tbgl_UseAlphaTest ALIAS "tbgl_UseAlphaTest" ( BYVAL flag AS LONG ) EXPORT
 
-  ' MACRO placed in thinbasic_tbgl
-  MACRO_Use1Param(%GL_ALPHA_TEST)
+  IF flag THEN glEnable %GL_ALPHA_TEST ELSE glDisable %GL_ALPHA_TEST
 
 END SUB
 
 ' -- Sets alpha func to be used when alpha testing is on
-SUB Exec_TBGL_AlphaFunc( )
+SUB tbgl_AlphaFunc ALIAS "tbgl_AlphaFunc" ( BYVAL func AS DWORD, BYVAL value AS SINGLE ) EXPORT
 
-  LOCAL fnc, param AS EXT
-
-  thinBasic_Parse2Numbers( fnc, param )
-
-  glAlphaFunc fnc, param
+  glAlphaFunc func, value
 
 END SUB
 
@@ -88,14 +73,11 @@ GLOBAL AlphaFuncStackDepth AS LONG
 
 
 ' -- Enables line stipple in given section, and makes sure it is returned back on the end
-SUB Exec_TBGL_PushAlphaFunc( )
-
-  LOCAL func, value AS EXT
+SUB tbgl_PushAlphaFunc ALIAS "tbgl_PushAlphaFunc" ( BYVAL func AS DWORD, BYVAL value AS SINGLE ) EXPORT
 
   INCR AlphaFuncStackDepth
   IF AlphaFuncStackDepth > UBOUND(AlphaFuncStack) THEN REDIM PRESERVE AlphaFuncStack(1 TO AlphaFuncStackDepth+4)
 
-  thinBasic_Parse2Numbers func, value
   ' -- Backup the line width
   glGetIntegerV(%GL_ALPHA_TEST_FUNC, AlphaFuncStack(AlphaFuncStackDepth).func)
   glGetFloatV(%GL_ALPHA_TEST_REF, AlphaFuncStack(AlphaFuncStackDepth).value)
@@ -106,7 +88,7 @@ SUB Exec_TBGL_PushAlphaFunc( )
 END SUB
 
 ' -- Ends line stipple region
-SUB Exec_TBGL_PopAlphaFunc( )
+SUB tbgl_PopAlphaFunc ALIAS "tbgl_PopAlphaFunc" ( ) EXPORT
 
   IF AlphaFuncStackDepth = 0 THEN
     IF gOpenGLStarted THEN
@@ -125,18 +107,14 @@ END SUB
 GLOBAL LogicOpStack() AS LONG
 GLOBAL LogicOpStackDepth AS LONG
 
-SUB Exec_TBGL_PushLogicOp( )
-
-  LOCAL LogicOp AS EXT
+SUB tbgl_PushLogicOp ALIAS "tbgl_PushLogicOp" ( BYVAL logicOp AS DWORD ) EXPORT
 
   INCR LogicOpStackDepth
   IF LogicOpStackDepth > UBOUND(LogicOpStack) THEN
     REDIM PRESERVE LogicOpStack(1 TO LogicOpStackDepth+4)
   END IF
 
-  LogicOp = thinBasic_Parse1Number
-
-  LogicOpStack(LogicOpStackDepth) = LogicOp
+  LogicOpStack(LogicOpStackDepth) = logicOp
 
   IF LogicOpStackDepth = 1 THEN
     glEnable(%GL_COLOR_LOGIC_OP)
@@ -146,7 +124,7 @@ SUB Exec_TBGL_PushLogicOp( )
 END SUB
 
 
-SUB Exec_TBGL_PopLogicOp( )
+SUB tbgl_PopLogicOp ALIAS "tbgl_PopLogicOp" ( ) EXPORT
 
   DECR LogicOpStackDepth
 
@@ -165,3 +143,74 @@ SUB Exec_TBGL_PopLogicOp( )
   END IF
 
 END SUB
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+' -- Optional 4th parameter is alpha
+' -- Colors go through the float path unrounded and unclamped, as script values always did
+SUB Exec_TBGL_Color ( )
+  LOCAL r, g, b, a AS EXT
+
+  a = 255
+  thinBasic_ParseXNumbers( 3, 4, r, g, b, a )
+  internal_ColorAlphaF( r / 255, g / 255, b / 255, a / 255 )
+
+END SUB
+
+SUB Exec_TBGL_ColorAlpha( )
+  LOCAL r, g, b, a AS EXT
+
+  thinBasic_Parse4Numbers( r, g, b, a )
+  internal_ColorAlphaF( r / 255, g / 255, b / 255, a / 255 )
+
+END SUB
+
+' -- Alpha defaults to 0
+SUB Exec_TBGL_BackColor ( )
+  LOCAL r, g, b, a AS EXT
+
+  thinBASIC_ParseXNumbers( 3, 4, r, g, b, a )
+  internal_BackColorF( r / 255, g / 255, b / 255, a / 255 )
+
+END SUB
+
+SUB Exec_TBGL_UseAlphaTest()
+  LOCAL flag AS EXT
+
+  flag = thinBasic_Parse1Number
+  IF thinBasic_ErrorFree THEN tbgl_UseAlphaTest( ISTRUE flag )
+
+END SUB
+
+SUB Exec_TBGL_AlphaFunc( )
+  LOCAL fnc, param AS EXT
+
+  thinBasic_Parse2Numbers( fnc, param )
+  tbgl_AlphaFunc( fnc, param )
+
+END SUB
+
+SUB Exec_TBGL_PushAlphaFunc( )
+  LOCAL func, value AS EXT
+
+  thinBasic_Parse2Numbers func, value
+  tbgl_PushAlphaFunc( func, value )
+
+END SUB
+
+SUB Exec_TBGL_PopAlphaFunc( )
+  tbgl_PopAlphaFunc( )
+END SUB
+
+SUB Exec_TBGL_PushLogicOp( )
+  tbgl_PushLogicOp( thinBasic_Parse1Number )
+END SUB
+
+SUB Exec_TBGL_PopLogicOp( )
+  tbgl_PopLogicOp( )
+END SUB
+
+#ENDIF

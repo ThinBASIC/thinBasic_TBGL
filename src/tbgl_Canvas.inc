@@ -13,13 +13,9 @@
 ' -----------------------------------------------------------------------------
 
 ' -- Retrieving handle of host control for rendering
-FUNCTION Exec_TBGL_BindCanvas( ) AS EXT
+FUNCTION tbgl_BindCanvas ALIAS "tbgl_BindCanvas" ( BYVAL hCtrl AS DWORD ) EXPORT AS LONG
 
-  LOCAL hCtrl AS DWORD
   LOCAL r AS RECT
-
-  ' -- Getting handle
-  hCtrl = thinBasic_Parse1Number
 
   ' -- Creating device handle
   g_Win.hDC = GetDC( hCtrl )
@@ -38,14 +34,12 @@ FUNCTION Exec_TBGL_BindCanvas( ) AS EXT
 END FUNCTION
 
 
-' -- Updates viewport size with actual control size
-FUNCTION Exec_TBGL_UpdateCanvasProportions( ) AS EXT
-  LOCAL cHandle AS EXT
+' -- Updates viewport size with actual control size, hCtrl = 0 means currently bound canvas
+FUNCTION tbgl_UpdateCanvasProportions ALIAS "tbgl_UpdateCanvasProportions" ( BYVAL hCtrl AS DWORD ) EXPORT AS LONG
   DIM r AS RECT
-  IF thinBasic_CheckOpenParens_Optional THEN
-    thinBASIC_ParseNumber( cHandle )
-    thinBasic_CheckCloseParens_Mandatory
-    GetClientRect( cHandle, r )
+
+  IF hCtrl THEN
+    GetClientRect( hCtrl, r )
   ELSE
     GetClientRect( g_Win.handle, r )
   END IF
@@ -57,15 +51,11 @@ FUNCTION Exec_TBGL_UpdateCanvasProportions( ) AS EXT
 END FUNCTION
 
 
-' -- Is canvas bound for rendering?
-FUNCTION Exec_TBGL_CanvasBound( ) AS EXT
-  LOCAL cHandle AS EXT
+' -- Is canvas bound for rendering? hCtrl = 0 means any canvas
+FUNCTION tbgl_CanvasBound ALIAS "tbgl_CanvasBound" ( BYVAL hCtrl AS DWORD ) EXPORT AS LONG
 
-  IF thinBasic_CheckOpenParens_Optional THEN
-    thinBASIC_ParseNumber( cHandle )
-    thinBasic_CheckCloseParens_Mandatory
-
-    IF cHandle = g_Win.handle AND g_Win.ControlParent <> 0 THEN
+  IF hCtrl THEN
+    IF hCtrl = g_Win.handle AND g_Win.ControlParent <> 0 THEN
       FUNCTION = %TRUE
     ELSE
       FUNCTION = %FALSE
@@ -77,16 +67,13 @@ FUNCTION Exec_TBGL_CanvasBound( ) AS EXT
 END FUNCTION
 
 
-' -- Releasing canvas results in releasing sources and refreshing control we captured
-FUNCTION Exec_TBGL_ReleaseCanvas( ) AS EXT
+' -- Releasing canvas results in releasing sources and refreshing control we captured, hCtrl = 0 means current canvas
+FUNCTION tbgl_ReleaseCanvas ALIAS "tbgl_ReleaseCanvas" ( BYVAL hCtrl AS DWORD ) EXPORT AS LONG
 
-  LOCAL cHandle AS EXT
-  IF thinBasic_CheckOpenParens_Optional THEN
-    thinBASIC_ParseNumber( cHandle )
-    thinBasic_CheckCloseParens_Mandatory
+  IF hCtrl THEN
     RedrawWindow( g_Win.handle, BYVAL 0, BYCOPY 0, %RDW_INVALIDATE )
 
-    IF cHandle = g_Win.handle THEN
+    IF hCtrl = g_Win.handle THEN
       Internal_TBGL_Free( )
     END IF
 
@@ -95,3 +82,38 @@ FUNCTION Exec_TBGL_ReleaseCanvas( ) AS EXT
   END IF
 
 END FUNCTION
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
+FUNCTION Exec_TBGL_BindCanvas( ) AS EXT
+  FUNCTION = tbgl_BindCanvas( thinBasic_Parse1Number )
+END FUNCTION
+
+' -- Parses optional "( hCtrl )", returns 0 when omitted
+FUNCTION internal_ParseOptionalHandleInParens( ) AS DWORD
+  LOCAL cHandle AS EXT
+
+  IF thinBasic_CheckOpenParens_Optional THEN
+    thinBASIC_ParseNumber( cHandle )
+    thinBasic_CheckCloseParens_Mandatory
+  END IF
+
+  FUNCTION = cHandle
+END FUNCTION
+
+FUNCTION Exec_TBGL_UpdateCanvasProportions( ) AS EXT
+  FUNCTION = tbgl_UpdateCanvasProportions( internal_ParseOptionalHandleInParens( ))
+END FUNCTION
+
+FUNCTION Exec_TBGL_CanvasBound( ) AS EXT
+  FUNCTION = tbgl_CanvasBound( internal_ParseOptionalHandleInParens( ))
+END FUNCTION
+
+FUNCTION Exec_TBGL_ReleaseCanvas( ) AS EXT
+  FUNCTION = tbgl_ReleaseCanvas( internal_ParseOptionalHandleInParens( ))
+END FUNCTION
+
+#ENDIF

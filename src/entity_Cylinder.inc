@@ -38,10 +38,78 @@ MACRO macro_t_Entity_Cylinder_FillData(ptrTo_t_EntityInfo, radius, radius2, heig
 END MACRO
 
 ' -- Both Cylinder and CylinderCapped differ just in the presence of ... cap :)
+SUB internal_EntityCreateCylinder( BYVAL ScriptSceneID AS LONG, BYVAL EntityID AS LONG, BYVAL PARENT AS LONG, BYVAL radius AS SINGLE, BYVAL radius2 AS SINGLE, BYVAL height AS SINGLE, _
+                                   BYVAL tex AS LONG, BYVAL r AS BYTE, BYVAL g AS BYTE, BYVAL b AS BYTE, BYVAL capped AS LONG )
+
+  internal_EntityRedimArrayIfNeeded(ScriptSceneID, EntityID)
+
+  '---Now we over impose a dummy structure to previously allocated string
+  internal_SetEntityOverlay(ScriptSceneID)
+
+  TBGLSceneEntities(EntityID) = macro_t_Entity_Cylinder_MemAlloc
+
+  '---Now point the object info pointer to point to the first byte (remember here there is the space for t_ObjectInfo
+    dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
+    macro_t_EntityInfo_FillData(dummy_PtrTo_t_EntityInfo, %TBGL_ENTITY_CYLINDER, PARENT, 1, 0, 0, 0)', 0, 0, 0)
+
+  '---Now point the object info pointer to point to the initial of the specific object data.
+    dummy_PtrTo_t_Entity_Cylinder = macro_t_Entity_Cylinder_MemPos(TBGLSceneEntities(EntityID))
+    macro_t_Entity_Cylinder_FillData(dummy_PtrTo_t_Entity_Cylinder, radius, radius2, height, tex, r, g, b, capped )
+
+  ' -- Now reset name
+  internal_SetEntityOverlayNames(ScriptSceneID)
+  TBGLSceneEntitiesNames(EntityID) = ""
+
+END SUB
+
+' -- Texture 0 means no texture
+SUB tbgl_EntityCreateCylinder ALIAS "tbgl_EntityCreateCylinder" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityID AS LONG _
+  , BYVAL PARENT AS LONG _
+  , BYVAL radius AS SINGLE _
+  , BYVAL radius2 AS SINGLE _
+  , BYVAL height AS SINGLE _
+  , BYVAL tex AS LONG _
+  , BYVAL r AS BYTE _
+  , BYVAL g AS BYTE _
+  , BYVAL b AS BYTE _
+  ) EXPORT
+
+  IF tex    = 0 THEN tex = -1
+  internal_EntityCreateCylinder( ScriptSceneID, EntityID, PARENT, radius, radius2, height, tex, r, g, b, 0 )
+
+END SUB
+
+' -- Radius, radius2 and height 0 mean 1, texture 0 means no texture
+SUB tbgl_EntityCreateCylinderCapped ALIAS "tbgl_EntityCreateCylinderCapped" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityID AS LONG _
+  , BYVAL PARENT AS LONG _
+  , BYVAL radius AS SINGLE _
+  , BYVAL radius2 AS SINGLE _
+  , BYVAL height AS SINGLE _
+  , BYVAL tex AS LONG _
+  , BYVAL r AS BYTE _
+  , BYVAL g AS BYTE _
+  , BYVAL b AS BYTE _
+  ) EXPORT
+
+  IF radius = 0   THEN radius = 1
+  IF radius2 = 0  THEN radius2 = 1
+  IF height = 0   THEN height = 1
+  IF tex    = 0 THEN tex = -1
+  internal_EntityCreateCylinder( ScriptSceneID, EntityID, PARENT, radius, radius2, height, tex, r, g, b, 1 )
+
+END SUB
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
 SUB Exec_TBGL_EntityCreateCylinder()
-
   LOCAL ScriptSceneID AS EXT
-
   LOCAL EntityID AS EXT
   LOCAL radius,radius2, height,tex,r,g,b AS EXT
   LOCAL PARENT AS EXT
@@ -52,38 +120,18 @@ SUB Exec_TBGL_EntityCreateCylinder()
   IF n < 4 THEN radius = 1
   IF n < 5 THEN radius2 = 1
   IF n < 6 THEN height = 1
-  IF tex    = 0 THEN tex = -1
   IF n < 8 THEN
     r = 255
     g = 255
     b = 255
   END IF
 
-  internal_EntityRedimArrayIfNeeded(ScriptSceneID, EntityID)
-
-  '---Now we over impose a dummy structure to previously allocated string
-  internal_SetEntityOverlay(ScriptSceneID)
-
-  TBGLSceneEntities(EntityID) = macro_t_Entity_Cylinder_MemAlloc
-
-  '---Now point the object info pointer to point to the first byte (remember here there is the space for t_ObjectInfo
-    dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
-    macro_t_EntityInfo_FillData(dummy_PtrTo_t_EntityInfo, %TBGL_ENTITY_CYLINDER, PARENT, 1, 0, 0, 0)', 0, 0, 0)
-
-  '---Now point the object info pointer to point to the initial of the specific object data.
-    dummy_PtrTo_t_Entity_Cylinder = macro_t_Entity_Cylinder_MemPos(TBGLSceneEntities(EntityID))
-    macro_t_Entity_Cylinder_FillData(dummy_PtrTo_t_Entity_Cylinder, radius, radius2, height, tex, r, g, b, 0 )
-
-  ' -- Now reset name
-  internal_SetEntityOverlayNames(ScriptSceneID)
-  TBGLSceneEntitiesNames(EntityID) = ""
+  tbgl_EntityCreateCylinder( ScriptSceneID, EntityID, PARENT, radius, radius2, height, tex, r, g, b )
 
 END SUB
 
 SUB Exec_TBGL_EntityCreateCylinderCapped()
-
   LOCAL ScriptSceneID AS EXT
-
   LOCAL EntityID AS EXT
   LOCAL radius,radius2, height,tex,r,g,b AS EXT
   LOCAL PARENT AS EXT
@@ -91,33 +139,14 @@ SUB Exec_TBGL_EntityCreateCylinderCapped()
 
   n = thinBASIC_ParseXNumbers( 2, 10, ScriptSceneID, EntityID, PARENT, radius, radius2, height, tex, r, g, b )
 
-  IF radius = 0   THEN radius = 1
-  IF radius2 = 0  THEN radius2 = 1
-  IF height = 0   THEN height = 1
-  IF tex    = 0 THEN tex = -1
   IF n < 8 THEN
     r = 255
     g = 255
     b = 255
   END IF
 
-  internal_EntityRedimArrayIfNeeded(ScriptSceneID, EntityID)
-
-  '---Now we over impose a dummy structure to previously allocated string
-  internal_SetEntityOverlay(ScriptSceneID)
-
-  TBGLSceneEntities(EntityID) = macro_t_Entity_Cylinder_MemAlloc
-
-  '---Now point the object info pointer to point to the first byte (remember here there is the space for t_ObjectInfo
-    dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
-    macro_t_EntityInfo_FillData(dummy_PtrTo_t_EntityInfo, %TBGL_ENTITY_CYLINDER, PARENT, 1, 0, 0, 0)', 0, 0, 0)
-
-  '---Now point the object info pointer to point to the initial of the specific object data.
-    dummy_PtrTo_t_Entity_Cylinder = macro_t_Entity_Cylinder_MemPos(TBGLSceneEntities(EntityID))
-    macro_t_Entity_Cylinder_FillData(dummy_PtrTo_t_Entity_Cylinder, radius, radius2, height, tex, r, g, b, 1 )
-
-  ' -- Now reset name
-  internal_SetEntityOverlayNames(ScriptSceneID)
-  TBGLSceneEntitiesNames(EntityID) = ""
+  tbgl_EntityCreateCylinderCapped( ScriptSceneID, EntityID, PARENT, radius, radius2, height, tex, r, g, b )
 
 END SUB
+
+#ENDIF

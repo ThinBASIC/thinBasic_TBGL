@@ -42,7 +42,46 @@ MACRO macro_t_Entity_BoundingSphere_FillData(ptrTo_t_EntityInfo, nPTR, nRadius)
   @ptrTo_t_EntityInfo.Radius   = nRadius
 END MACRO
 
-' -- Creates entity
+' -- Creates entity, funcPtr (may be 0) is callback invoked on collision
+SUB tbgl_EntityCreateBoundingSphere ALIAS "tbgl_EntityCreateBoundingSphere" ( _
+    BYVAL ScriptSceneID AS LONG _
+  , BYVAL EntityID AS LONG _
+  , BYVAL PARENT AS LONG _
+  , BYVAL eRadius AS SINGLE _
+  , BYVAL FuncPTR AS LONG _
+  ) EXPORT
+
+  internal_EntityRedimArrayIfNeeded(ScriptSceneID, EntityID)
+
+  '---Now we over impose a dummy structure to previously allocated string
+  internal_SetEntityOverlay(ScriptSceneID)
+
+  TBGLSceneEntities(EntityID) = macro_t_Entity_BoundingSphere_MemAlloc
+
+  '---Now point the object info pointer to point to the first byte (remember here there is the space for t_ObjectInfo
+    dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
+    macro_t_EntityInfo_FillData(dummy_PtrTo_t_EntityInfo, %TBGL_ENTITY_BoundingSphere, PARENT, 1, 0, 0, 0)', 0, 0, 0)
+
+  '---Now point the object info pointer to point to the initial of the specific object data.
+    dummy_PtrTo_t_Entity_BoundingSphere = macro_t_Entity_BoundingSphere_MemPos(TBGLSceneEntities(EntityID))
+    macro_t_Entity_BoundingSphere_FillData(dummy_PtrTo_t_Entity_BoundingSphere, FuncPTR, eRadius )
+
+  ' -- Now reset name
+  internal_SetEntityOverlayNames(ScriptSceneID)
+  TBGLSceneEntitiesNames(EntityID) = ""
+
+END SUB
+
+' -- Pointer to TBGL_tCollisionInfo of the last collision
+FUNCTION tbgl_EntityGetCollisionInfo ALIAS "tbgl_EntityGetCollisionInfo" ( ) EXPORT AS DWORD
+  function = varptr(g_CollisionInfo)
+END FUNCTION
+
+' -----------------------------------------------------------------------------
+' -- thinBasic keyword parsers
+' -----------------------------------------------------------------------------
+#IF %TBGL_THINBASIC_INTERPRETER_INTERFACE
+
 SUB Exec_TBGL_EntityCreateBoundingSphere()
 
   LOCAL ScriptSceneID, EntityID, Parent, eRadius AS EXT
@@ -61,34 +100,13 @@ SUB Exec_TBGL_EntityCreateBoundingSphere()
         thinBasic_ParseNumber eRadius
 
         IF thinBasic_CheckComma_Optional THEN
-          'thinBasic_ParseString FuncName
-
           IF thinBasic_ErrorFree THEN
-
             ' -- Retrieve pointer to the function
             FuncPtr = thinBasic_FunctionParseAndGetPtr(%FALSE)
-
           END IF
         END IF
 
-        internal_EntityRedimArrayIfNeeded(ScriptSceneID, EntityID)
-
-        '---Now we over impose a dummy structure to previously allocated string
-        internal_SetEntityOverlay(ScriptSceneID)
-
-        TBGLSceneEntities(EntityID) = macro_t_Entity_BoundingSphere_MemAlloc
-
-        '---Now point the object info pointer to point to the first byte (remember here there is the space for t_ObjectInfo
-          dummy_PtrTo_t_EntityInfo = STRPTR(TBGLSceneEntities(EntityID))
-          macro_t_EntityInfo_FillData(dummy_PtrTo_t_EntityInfo, %TBGL_ENTITY_BoundingSphere, PARENT, 1, 0, 0, 0)', 0, 0, 0)
-
-        '---Now point the object info pointer to point to the initial of the specific object data.
-          dummy_PtrTo_t_Entity_BoundingSphere = macro_t_Entity_BoundingSphere_MemPos(TBGLSceneEntities(EntityID))
-          macro_t_Entity_BoundingSphere_FillData(dummy_PtrTo_t_Entity_BoundingSphere, FuncPTR, eRadius )
-
-        ' -- Now reset name
-        internal_SetEntityOverlayNames(ScriptSceneID)
-        TBGLSceneEntitiesNames(EntityID) = ""
+        tbgl_EntityCreateBoundingSphere( ScriptSceneID, EntityID, PARENT, eRadius, FuncPTR )
 
       END IF
     END IF
@@ -99,5 +117,7 @@ SUB Exec_TBGL_EntityCreateBoundingSphere()
 END SUB
 
 FUNCTION Exec_TBGL_EntityGetCollisionInfo() AS EXT
-  function = varptr(g_CollisionInfo)
+  FUNCTION = tbgl_EntityGetCollisionInfo( )
 END FUNCTION
+
+#ENDIF
